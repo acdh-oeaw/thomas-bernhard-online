@@ -7,7 +7,7 @@ import type { ReactNode } from "react";
 interface ImageProps extends Omit<NextImageProps, "loader"> {}
 
 export function Image(props: Readonly<ImageProps>): ReactNode {
-	const { alt = "", placeholder } = props;
+	const { alt, placeholder } = props;
 
 	/** @see https://nextjs.org/docs/pages/api-reference/components/image#getimageprops */
 	if (placeholder == null || placeholder === "empty") {

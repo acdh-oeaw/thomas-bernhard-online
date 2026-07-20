@@ -51,7 +51,7 @@ export function ListBoxItem<T extends object>(props: Readonly<ListBoxItemProps<T
 			{...rest}
 			className={composeRenderProps(className, (className) => {
 				return cn(
-					"interactive isolate inline-flex cursor-default items-center gap-x-3 py-3 pr-12 pl-4 outline-transparent transition will-change-transform forced-color-adjust-none select-none hover:hover-overlay focus-visible:focus-outline focus-visible:-focus-outline-offset-2 disabled:text-text-disabled forced-colors:focus:bg-[Highlight] forced-colors:focus:text-[HighlightText] forced-colors:disabled:text-[GrayText] pressed:press-overlay selected:select-overlay-left selected:bg-fill-brand-weak forced-colors:selected:bg-[Highlight] forced-colors:selected:text-[HighlightText] slot-icon:size-5 slot-icon:shrink-0 slot-icon:text-icon-neutral",
+					"interactive isolate inline-flex cursor-default items-center gap-x-3 py-3 pr-12 pl-4 outline-transparent transition will-change-transform forced-color-adjust-none select-none hover:hover-overlay focus-visible:focus-outline focus-visible:-focus-outline-offset-2 disabled:text-text-disabled forced-colors:focus:bg-[Highlight] forced-colors:focus:text-[HighlightText] forced-colors:disabled:text-[GrayText] forced-colors:selected:bg-[Highlight] forced-colors:selected:text-[HighlightText] pressed:press-overlay selected:select-overlay-left selected:bg-fill-brand-weak slot-icon:size-5 slot-icon:shrink-0 slot-icon:text-icon-neutral",
 					className,
 				);
 			})}
