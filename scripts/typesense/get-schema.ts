@@ -97,7 +97,7 @@ async function main() {
 export const ${collectionName}Collection = defineCollection({
 	fields: [
 ${fieldLines}
-	],
+	] as const,
 });
 
 export const ${collectionName}QueryableFieldNames = ${JSON.stringify(queryableFieldNames, null, 2)} as const;

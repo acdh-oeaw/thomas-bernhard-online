@@ -22,7 +22,7 @@ export const tbo_workCollection = defineCollection({
 		{ name: "expressions.id", type: "string[]", optional: true },
 		{ name: "category", type: "string", optional: true, facet: true },
 		{ name: "title", type: "string", sort: true },
-	],
+	] as const,
 });
 
 export const tbo_workQueryableFieldNames = [

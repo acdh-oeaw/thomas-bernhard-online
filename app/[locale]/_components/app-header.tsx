@@ -1,7 +1,6 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import { exampleAction } from "@/app/[locale]/_client-actions/navigation";
 import { AppNavigation, AppNavigationMobile } from "@/app/[locale]/_components/app-navigation";
 import { ColorSchemeSwitcher } from "@/app/[locale]/_components/color-scheme-switcher";
 import { LocaleSwitcher } from "@/app/[locale]/_components/locale-switcher";
@@ -24,21 +23,10 @@ export function AppHeader(): ReactNode {
 			href: createHref({ pathname: "/about" }),
 			label: t("navigation.items.about"),
 		},
-		documentation: {
-			type: "menu",
-			label: t("navigation.items.documentation"),
-			children: {
-				about: {
-					type: "link",
-					href: createHref({ pathname: "/about" }),
-					label: t("navigation.items.about"),
-				},
-				example: {
-					type: "action",
-					onAction: exampleAction,
-					label: t("navigation.items.example"),
-				},
-			},
+		search: {
+			type: "link",
+			href: createHref({ pathname: "/search" }),
+			label: t("navigation.items.search"),
 		},
 	} satisfies Record<string, NavigationItem>;
 

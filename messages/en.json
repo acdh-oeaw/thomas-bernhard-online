@@ -42,7 +42,8 @@
 				"about": "About the project",
 				"documentation": "Documentation",
 				"example": "Example",
-				"home": "Home"
+				"home": "Home",
+				"search": "Search"
 			},
 			"label": "Primary"
 		}
@@ -86,5 +87,43 @@
 			"title": "Page not found"
 		},
 		"title": "Page not found"
+	},
+	"ResultStatus": {
+		"loading": "Loading...",
+		"no-documents": "No documents found.",
+		"results": "Showing {startIndex}–{endIndex} of {totalCount} {count, plural, one {document} other {documents}}"
+	},
+	"SearchResults": {
+		"category": "Category",
+		"filter-categories": "filter categories",
+		"filters": "Filters",
+		"no-results": "No documents found. Try adjusting your search query or filters.",
+		"search-placeholder": "Search works...",
+		"title": "Search Results"
+	},
+	"FacetDropdown": {
+		"clear-selection": "Clear selection",
+		"filter-values": "filter values",
+		"loading": "Loading...",
+		"no-results": "No results",
+		"search": "Search"
+	},
+	"PopoverAutocomplete": {
+		"button-label-empty": "Select options",
+		"clear-selection": "Clear selection",
+		"loading": "Loading...",
+		"no-results": "No results",
+		"search": "Search",
+		"search-placeholder": "Search options..."
+	},
+	"WorkPage": {
+		"authors": "Authors",
+		"category": "Category",
+		"default-title": "Work",
+		"expressions": "Expressions",
+		"performances": "Performances",
+		"references": "References",
+		"unknown": "Unknown",
+		"untitled": "Untitled"
 	}
 }

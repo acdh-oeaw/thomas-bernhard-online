@@ -42,7 +42,8 @@
 				"about": "Über das Projekt",
 				"documentation": "Dokumentation",
 				"example": "Beispiel",
-				"home": "Startseite"
+				"home": "Startseite",
+				"search": "Suche"
 			},
 			"label": "Primär"
 		}
@@ -86,5 +87,43 @@
 			"title": "Seite nicht gefunden"
 		},
 		"title": "Seite nicht gefunden"
+	},
+	"ResultStatus": {
+		"loading": "Wird geladen...",
+		"no-documents": "Keine Dokumente gefunden.",
+		"results": "Zeige {startIndex}–{endIndex} von {totalCount} {count, plural, one {Dokument} other {Dokumente}}"
+	},
+	"SearchResults": {
+		"category": "Kategorie",
+		"filter-categories": "Kategorien filtern",
+		"filters": "Filter",
+		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
+		"search-placeholder": "Werke durchsuchen...",
+		"title": "Suchergebnisse"
+	},
+	"FacetDropdown": {
+		"clear-selection": "Auswahl löschen",
+		"filter-values": "Werte filtern",
+		"loading": "Wird geladen...",
+		"no-results": "Keine Ergebnisse",
+		"search": "Suchen"
+	},
+	"PopoverAutocomplete": {
+		"button-label-empty": "Optionen auswählen",
+		"clear-selection": "Auswahl löschen",
+		"loading": "Wird geladen...",
+		"no-results": "Keine Ergebnisse",
+		"search": "Suchen",
+		"search-placeholder": "Optionen durchsuchen..."
+	},
+	"WorkPage": {
+		"authors": "Autoren",
+		"category": "Kategorie",
+		"default-title": "Werk",
+		"expressions": "Ausdrücke",
+		"performances": "Aufführungen",
+		"references": "Referenzen",
+		"unknown": "Unbekannt",
+		"untitled": "Ohne Titel"
 	}
 }

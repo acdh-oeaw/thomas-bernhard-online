@@ -74,7 +74,7 @@ const result = createEnv({
 				 * Optional, because we need to be able to create a collection, before we create
 				 * a search-only api key for that collection.
 				 */
-				NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY: v.pipe(v.string(), v.nonEmpty()),
+				NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY: v.optional(v.pipe(v.string(), v.nonEmpty())),
 				// NEXT_RUNTIME: process.env.NEXT_RUNTIME,
 			});
 
