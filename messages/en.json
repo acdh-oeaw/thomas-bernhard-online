@@ -106,6 +106,7 @@
 		"filter-values": "filter values",
 		"loading": "Loading...",
 		"no-results": "No results",
+		"options-count": "{count, plural, one {# option} other {# options}}",
 		"search": "Search"
 	},
 	"PopoverAutocomplete": {

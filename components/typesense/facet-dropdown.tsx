@@ -148,13 +148,22 @@ export function FacetDropdown<C extends Collection<any>>(
 	}, [collectionName, fieldName, searchQuery, otherFilters]);
 
 	const selectedCount = internalSelected.size;
-	const buttonLabel =
-		selectedCount === 0
-			? "Select options"
-			: selectedCount === 1
-				? Array.from(internalSelected)[0]
-				: // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-					`${selectedCount} selected`;
+
+	const buttonLabel = useMemo(() => {
+		if (selectedCount === 0) {
+			return t("options-count", { count: facetValues.length });
+		}
+
+		return Array.from(internalSelected)
+			.map((value) => {
+				const facetValue = facetValues.find((item) => {
+					return item.value === value;
+				});
+
+				return facetValue != null ? `${value} (${String(facetValue.count)})` : value;
+			})
+			.join(", ");
+	}, [facetValues, internalSelected, selectedCount, t]);
 
 	const filteredValues = useMemo(() => {
 		return facetValues.filter((item) => {
