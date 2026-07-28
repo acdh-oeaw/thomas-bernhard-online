@@ -97,6 +97,10 @@
 		"category": "Kategorie",
 		"clear-search": "Suche zurücksetzen",
 		"filter-categories": "Kategorien filtern",
+		"filter-ui": "Filter-Ansicht",
+		"filter-ui-dropdown": "Dropdown",
+		"filter-ui-list": "Liste",
+		"filter-ui-tags": "Tags",
 		"filters": "Filter",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
 		"search-placeholder": "Werke durchsuchen...",
@@ -109,6 +113,15 @@
 		"no-results": "Keine Ergebnisse",
 		"options-count": "{count, plural, one {# Option} other {# Optionen}}",
 		"search": "Suchen"
+	},
+	"FacetList": {
+		"loading": "Wird geladen…",
+		"no-values": "Keine Werte"
+	},
+	"MultiFacetFilter": {
+		"clear-all": "Alle Filter zurücksetzen",
+		"loading": "Wird geladen…",
+		"no-values": "Keine Werte"
 	},
 	"PopoverAutocomplete": {
 		"button-label-empty": "Optionen auswählen",

@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronDownIcon, SearchIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import {
 	Autocomplete,
 	Button,
@@ -17,16 +17,14 @@ import {
 	type Selection,
 } from "react-aria-components";
 
-import { tbo_workQueryableFieldNames } from "@/lib/typesense/collections";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
+import { useFacetCounts } from "@/components/typesense/use-facet-counts";
 import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/schema";
 
-// NOTE: Typesense data-fetching and Aria UI components are intentionally tightly coupled in this
-// component. Separating them caused re-render cascades that made the ListBox lose focus/scroll
-// position on every selection: parent updates state → FacetDropdown re-renders → new facet counts
-// array → PopoverAutocomplete re-renders → ListBox re-renders → focus/scroll lost. By keeping
-// both together, the ListBox uses defaultSelectedKeys (uncontrolled) and only syncs to parent
-// via useEffect, preventing the render loop entirely.
+// NOTE: The ListBox is uncontrolled (`defaultSelectedKeys`). Its selection is mirrored into local
+// state and propagated to the parent from the selection handlers (not via a `useEffect` syncing on
+// `onChange`, which loops when the parent passes an unstable `onChange`). Together with
+// `useFacetCounts` keeping the facet list referentially stable, this avoids the re-render cascade
+// that would otherwise make the ListBox lose focus/scroll position on every selection.
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FacetDropdownProps<C extends Collection<any>> {
@@ -65,115 +63,62 @@ export function FacetDropdown<C extends Collection<any>>(
 		return new Set(selectedValues);
 	});
 	const [searchInput, setSearchInput] = useState("");
-	const [facetValues, setFacetValues] = useState<Array<{ value: string; count: number }>>([]);
-	const [isFetchingFacets, setIsFetchingFacets] = useState(false);
 
-	useEffect(() => {
-		let fetchMounted = true;
+	const field = String(fieldName);
 
-		const fetchFacetValues = async () => {
-			setIsFetchingFacets(true);
-			try {
-				const client = createTypesenseClient();
+	const facetFields = useMemo(() => {
+		return [field];
+	}, [field]);
 
-				const searchParams: Record<string, unknown> = {
-					q: searchQuery || "*",
-					query_by: tbo_workQueryableFieldNames.join(","),
-					facet_by: fieldName,
-					limit: 0,
-				};
+	const selectedByField = useMemo(() => {
+		return { [field]: internalSelected };
+	}, [field, internalSelected]);
 
-				if (otherFilters && otherFilters.size > 0) {
-					const otherFilterArray = Array.from(otherFilters);
-					if (otherFilterArray.length > 0) {
-						const filterString = otherFilterArray.join(" && ");
-						searchParams.filter_by = filterString;
-					}
-				}
+	const filterBy =
+		otherFilters != null && otherFilters.size > 0
+			? Array.from(otherFilters).join(" && ")
+			: undefined;
 
-				const searchResults = await client
-					.collections(collectionName)
-					.documents()
-					.search(searchParams);
+	const { displayData, isFetching } = useFacetCounts({
+		collectionName,
+		facetFields,
+		filterBy,
+		searchQuery,
+		selectedValues: selectedByField,
+	});
 
-				if (!fetchMounted) return;
-
-				if (searchResults.facet_counts) {
-					const facetCounts =
-						searchResults.facet_counts
-							.find((fc) => {
-								return fc.field_name === String(fieldName);
-							})
-							?.counts.map((c) => {
-								return {
-									value: c.value,
-									count: c.count,
-								};
-							}) ?? [];
-
-					setFacetValues((prev) => {
-						// Only update if the contents actually changed
-						if (
-							prev.length === facetCounts.length &&
-							prev.every((p, i) => {
-								return p.value === facetCounts[i]!.value && p.count === facetCounts[i]!.count;
-							})
-						) {
-							return prev;
-						}
-						return facetCounts;
-					});
-				} else {
-					setFacetValues((prev) => {
-						return prev.length === 0 ? prev : [];
-					});
-				}
-			} catch (error) {
-				console.error(`Failed to fetch facet values for ${String(fieldName)}:`, error);
-				if (fetchMounted) {
-					setFacetValues([]);
-				}
-			} finally {
-				if (fetchMounted) {
-					setIsFetchingFacets(false);
-				}
-			}
-		};
-
-		void fetchFacetValues();
-
-		return () => {
-			fetchMounted = false;
-		};
-	}, [collectionName, fieldName, searchQuery, otherFilters]);
+	const displayValues = useMemo(() => {
+		return displayData[field] ?? [];
+	}, [displayData, field]);
 
 	const selectedCount = internalSelected.size;
 
 	const buttonLabel = useMemo(() => {
 		if (selectedCount === 0) {
-			return t("options-count", { count: facetValues.length });
+			return t("options-count", { count: displayValues.length });
 		}
 
 		return Array.from(internalSelected)
 			.map((value) => {
-				const facetValue = facetValues.find((item) => {
+				const facetValue = displayValues.find((item) => {
 					return item.value === value;
 				});
 
-				return facetValue != null ? `${value} (${String(facetValue.count)})` : value;
+				return `${value} (${String(facetValue?.count ?? 0)})`;
 			})
 			.join(", ");
-	}, [facetValues, internalSelected, selectedCount, t]);
+	}, [displayValues, internalSelected, selectedCount, t]);
 
 	const filteredValues = useMemo(() => {
-		return facetValues.filter((item) => {
+		return displayValues.filter((item) => {
 			return !searchInput || item.value.toLowerCase().includes(searchInput.toLowerCase());
 		});
-	}, [facetValues, searchInput]);
+	}, [displayValues, searchInput]);
 
-	useEffect(() => {
-		onChange(internalSelected);
-	}, [internalSelected, onChange]);
+	const updateSelection = (values: Set<string>) => {
+		setInternalSelected(values);
+		onChange(values);
+	};
 
 	return (
 		<div className="flex items-center gap-x-2">
@@ -181,7 +126,7 @@ export function FacetDropdown<C extends Collection<any>>(
 			<DialogTrigger>
 				<Button
 					className="interactive flex w-fit items-center justify-between rounded-2 border border-stroke-weak bg-background-raised px-3 py-2 text-small text-text-strong hover:hover-overlay focus-visible:focus-outline disabled:opacity-50"
-					isDisabled={isLoading || isFetchingFacets}
+					isDisabled={isLoading || isFetching}
 				>
 					<span className="truncate">{buttonLabel}</span>
 					<ChevronDownIcon aria-hidden={true} className="size-4 shrink-0" data-slot="icon" />
@@ -207,7 +152,7 @@ export function FacetDropdown<C extends Collection<any>>(
 								</div>
 							</SearchField>
 
-							{isFetchingFacets ? (
+							{isFetching ? (
 								<div className="px-3 py-2 text-small text-text-weak">{t("loading")}</div>
 							) : filteredValues.length === 0 ? (
 								<div className="px-3 py-2 text-small text-text-weak">{t("no-results")}</div>
@@ -224,7 +169,7 @@ export function FacetDropdown<C extends Collection<any>>(
 												newSelected.add(String(key));
 											}
 										}
-										setInternalSelected(newSelected);
+										updateSelection(newSelected);
 									}}
 									selectionMode="multiple"
 									shouldFocusWrap={true}
@@ -264,7 +209,7 @@ export function FacetDropdown<C extends Collection<any>>(
 								className="interactive w-full py-2 text-center text-small text-text-brand outline-transparent hover:hover-overlay focus-visible:focus-outline disabled:opacity-50"
 								isDisabled={selectedCount === 0}
 								onPress={() => {
-									setInternalSelected(new Set());
+									updateSelection(new Set());
 								}}
 							>
 								{t("clear-selection")}

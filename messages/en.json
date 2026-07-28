@@ -97,6 +97,10 @@
 		"category": "Category",
 		"clear-search": "Clear search",
 		"filter-categories": "filter categories",
+		"filter-ui": "Filter UI",
+		"filter-ui-dropdown": "Dropdown",
+		"filter-ui-list": "List",
+		"filter-ui-tags": "Tags",
 		"filters": "Filters",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
 		"search-placeholder": "Search works...",
@@ -109,6 +113,15 @@
 		"no-results": "No results",
 		"options-count": "{count, plural, one {# option} other {# options}}",
 		"search": "Search"
+	},
+	"FacetList": {
+		"loading": "Loading…",
+		"no-values": "No values"
+	},
+	"MultiFacetFilter": {
+		"clear-all": "Clear all filters",
+		"loading": "Loading…",
+		"no-values": "No values"
 	},
 	"PopoverAutocomplete": {
 		"button-label-empty": "Select options",

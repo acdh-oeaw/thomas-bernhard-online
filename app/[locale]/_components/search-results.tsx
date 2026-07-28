@@ -2,11 +2,23 @@
 
 import { SearchIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryState } from "nuqs";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Input } from "react-aria-components";
+import {
+	parseAsArrayOf,
+	parseAsInteger,
+	parseAsString,
+	parseAsStringLiteral,
+	useQueryState,
+} from "nuqs";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button, Input, Label, Radio, RadioGroup } from "react-aria-components";
 
-import { FacetDropdown, Pagination, ResultStatus } from "@/components/typesense";
+import {
+	FacetDropdown,
+	FacetList,
+	MultiFacetFilter,
+	Pagination,
+	ResultStatus,
+} from "@/components/typesense";
 import { SearchInput } from "@/components/ui/search-input";
 import { tbo_workCollection, tbo_workQueryableFieldNames } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
@@ -17,6 +29,11 @@ import { WorkResultCard } from "./work-result-card";
 interface SearchResultsProps {
 	collectionName: string;
 }
+
+const filterUiOptions = ["dropdown", "tags", "list"] as const;
+
+const filterUiRadioClassName =
+	"interactive flex cursor-pointer items-center rounded-2 border border-stroke-weak px-3 py-1.5 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong";
 
 type WorkDocument = CollectionDocument<typeof tbo_workCollection>;
 
@@ -37,6 +54,10 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		parseAsArrayOf(parseAsString).withDefault([]),
 	);
 	const [currentPage, setCurrentPage] = useQueryState("page", parseAsInteger.withDefault(1));
+	const [filterUi, setFilterUi] = useQueryState(
+		"ui",
+		parseAsStringLiteral(filterUiOptions).withDefault("dropdown"),
+	);
 
 	const [documents, setDocuments] = useState<Array<WorkDocumentWithHighlights>>([]);
 	const [totalDocuments, setTotalDocuments] = useState(0);
@@ -111,15 +132,73 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		[setCurrentPage],
 	);
 
-	const handleCategoryChange = useCallback(
-		(newSelected: Set<string>) => {
-			void setCategoryFilters(Array.from(newSelected));
+	const facets = useMemo(() => {
+		return [{ fieldName: "category", label: t("category") }] as const;
+	}, [t]);
+
+	const facetSelection = useMemo(() => {
+		return { category: selectedCategories };
+	}, [selectedCategories]);
+
+	const handleFacetChange = useCallback(
+		(fieldName: string, values: Set<string>) => {
+			if (fieldName === "category") {
+				void setCategoryFilters(Array.from(values));
+			}
 		},
 		[setCategoryFilters],
 	);
 
+	const resultsContent =
+		documents.length > 0 ? (
+			<>
+				<ul
+					className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,28rem),1fr))] gap-8"
+					role="list"
+				>
+					{documents.map((doc) => {
+						return (
+							<WorkResultCard key={doc.id} document={doc} highlights={doc.highlights} id={doc.id} />
+						);
+					})}
+				</ul>
+				<div className="flex justify-center pt-8">
+					<Pagination
+						currentPage={currentPage}
+						isLoading={isLoading}
+						onPageChange={handlePageChange}
+						totalPages={Math.ceil(totalDocuments / perPage)}
+					/>
+				</div>
+			</>
+		) : !isLoading ? (
+			<div className="grid gap-y-4 rounded-4 border border-stroke-weak bg-background-raised p-8">
+				<p className="text-small text-text-weak">{t("no-results")}</p>
+			</div>
+		) : null;
+
 	return (
 		<section className="relative layout-subgrid gap-y-12 py-16 xs:py-24">
+			<RadioGroup
+				className="flex max-w-text flex-wrap items-center justify-end gap-x-3 gap-y-2"
+				onChange={(value) => {
+					void setFilterUi(value === "tags" ? "tags" : value === "list" ? "list" : "dropdown");
+				}}
+				orientation="horizontal"
+				value={filterUi}
+			>
+				<Label className="text-small font-strong text-text-strong">{t("filter-ui")}</Label>
+				<Radio className={filterUiRadioClassName} value="dropdown">
+					{t("filter-ui-dropdown")}
+				</Radio>
+				<Radio className={filterUiRadioClassName} value="tags">
+					{t("filter-ui-tags")}
+				</Radio>
+				<Radio className={filterUiRadioClassName} value="list">
+					{t("filter-ui-list")}
+				</Radio>
+			</RadioGroup>
+
 			<header className="grid max-w-text gap-y-4">
 				<h1 className="font-heading text-heading-2 font-strong text-balance text-text-strong">
 					{t("title")}
@@ -159,50 +238,53 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					</div>
 				</SearchInput>
 
-				<FacetDropdown
-					collection={tbo_workCollection}
-					collectionName={collectionName}
-					fieldName="category"
-					isLoading={isLoading}
-					label={t("category")}
-					onChange={handleCategoryChange}
-					searchPlaceholder={t("filter-categories")}
-					searchQuery={searchQuery}
-					selectedValues={selectedCategories}
-				/>
+				{filterUi === "tags" ? (
+					<MultiFacetFilter
+						collection={tbo_workCollection}
+						collectionName={collectionName}
+						facets={facets}
+						isLoading={isLoading}
+						label={t("filters")}
+						onChange={handleFacetChange}
+						searchQuery={searchQuery}
+						selectedValues={facetSelection}
+					/>
+				) : filterUi === "dropdown" ? (
+					<FacetDropdown
+						collection={tbo_workCollection}
+						collectionName={collectionName}
+						fieldName="category"
+						isLoading={isLoading}
+						label={t("category")}
+						onChange={(values) => {
+							handleFacetChange("category", values);
+						}}
+						searchPlaceholder={t("filter-categories")}
+						searchQuery={searchQuery}
+						selectedValues={selectedCategories}
+					/>
+				) : null}
 			</div>
 
-			{documents.length > 0 ? (
-				<>
-					<ul
-						className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,28rem),1fr))] gap-8"
-						role="list"
-					>
-						{documents.map((doc) => {
-							return (
-								<WorkResultCard
-									key={doc.id}
-									document={doc}
-									highlights={doc.highlights}
-									id={doc.id}
-								/>
-							);
-						})}
-					</ul>
-					<div className="flex justify-center pt-8">
-						<Pagination
-							currentPage={currentPage}
+			{filterUi === "list" ? (
+				<div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+					<aside className="lg:w-64 lg:shrink-0">
+						<FacetList
+							collection={tbo_workCollection}
+							collectionName={collectionName}
+							facets={facets}
 							isLoading={isLoading}
-							onPageChange={handlePageChange}
-							totalPages={Math.ceil(totalDocuments / perPage)}
+							label={t("filters")}
+							onChange={handleFacetChange}
+							searchQuery={searchQuery}
+							selectedValues={facetSelection}
 						/>
-					</div>
-				</>
-			) : !isLoading ? (
-				<div className="grid gap-y-4 rounded-4 border border-stroke-weak bg-background-raised p-8">
-					<p className="text-small text-text-weak">{t("no-results")}</p>
+					</aside>
+					<div className="grid flex-1 gap-y-12">{resultsContent}</div>
 				</div>
-			) : null}
+			) : (
+				resultsContent
+			)}
 		</section>
 	);
 }
