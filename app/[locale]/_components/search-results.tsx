@@ -118,18 +118,23 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		void fetchResults();
 	}, [currentPage, selectedCategories, searchQuery, collectionName, perPage]);
 
-	useEffect(() => {
-		// Reset to page 1 when search query or filters change
-		if (currentPage > 1) {
-			void setCurrentPage(1);
-		}
-	}, [searchQuery, categoryFilters, currentPage, setCurrentPage]);
+	const sectionRef = useRef<HTMLElement>(null);
 
 	const handlePageChange = useCallback(
 		(page: number) => {
 			void setCurrentPage(page);
+			sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 		},
 		[setCurrentPage],
+	);
+
+	const handleSearchChange = useCallback(
+		(value: string) => {
+			void setSearchQuery(value);
+			// A changed query means a new result set, so return to the first page.
+			void setCurrentPage(1);
+		},
+		[setSearchQuery, setCurrentPage],
 	);
 
 	const facets = useMemo(() => {
@@ -144,9 +149,11 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		(fieldName: string, values: Set<string>) => {
 			if (fieldName === "category") {
 				void setCategoryFilters(Array.from(values));
+				// A changed filter means a new result set, so return to the first page.
+				void setCurrentPage(1);
 			}
 		},
-		[setCategoryFilters],
+		[setCategoryFilters, setCurrentPage],
 	);
 
 	const resultsContent =
@@ -178,9 +185,9 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		) : null;
 
 	return (
-		<section className="relative layout-subgrid gap-y-12 py-16 xs:py-24">
+		<section ref={sectionRef} className="relative layout-subgrid gap-y-12 py-16 xs:py-24">
 			<RadioGroup
-				className="flex max-w-text flex-wrap items-center justify-end gap-x-3 gap-y-2"
+				className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
 				onChange={(value) => {
 					void setFilterUi(value === "tags" ? "tags" : value === "list" ? "list" : "dropdown");
 				}}
@@ -214,9 +221,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 				<SearchInput
 					aria-label={t("search-placeholder")}
 					className="w-96 max-w-full"
-					onChange={(value) => {
-						void setSearchQuery(value);
-					}}
+					onChange={handleSearchChange}
 					value={searchQuery}
 				>
 					<div className="flex items-center gap-x-3 rounded-2 border border-stroke-strong bg-fill-inverse-strong px-4 text-small text-text-strong focus-within:focus-outline">

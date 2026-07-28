@@ -109,11 +109,7 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 							<div key={field}>
 								<dt className="text-tiny font-strong text-text-weak">{t(field)}</dt>
 								<dd className="text-small text-text-weak">
-									{highlight?.snippet ? (
-										<HighlightedSnippet snippet={highlight.snippet} />
-									) : (
-										value
-									)}
+									{highlight?.snippet ? <HighlightedSnippet snippet={highlight.snippet} /> : value}
 								</dd>
 							</div>
 						);
