@@ -103,6 +103,9 @@
 		"filter-ui-tags": "Tags",
 		"filters": "Filter",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
+		"order-by": "Sortieren nach",
+		"order-title-asc": "Titel (A–Z)",
+		"order-title-desc": "Titel (Z–A)",
 		"search-placeholder": "Werke durchsuchen...",
 		"title": "Suchergebnisse"
 	},

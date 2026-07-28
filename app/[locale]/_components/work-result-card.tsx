@@ -5,13 +5,13 @@ import { Fragment, type ReactNode } from "react";
 
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense/highlight";
-import type { tbo_workCollection } from "@/lib/typesense/collections";
+import type { collections } from "@/lib/typesense/collections";
 import type { CollectionDocument, CollectionSearchHit } from "@/lib/typesense/schema";
 
 import { SearchResultCard } from "./search-result-card";
 
-type WorkDocument = CollectionDocument<typeof tbo_workCollection>;
-type WorkSearchHit = CollectionSearchHit<typeof tbo_workCollection>;
+type WorkDocument = CollectionDocument<typeof collections.tbo_work.collection>;
+type WorkSearchHit = CollectionSearchHit<typeof collections.tbo_work.collection>;
 type WorkHighlight = WorkSearchHit["highlight"];
 
 const displayFields = [

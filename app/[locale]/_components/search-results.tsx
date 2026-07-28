@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchIcon, XIcon } from "lucide-react";
+import { ArrowDownAZIcon, ArrowDownZAIcon, SearchIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
 	parseAsArrayOf,
@@ -16,11 +16,12 @@ import {
 	FacetDropdown,
 	FacetList,
 	MultiFacetFilter,
+	OrderBy,
 	Pagination,
 	ResultStatus,
 } from "@/components/typesense";
 import { SearchInput } from "@/components/ui/search-input";
-import { tbo_workCollection, tbo_workSearchableFieldNames } from "@/lib/typesense/collections";
+import { collections } from "@/lib/typesense/collections";
 import type { CollectionDocument, CollectionSearchHit } from "@/lib/typesense/schema";
 import { searchCollection } from "@/lib/typesense/search";
 
@@ -32,12 +33,23 @@ interface SearchResultsProps {
 
 const filterUiOptions = ["dropdown", "tags", "list"] as const;
 
+const orderOptions = [
+	{ value: "title:asc", labelKey: "order-title-asc", icon: ArrowDownAZIcon },
+	{ value: "title:desc", labelKey: "order-title-desc", icon: ArrowDownZAIcon },
+] as const;
+
+const orderValues = orderOptions.map((option) => {
+	return option.value;
+});
+
 const filterUiRadioClassName =
 	"interactive flex cursor-pointer items-center rounded-2 border border-stroke-weak px-3 py-1.5 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong";
 
-type WorkDocument = CollectionDocument<typeof tbo_workCollection>;
+const workCollection = collections.tbo_work.collection;
 
-type WorkSearchHit = CollectionSearchHit<typeof tbo_workCollection>;
+type WorkDocument = CollectionDocument<typeof workCollection>;
+
+type WorkSearchHit = CollectionSearchHit<typeof workCollection>;
 
 export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const { collectionName } = props;
@@ -55,11 +67,16 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		"ui",
 		parseAsStringLiteral(filterUiOptions).withDefault("dropdown"),
 	);
+	const [sortBy, setSortBy] = useQueryState(
+		"sort",
+		parseAsStringLiteral(orderValues).withDefault("title:asc"),
+	);
 
 	const [hits, setHits] = useState<Array<WorkSearchHit>>([]);
 	// Pagination status is read straight off the last search response.
 	const [pagination, setPagination] = useState({ found: 0, page: 1, perPage: 0 });
-	const [isLoading, setIsLoading] = useState(false);
+	// Starts true because a search is always run on mount; avoids a flash of "no results".
+	const [isLoading, setIsLoading] = useState(true);
 
 	const selectedCategories = useMemo(() => {
 		return new Set(categoryFilters);
@@ -73,18 +90,20 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 				const categoryFilter =
 					selectedCategories.size > 0
 						? `(${Array.from(selectedCategories)
-								.map((cat) => {
-									return `category:="${cat}"`;
-								})
-								.join(" || ")})`
+							.map((cat) => {
+								return `category:="${cat}"`;
+							})
+							.join(" || ")})`
 						: undefined;
 
 				const searchResults = await searchCollection<WorkDocument>(collectionName, {
 					q: searchQuery || "*",
-					query_by: tbo_workSearchableFieldNames.join(","),
+					query_by: collections.tbo_work.searchableFieldNames.join(","),
 					highlight_full_fields: ["title"],
 					page: currentPage,
-					sort_by: "_text_match:desc,title:asc",
+					prioritize_token_position: true,
+					text_match_type: "sum_score",
+					sort_by: `_text_match:desc,${sortBy}`,
 					...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
 				});
 
@@ -104,7 +123,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		};
 
 		void fetchResults();
-	}, [currentPage, selectedCategories, searchQuery, collectionName]);
+	}, [currentPage, selectedCategories, searchQuery, sortBy, collectionName]);
 
 	const sectionRef = useRef<HTMLElement>(null);
 
@@ -127,6 +146,12 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 
 	const facets = useMemo(() => {
 		return [{ fieldName: "category", label: t("category") }] as const;
+	}, [t]);
+
+	const orderByOptions = useMemo(() => {
+		return orderOptions.map((option) => {
+			return { value: option.value, label: t(option.labelKey), icon: option.icon };
+		});
 	}, [t]);
 
 	const facetSelection = useMemo(() => {
@@ -231,7 +256,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 
 				{filterUi === "tags" ? (
 					<MultiFacetFilter
-						collection={tbo_workCollection}
+						collection={workCollection}
 						collectionName={collectionName}
 						facets={facets}
 						isLoading={isLoading}
@@ -242,7 +267,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					/>
 				) : filterUi === "dropdown" ? (
 					<FacetDropdown
-						collection={tbo_workCollection}
+						collection={workCollection}
 						collectionName={collectionName}
 						fieldName="category"
 						isLoading={isLoading}
@@ -255,13 +280,24 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 						selectedValues={selectedCategories}
 					/>
 				) : null}
+
+				<OrderBy
+					label={t("order-by")}
+					onChange={(value) => {
+						void setSortBy(value);
+						// A changed order means a new result sequence, so return to the first page.
+						void setCurrentPage(1);
+					}}
+					options={orderByOptions}
+					value={sortBy}
+				/>
 			</div>
 
 			{filterUi === "list" ? (
 				<div className="flex flex-col gap-8 lg:flex-row lg:items-start">
 					<aside className="lg:w-64 lg:shrink-0">
 						<FacetList
-							collection={tbo_workCollection}
+							collection={workCollection}
 							collectionName={collectionName}
 							facets={facets}
 							isLoading={isLoading}

@@ -1,126 +1,152 @@
 import fs from "fs";
 import path from "path";
+import type { CollectionFieldSchema } from "typesense";
 
 import { env } from "@/config/env.config";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 
-async function main() {
-	const client = createTypesenseClient();
-	const collectionName = env.NEXT_PUBLIC_TYPESENSE_COLLECTION;
+// Collections to generate schema + field metadata for. Add further collection names here.
+const collectionNames = [env.NEXT_PUBLIC_TYPESENSE_COLLECTION];
 
-	if (!collectionName) {
-		throw new Error("NEXT_PUBLIC_TYPESENSE_COLLECTION environment variable is not set");
-	}
+// Searchable (query_by / full-text) fields are the string-typed fields, INCLUDING nested object
+// sub-fields such as `authors.name`; object fields themselves are not searchable.
+const searchableFieldTypes = ["string", "string[]", "string*"];
 
-	console.warn(`Fetching schema for collection: ${collectionName}`);
+const nestingLevel = (name: string) => {
+	return (name.match(/\./g) ?? []).length;
+};
 
-	try {
-		const collection = await client.collections(collectionName).retrieve();
+// Higher score = higher priority: prefer indexed, then sortable, then non-optional fields.
+const searchPriority = (field: CollectionFieldSchema) => {
+	return (
+		(field.index !== false ? 4 : 0) +
+		(field.sort === true ? 2 : 0) +
+		(field.optional !== true ? 1 : 0)
+	);
+};
 
-		const fields = collection.fields.map((field) => {
-			const fieldDef: Record<string, unknown> = {
-				name: field.name,
-				type: field.type,
-			};
+interface CollectionEntry {
+	code: string;
+	counts: {
+		fields: number;
+		searchable: number;
+		filterable: number;
+		sortable: number;
+		facetable: number;
+	};
+}
 
-			if (field.optional) {
-				fieldDef.optional = true;
+async function buildCollectionEntry(
+	client: ReturnType<typeof createTypesenseClient>,
+	collectionName: string,
+): Promise<CollectionEntry> {
+	const collection = await client.collections(collectionName).retrieve();
+
+	const fieldLines = collection.fields
+		.map((field) => {
+			return `				{ name: "${field.name}", type: "${field.type}"${field.optional ? ", optional: true" : ""}${field.index === false ? ", index: false" : ""}${field.facet ? ", facet: true" : ""}${field.sort ? ", sort: true" : ""} },`;
+		})
+		.join("\n");
+
+	// Sorted searchable field names. Typesense reports nested fields more than once, so the first
+	// occurrence of each name is kept before sorting.
+	const uniqueSearchableFields = Array.from(
+		new Map(
+			collection.fields
+				.filter((f) => {
+					return f.index !== false && searchableFieldTypes.includes(f.type);
+				})
+				.map((f) => {
+					return [f.name, f] as const;
+				}),
+		).values(),
+	);
+	const searchableFieldNames = uniqueSearchableFields
+		.sort((a, b) => {
+			// Shallower fields (fewer periods) come first.
+			const levelDiff = nestingLevel(a.name) - nestingLevel(b.name);
+			if (levelDiff !== 0) {
+				return levelDiff;
 			}
-
-			if (field.index === false) {
-				fieldDef.index = false;
-			}
-
-			if (field.facet) {
-				fieldDef.facet = true;
-			}
-
-			if (field.sort) {
-				fieldDef.sort = true;
-			}
-
-			return fieldDef;
+			// Within a nesting level, order by the search priority heuristic.
+			return searchPriority(b) - searchPriority(a);
+		})
+		.map((f) => {
+			return f.name;
+		});
+	const filterableFieldNames = collection.fields
+		.filter((f) => {
+			return f.index !== false;
+		})
+		.map((f) => {
+			return f.name;
+		});
+	const sortableFieldNames = collection.fields
+		.filter((f) => {
+			return f.sort === true;
+		})
+		.map((f) => {
+			return f.name;
+		});
+	const facetableFieldNames = collection.fields
+		.filter((f) => {
+			return f.facet === true;
+		})
+		.map((f) => {
+			return f.name;
 		});
 
-		// Extract field names by category (mirrors schema.ts type logic).
-		// Searchable (query_by / full-text) fields are the string-typed fields, INCLUDING nested
-		// object sub-fields such as `authors.name`; object fields themselves are not searchable.
-		// Typesense reports nested fields more than once, so duplicates are removed.
-		const searchableFieldTypes = ["string", "string[]", "string*"];
-		const isTopLevelField = (fieldName: string) => {
-			return !fieldName.includes(".");
-		};
-		const queryableFieldNames = collection.fields
-			.filter((f) => {
-				return f.index !== false && isTopLevelField(f.name);
-			})
-			.map((f) => {
-				return f.name;
-			});
-		const searchableFieldNames = Array.from(
-			new Set(
-				collection.fields
-					.filter((f) => {
-						return f.index !== false && searchableFieldTypes.includes(f.type);
-					})
-					.map((f) => {
-						return f.name;
-					}),
-			),
-		);
-		const filterableFieldNames = collection.fields
-			.filter((f) => {
-				return f.index !== false;
-			})
-			.map((f) => {
-				return f.name;
-			});
-		const sortableFieldNames = collection.fields
-			.filter((f) => {
-				return f.sort === true;
-			})
-			.map((f) => {
-				return f.name;
-			});
-		const facetableFieldNames = collection.fields
-			.filter((f) => {
-				return f.facet === true;
-			})
-			.map((f) => {
-				return f.name;
-			});
+	const code = `	${collectionName}: {
+		collection: defineCollection({
+			fields: [
+${fieldLines}
+			] as const,
+		}),
+		searchableFieldNames: ${JSON.stringify(searchableFieldNames)},
+		filterableFieldNames: ${JSON.stringify(filterableFieldNames)},
+		sortableFieldNames: ${JSON.stringify(sortableFieldNames)},
+		facetableFieldNames: ${JSON.stringify(facetableFieldNames)},
+	},`;
 
-		const fieldLines = fields
-			.map((f) => {
-				return `		{ name: "${String(f.name)}", type: "${String(f.type)}"${f.optional ? ", optional: true" : ""}${f.index === false ? ", index: false" : ""}${f.facet ? ", facet: true" : ""}${f.sort ? ", sort: true" : ""} },`;
-			})
-			.join("\n");
+	return {
+		code,
+		counts: {
+			fields: collection.fields.length,
+			searchable: searchableFieldNames.length,
+			filterable: filterableFieldNames.length,
+			sortable: sortableFieldNames.length,
+			facetable: facetableFieldNames.length,
+		},
+	};
+}
+
+async function main() {
+	const client = createTypesenseClient();
+
+	try {
+		const entries: Array<string> = [];
+		for (const collectionName of collectionNames) {
+			console.warn(`Fetching schema for collection: ${collectionName}`);
+			const { code, counts } = await buildCollectionEntry(client, collectionName);
+			entries.push(code);
+			console.warn(
+				`✓ ${collectionName}: ${String(counts.fields)} fields (searchable ${String(counts.searchable)}, filterable ${String(counts.filterable)}, sortable ${String(counts.sortable)}, facetable ${String(counts.facetable)})`,
+			);
+		}
 
 		const code = `import { defineCollection } from "@/lib/typesense/schema";
 
-export const ${collectionName}Collection = defineCollection({
-	fields: [
-${fieldLines}
-	] as const,
-});
-
-export const ${collectionName}QueryableFieldNames = ${JSON.stringify(queryableFieldNames, null, 2)} as const;
-export const ${collectionName}SearchableFieldNames = ${JSON.stringify(searchableFieldNames, null, 2)} as const;
-export const ${collectionName}FilterableFieldNames = ${JSON.stringify(filterableFieldNames, null, 2)} as const;
-export const ${collectionName}SortableFieldNames = ${JSON.stringify(sortableFieldNames, null, 2)} as const;
-export const ${collectionName}FacetableFieldNames = ${JSON.stringify(facetableFieldNames, null, 2)} as const;
+export const collections = {
+${entries.join("\n")}
+} as const;
 `;
 
 		const outputPath = path.join(process.cwd(), "lib/typesense/collections.ts");
 
 		fs.writeFileSync(outputPath, code);
-		console.warn(`✓ Schema written to ${outputPath}`);
-		console.warn(`✓ Generated field metadata for ${String(fields.length)} fields`);
-		console.warn(`  - Queryable: ${String(queryableFieldNames.length)}`);
-		console.warn(`  - Searchable: ${String(searchableFieldNames.length)}`);
-		console.warn(`  - Filterable: ${String(filterableFieldNames.length)}`);
-		console.warn(`  - Sortable: ${String(sortableFieldNames.length)}`);
-		console.warn(`  - Facetable: ${String(facetableFieldNames.length)}`);
+		console.warn(
+			`✓ Schema for ${String(collectionNames.length)} collection(s) written to ${outputPath}`,
+		);
 	} catch (error) {
 		console.error("Failed to fetch schema:", error);
 		process.exit(1);

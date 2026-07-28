@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { tbo_workSearchableFieldNames } from "@/lib/typesense/collections";
+import { collections } from "@/lib/typesense/collections";
 import { searchCollection } from "@/lib/typesense/search";
 
 export interface FacetValue {
@@ -75,7 +75,7 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 			try {
 				const searchResults = await searchCollection(collectionName, {
 					q: searchQuery || "*",
-					query_by: tbo_workSearchableFieldNames.join(","),
+					query_by: collections.tbo_work.searchableFieldNames.join(","),
 					facet_by: fieldNames.join(","),
 					// Facet-only search: no document hits needed.
 					per_page: 0,
