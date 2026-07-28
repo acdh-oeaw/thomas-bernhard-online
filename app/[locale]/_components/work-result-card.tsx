@@ -23,28 +23,35 @@ const displayFields = [
 
 /**
  * Typesense's object-form `highlight` mirrors the document. Its types are loose (nested arrays), so
- * we read snippets through small typed accessors.
+ * we read the highlighted markup through small typed accessors. The full `value` (the whole field
+ * with `<mark>` tags) is preferred; the truncated `snippet` is only a fallback.
  */
-type StringHighlight = { snippet?: string } | undefined;
-type ObjectListHighlight = ReadonlyArray<Record<string, StringHighlight>> | undefined;
+type FieldHighlight = { snippet?: string; value?: string } | undefined;
+type ObjectListHighlight = ReadonlyArray<Record<string, FieldHighlight>> | undefined;
 
-/** The highlight snippet for a top-level string field, e.g. `highlight.title.snippet`. */
-function fieldSnippet(highlight: WorkHighlight, field: string): string | undefined {
-	return (highlight as Record<string, StringHighlight>)[field]?.snippet;
+function highlightMarkup(highlight: FieldHighlight): string | undefined {
+	return highlight?.value ?? highlight?.snippet;
+}
+
+/** The highlighted markup for a top-level string field, e.g. `highlight.title`. */
+function fieldHighlight(highlight: WorkHighlight, field: string): string | undefined {
+	return highlightMarkup((highlight as Record<string, FieldHighlight>)[field]);
 }
 
 /**
- * The highlight snippet for a sub-field of the `index`-th entry of an `object[]` field, e.g.
- * `highlight.authors[index].name.snippet`. Typesense aligns the highlight array with the document
- * array by index.
+ * The highlighted markup for a sub-field of the `index`-th entry of an `object[]` field, e.g.
+ * `highlight.authors[index].name`. Typesense aligns the highlight array with the document array by
+ * index.
  */
-function itemSnippet(
+function itemHighlight(
 	highlight: WorkHighlight,
 	field: string,
 	index: number,
 	subField: string,
 ): string | undefined {
-	return (highlight as Record<string, ObjectListHighlight>)[field]?.[index]?.[subField]?.snippet;
+	return highlightMarkup(
+		(highlight as Record<string, ObjectListHighlight>)[field]?.[index]?.[subField],
+	);
 }
 
 /** Renders the values of an `object[]` field as a comma-separated list, highlighting matched items. */
@@ -56,10 +63,10 @@ function renderHighlightedList(
 ): ReactNode {
 	const entries = values
 		.map((value, index) => {
-			return { value, index, snippet: itemSnippet(highlight, field, index, subField) };
+			return { value, index, markup: itemHighlight(highlight, field, index, subField) };
 		})
 		.filter((entry) => {
-			return entry.snippet != null || (entry.value != null && entry.value !== "");
+			return entry.markup != null || (entry.value != null && entry.value !== "");
 		});
 
 	if (entries.length === 0) {
@@ -70,7 +77,7 @@ function renderHighlightedList(
 		return (
 			<Fragment key={entry.index}>
 				{position > 0 ? ", " : null}
-				{entry.snippet != null ? <HighlightedSnippet snippet={entry.snippet} /> : entry.value}
+				{entry.markup != null ? <HighlightedSnippet snippet={entry.markup} /> : entry.value}
 			</Fragment>
 		);
 	});
@@ -87,11 +94,11 @@ function renderExpressions(
 
 	const entries = expressions
 		.map((expression, index) => {
-			return { expression, index, snippet: itemSnippet(highlight, "expressions", index, "title") };
+			return { expression, index, markup: itemHighlight(highlight, "expressions", index, "title") };
 		})
 		.filter((entry) => {
 			return (
-				entry.snippet != null || entry.expression.title != null || entry.expression.language != null
+				entry.markup != null || entry.expression.title != null || entry.expression.language != null
 			);
 		});
 
@@ -100,13 +107,13 @@ function renderExpressions(
 	}
 
 	return entries.map((entry, position) => {
-		const { expression, index, snippet } = entry;
-		const hasTitle = snippet != null || expression.title != null;
+		const { expression, index, markup } = entry;
+		const hasTitle = markup != null || expression.title != null;
 
 		return (
 			<Fragment key={expression.id ?? index}>
 				{position > 0 ? ", " : null}
-				{snippet != null ? <HighlightedSnippet snippet={snippet} /> : expression.title}
+				{markup != null ? <HighlightedSnippet snippet={markup} /> : expression.title}
 				{expression.language != null ? (
 					<>
 						{hasTitle ? " (" : null}
@@ -129,14 +136,14 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 	const t = useTranslations("WorkPage");
 	const href = `/work/${document.id}`;
 
-	const titleSnippet = fieldSnippet(highlight, "title");
-	const categorySnippet = fieldSnippet(highlight, "category");
+	const titleMarkup = fieldHighlight(highlight, "title");
+	const categoryMarkup = fieldHighlight(highlight, "category");
 
 	/** Rendered (highlight-aware) content for each displayed field. */
 	const fieldValues = {
 		category:
-			categorySnippet != null ? (
-				<HighlightedSnippet snippet={categorySnippet} />
+			categoryMarkup != null ? (
+				<HighlightedSnippet snippet={categoryMarkup} />
 			) : (
 				(document.category ?? "")
 			),
@@ -163,8 +170,8 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 		<SearchResultCard href={href}>
 			<div className="grid gap-y-2">
 				<h2 className="font-heading text-heading-4 font-strong text-text-strong">
-					{titleSnippet != null ? (
-						<HighlightedSnippet snippet={titleSnippet} />
+					{titleMarkup != null ? (
+						<HighlightedSnippet snippet={titleMarkup} />
 					) : (
 						document.title || t("untitled")
 					)}

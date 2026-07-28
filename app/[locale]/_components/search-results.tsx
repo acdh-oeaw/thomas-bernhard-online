@@ -21,8 +21,8 @@ import {
 } from "@/components/typesense";
 import { SearchInput } from "@/components/ui/search-input";
 import { tbo_workCollection, tbo_workSearchableFieldNames } from "@/lib/typesense/collections";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import type { CollectionDocument, CollectionSearchHit } from "@/lib/typesense/schema";
+import { searchCollection } from "@/lib/typesense/search";
 
 import { WorkResultCard } from "./work-result-card";
 
@@ -57,9 +57,9 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	);
 
 	const [hits, setHits] = useState<Array<WorkSearchHit>>([]);
-	const [totalDocuments, setTotalDocuments] = useState(0);
+	// Pagination status is read straight off the last search response.
+	const [pagination, setPagination] = useState({ found: 0, page: 1, perPage: 0 });
 	const [isLoading, setIsLoading] = useState(false);
-	const perPage = 12;
 
 	const selectedCategories = useMemo(() => {
 		return new Set(categoryFilters);
@@ -70,8 +70,6 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		const fetchResults = async () => {
 			setIsLoading(true);
 			try {
-				const client = createTypesenseClient();
-
 				const categoryFilter =
 					selectedCategories.size > 0
 						? `(${Array.from(selectedCategories)
@@ -81,30 +79,32 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 								.join(" || ")})`
 						: undefined;
 
-				const searchResults = await client
-					.collections<WorkDocument>(collectionName)
-					.documents()
-					.search({
-						q: searchQuery || "*",
-						query_by: tbo_workSearchableFieldNames.join(","),
-						highlight_fields: tbo_workSearchableFieldNames.join(","),
-						page: currentPage,
-						per_page: perPage,
-						...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
-					});
+				const searchResults = await searchCollection<WorkDocument>(collectionName, {
+					q: searchQuery || "*",
+					query_by: tbo_workSearchableFieldNames.join(","),
+					highlight_full_fields: ["title"],
+					page: currentPage,
+					sort_by: "_text_match:desc,title:asc",
+					...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
+				});
 
 				setHits(searchResults.hits ?? []);
-				setTotalDocuments(searchResults.found || 0);
+				setPagination({
+					found: searchResults.found,
+					page: searchResults.page,
+					perPage: searchResults.request_params.per_page ?? 0,
+				});
 			} catch (error) {
 				console.error("Failed to fetch search results:", error);
 				setHits([]);
+				setPagination({ found: 0, page: 1, perPage: 0 });
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
 		void fetchResults();
-	}, [currentPage, selectedCategories, searchQuery, collectionName, perPage]);
+	}, [currentPage, selectedCategories, searchQuery, collectionName]);
 
 	const sectionRef = useRef<HTMLElement>(null);
 
@@ -160,7 +160,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 						currentPage={currentPage}
 						isLoading={isLoading}
 						onPageChange={handlePageChange}
-						totalPages={Math.ceil(totalDocuments / perPage)}
+						totalPages={Math.ceil(pagination.found / pagination.perPage)}
 					/>
 				</div>
 			</>
@@ -197,10 +197,10 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					{t("title")}
 				</h1>
 				<ResultStatus
-					endIndex={(currentPage - 1) * perPage + hits.length}
+					endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
 					isLoading={isLoading}
-					startIndex={(currentPage - 1) * perPage + 1}
-					totalCount={totalDocuments}
+					startIndex={(pagination.page - 1) * pagination.perPage + 1}
+					totalCount={pagination.found}
 				/>
 			</header>
 			<div className="flex max-w-text flex-wrap items-center gap-4">

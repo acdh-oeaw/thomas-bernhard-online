@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { tbo_workSearchableFieldNames } from "@/lib/typesense/collections";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
+import { searchCollection } from "@/lib/typesense/search";
 
 export interface FacetValue {
 	value: string;
@@ -73,18 +73,14 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 
 			setIsFetching(true);
 			try {
-				const client = createTypesenseClient();
-
-				const searchResults = await client
-					.collections(collectionName)
-					.documents()
-					.search({
-						q: searchQuery || "*",
-						query_by: tbo_workSearchableFieldNames.join(","),
-						facet_by: fieldNames.join(","),
-						limit: 0,
-						...(filterBy != null ? { filter_by: filterBy } : {}),
-					});
+				const searchResults = await searchCollection(collectionName, {
+					q: searchQuery || "*",
+					query_by: tbo_workSearchableFieldNames.join(","),
+					facet_by: fieldNames.join(","),
+					// Facet-only search: no document hits needed.
+					per_page: 0,
+					...(filterBy != null ? { filter_by: filterBy } : {}),
+				});
 
 				if (!fetchMounted) return;
 
