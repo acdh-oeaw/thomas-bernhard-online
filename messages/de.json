@@ -95,6 +95,7 @@
 	},
 	"SearchResults": {
 		"category": "Kategorie",
+		"clear-search": "Suche zurücksetzen",
 		"filter-categories": "Kategorien filtern",
 		"filters": "Filter",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",

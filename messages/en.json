@@ -95,6 +95,7 @@
 	},
 	"SearchResults": {
 		"category": "Category",
+		"clear-search": "Clear search",
 		"filter-categories": "filter categories",
 		"filters": "Filters",
 		"no-results": "No documents found. Try adjusting your search query or filters.",

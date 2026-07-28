@@ -176,7 +176,7 @@ export function FacetDropdown<C extends Collection<any>>(
 	}, [internalSelected, onChange]);
 
 	return (
-		<div className="grid gap-y-2">
+		<div className="flex items-center gap-x-2">
 			<Label className="text-small font-strong text-text-strong">{label}</Label>
 			<DialogTrigger>
 				<Button

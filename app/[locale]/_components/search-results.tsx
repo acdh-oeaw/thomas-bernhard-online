@@ -1,11 +1,13 @@
 "use client";
 
-import { SearchIcon } from "lucide-react";
+import { SearchIcon, XIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { parseAsArrayOf, parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { Button, Input } from "react-aria-components";
 
 import { FacetDropdown, Pagination, ResultStatus } from "@/components/typesense";
+import { SearchInput } from "@/components/ui/search-input";
 import { tbo_workCollection, tbo_workQueryableFieldNames } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import type { CollectionDocument, SearchHighlight } from "@/lib/typesense/schema";
@@ -129,21 +131,33 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					totalCount={totalDocuments}
 				/>
 			</header>
-			<div className="flex max-w-text gap-4">
-				<input
+			<div className="flex max-w-text flex-wrap items-center gap-4">
+				<SearchInput
 					aria-label={t("search-placeholder")}
-					// eslint-disable-next-line better-tailwindcss/no-unknown-classes
-					className="bg-background interactive w-full rounded-2 border border-stroke-weak px-4 py-3 pr-12 text-small outline-transparent placeholder:text-text-weak hover:hover-overlay focus-visible:focus-outline"
-					onChange={(e) => {
-						void setSearchQuery(e.target.value);
+					className="w-96 max-w-full"
+					onChange={(value) => {
+						void setSearchQuery(value);
 					}}
-					placeholder={t("search-placeholder")}
-					type="text"
 					value={searchQuery}
-				/>
-				<div className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-icon-neutral">
-					<SearchIcon aria-hidden="true" className="size-5" data-slot="icon" />
-				</div>
+				>
+					<div className="flex items-center gap-x-3 rounded-2 border border-stroke-strong bg-fill-inverse-strong px-4 text-small text-text-strong focus-within:focus-outline">
+						<SearchIcon
+							aria-hidden="true"
+							className="size-5 shrink-0 text-icon-neutral"
+							data-slot="icon"
+						/>
+						<Input
+							className="min-h-12 grow bg-transparent text-text-strong outline-transparent placeholder:text-text-weak"
+							placeholder={t("search-placeholder")}
+						/>
+						<Button
+							aria-label={t("clear-search")}
+							className="shrink-0 rounded-1 p-1 text-icon-neutral outline-transparent group-data-empty:hidden hover:bg-fill-hover focus-visible:focus-outline"
+						>
+							<XIcon aria-hidden={true} className="size-4" data-slot="icon" />
+						</Button>
+					</div>
+				</SearchInput>
 
 				<FacetDropdown
 					collection={tbo_workCollection}
