@@ -1,8 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
+import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense/highlight";
 import type { tbo_workCollection } from "@/lib/typesense/collections";
 import type { CollectionDocument, SearchHighlight } from "@/lib/typesense/schema";
@@ -24,33 +25,21 @@ const displayFields = [
 	"expressions",
 ] as const satisfies ReadonlyArray<keyof WorkDocument>;
 
-function renderFieldValue(value: unknown): string {
-	if (value === null || value === undefined) {
+/** Joins the non-empty labels of a nested object list into a single comma-separated summary. */
+function formatList<T>(
+	items: ReadonlyArray<T> | null | undefined,
+	format: (item: T) => string | null | undefined,
+): string {
+	if (items == null) {
 		return "";
 	}
 
-	if (typeof value === "string") {
-		return value;
-	}
-
-	if (typeof value === "number") {
-		return String(value);
-	}
-
-	if (Array.isArray(value)) {
-		const items = value.map((item) => {
-			if (typeof item === "object" && item !== null) {
-				const obj = item as Record<string, unknown>;
-				return (obj.name as string | undefined) ?? (obj.title as string | undefined) ?? "";
-			}
-
-			return String(item);
-		});
-
-		return items.filter(Boolean).join(", ");
-	}
-
-	return "";
+	return items
+		.map(format)
+		.filter((label): label is string => {
+			return Boolean(label);
+		})
+		.join(", ");
 }
 
 export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode {
@@ -63,6 +52,35 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 			return highlight.field === field;
 		});
 	};
+
+	/** Typed, human-readable summary for each displayed field, derived from the nested records. */
+	const fieldValues = {
+		category: document.category ?? "",
+		authors: formatList(document.authors, (author) => {
+			return author.name;
+		}),
+		performances: formatList(document.performances, (performance) => {
+			return performance.label;
+		}),
+		expressions:
+			document.expressions && document.expressions.length > 0
+				? document.expressions.map((expression, index) => {
+						return (
+							<Fragment key={expression.id ?? index}>
+								{index > 0 ? ", " : null}
+								{expression.title}
+								{expression.language != null ? (
+									<>
+										{expression.title != null ? " (" : null}
+										<LanguageLabel code={expression.language} />
+										{expression.title != null ? ")" : null}
+									</>
+								) : null}
+							</Fragment>
+						);
+					})
+				: null,
+	} satisfies Record<(typeof displayFields)[number], ReactNode>;
 
 	const titleHighlight = findHighlight("title");
 
@@ -79,16 +97,13 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 
 				<dl className="grid gap-y-2">
 					{displayFields.map((field) => {
-						if (!document[field]) {
-							return null;
-						}
-
-						const value = renderFieldValue(document[field]);
-						if (!value) {
-							return null;
-						}
-
 						const highlight = findHighlight(field);
+						const value = fieldValues[field];
+						const hasValue = value != null && value !== "";
+
+						if (!hasValue && !highlight?.snippet) {
+							return null;
+						}
 
 						return (
 							<div key={field}>

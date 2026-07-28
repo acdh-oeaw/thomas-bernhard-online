@@ -129,43 +129,34 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					totalCount={totalDocuments}
 				/>
 			</header>
-			<div className="grid max-w-text">
-				<div className="relative">
-					<input
-						aria-label={t("search-placeholder")}
-						// eslint-disable-next-line better-tailwindcss/no-unknown-classes
-						className="bg-background interactive w-full rounded-2 border border-stroke-weak px-4 py-3 pr-12 text-small outline-transparent placeholder:text-text-weak hover:hover-overlay focus-visible:focus-outline"
-						onChange={(e) => {
-							void setSearchQuery(e.target.value);
-						}}
-						placeholder={t("search-placeholder")}
-						type="text"
-						value={searchQuery}
-					/>
-					<div className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-icon-neutral">
-						<SearchIcon aria-hidden="true" className="size-5" data-slot="icon" />
-					</div>
+			<div className="flex max-w-text gap-4">
+				<input
+					aria-label={t("search-placeholder")}
+					// eslint-disable-next-line better-tailwindcss/no-unknown-classes
+					className="bg-background interactive w-full rounded-2 border border-stroke-weak px-4 py-3 pr-12 text-small outline-transparent placeholder:text-text-weak hover:hover-overlay focus-visible:focus-outline"
+					onChange={(e) => {
+						void setSearchQuery(e.target.value);
+					}}
+					placeholder={t("search-placeholder")}
+					type="text"
+					value={searchQuery}
+				/>
+				<div className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-icon-neutral">
+					<SearchIcon aria-hidden="true" className="size-5" data-slot="icon" />
 				</div>
-			</div>
 
-			<aside className="grid gap-y-6">
-				<div className="grid gap-y-4">
-					<h2 className="font-heading text-heading-4 font-strong text-text-strong">
-						{t("filters")}
-					</h2>
-					<FacetDropdown
-						collection={tbo_workCollection}
-						collectionName={collectionName}
-						fieldName="category"
-						isLoading={isLoading}
-						label={t("category")}
-						onChange={handleCategoryChange}
-						searchPlaceholder={t("filter-categories")}
-						searchQuery={searchQuery}
-						selectedValues={selectedCategories}
-					/>
-				</div>
-			</aside>
+				<FacetDropdown
+					collection={tbo_workCollection}
+					collectionName={collectionName}
+					fieldName="category"
+					isLoading={isLoading}
+					label={t("category")}
+					onChange={handleCategoryChange}
+					searchPlaceholder={t("filter-categories")}
+					searchQuery={searchQuery}
+					selectedValues={selectedCategories}
+				/>
+			</div>
 
 			{documents.length > 0 ? (
 				<>

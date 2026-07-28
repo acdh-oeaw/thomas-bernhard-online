@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
 import { env } from "@/config/env.config";
 import type { IntlLocale } from "@/lib/i18n/locales";
@@ -17,6 +18,17 @@ interface WorkPageProps {
 		id: string;
 		locale: IntlLocale;
 	}>;
+}
+
+function MetadataSection(props: Readonly<{ title: string; children: ReactNode }>): ReactNode {
+	const { title, children } = props;
+
+	return (
+		<section>
+			<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">{title}</h2>
+			<ul className="list-disc space-y-2 pl-5">{children}</ul>
+		</section>
+	);
 }
 
 export async function generateMetadata(
@@ -37,8 +49,7 @@ export async function generateMetadata(
 			.retrieve();
 
 		return {
-			title:
-				(typeof document.title === "string" ? document.title : undefined) ?? t("default-title"),
+			title: document.title || t("default-title"),
 		};
 	} catch {
 		return {
@@ -65,92 +76,91 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 		notFound();
 	}
 
-	const authors = Array.isArray(document.authors) ? document.authors : null;
-	const performances = Array.isArray(document.performances) ? document.performances : null;
-	const expressions = Array.isArray(document.expressions) ? document.expressions : null;
-	const references = Array.isArray(document.sameas) ? document.sameas : null;
+	const { title, category, authors, performances, expressions, sameas } = document;
 
 	return (
 		<MainContent className="layout-grid content-start">
 			<article className="relative layout-subgrid gap-y-8 py-16 xs:py-24">
 				<header className="grid max-w-text gap-y-4">
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
-						{(typeof document.title === "string" ? document.title : undefined) ?? t("untitled")}
+						{title || t("untitled")}
 					</h1>
-					{typeof document.category === "string" && document.category && (
-						<p className="font-heading text-heading-4 text-text-weak">{document.category}</p>
-					)}
+					{category ? (
+						<p className="font-heading text-heading-4 text-text-weak">{category}</p>
+					) : null}
 				</header>
 
 				<div className="grid max-w-text gap-y-6">
-					{authors && authors.length > 0 && (
-						<section>
-							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{t("authors")}
-							</h2>
-							<ul className="space-y-2">
-								{authors.map((author: Record<string, unknown>, idx: number) => {
-									return (
-										<li key={idx} className="text-small text-text-weak">
-											{(author.name as string) || t("unknown")}
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					)}
+					{authors && authors.length > 0 ? (
+						<MetadataSection title={t("authors")}>
+							{authors.map((author, index) => {
+								return (
+									<li key={author.id ?? index} className="text-small text-text-weak">
+										{author.name ?? t("unknown")}
+									</li>
+								);
+							})}
+						</MetadataSection>
+					) : null}
 
-					{performances && performances.length > 0 && (
-						<section>
-							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{t("performances")}
-							</h2>
-							<ul className="space-y-2">
-								{performances.map((perf: Record<string, unknown>, idx: number) => {
-									return (
-										<li key={idx} className="text-small text-text-weak">
-											{(perf.label as string) || t("unknown")}
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					)}
+					{performances && performances.length > 0 ? (
+						<MetadataSection title={t("performances")}>
+							{performances.map((performance, index) => {
+								return (
+									<li key={performance.id ?? index} className="text-small text-text-weak">
+										{performance.label ?? t("unknown")}
+									</li>
+								);
+							})}
+						</MetadataSection>
+					) : null}
 
-					{expressions && expressions.length > 0 && (
-						<section>
-							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{t("expressions")}
-							</h2>
-							<ul className="space-y-2">
-								{expressions.map((expr: Record<string, unknown>, idx: number) => {
-									return (
-										<li key={idx} className="text-small text-text-weak">
-											{(expr.title as string) || (expr.language as string) || t("unknown")}
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					)}
+					{expressions && expressions.length > 0 ? (
+						<MetadataSection title={t("expressions")}>
+							{expressions.map((expression, index) => {
+								return (
+									<li key={expression.id ?? index} className="text-small text-text-weak">
+										{expression.title != null ? (
+											<>
+												{expression.title}
+												{expression.language != null ? (
+													<span className="ml-2 text-tiny text-text-weak">
+														<LanguageLabel code={expression.language} />
+													</span>
+												) : null}
+											</>
+										) : expression.language != null ? (
+											<LanguageLabel code={expression.language} />
+										) : (
+											t("unknown")
+										)}
+									</li>
+								);
+							})}
+						</MetadataSection>
+					) : null}
 
-					{references && references.length > 0 && (
-						<section>
-							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{t("references")}
-							</h2>
-							<ul className="space-y-2">
-								{references.map((ref: string, idx: number) => {
-									return (
-										<li key={idx} className="text-small break-all text-text-weak">
-											{ref}
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					)}
+					{sameas.length > 0 ? (
+						<MetadataSection title={t("references")}>
+							{sameas.map((reference) => {
+								return (
+									<li key={reference} className="text-small break-all text-text-weak">
+										{reference}
+									</li>
+								);
+							})}
+						</MetadataSection>
+					) : null}
 				</div>
+
+				<details className="mt-4">
+					<summary className="interactive w-fit cursor-pointer rounded-2 border border-stroke-weak bg-background-raised px-3 py-2 text-small text-text-strong select-none hover:hover-overlay focus-visible:focus-outline">
+						{t("raw-data")}
+					</summary>
+					<pre className="mt-2 overflow-x-auto rounded-2 border border-stroke-weak bg-background-raised p-4 font-code text-tiny text-text-weak">
+						{JSON.stringify(document, null, 2)}
+					</pre>
+				</details>
 			</article>
 		</MainContent>
 	);
