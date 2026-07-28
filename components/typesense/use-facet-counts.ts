@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { tbo_workQueryableFieldNames } from "@/lib/typesense/collections";
+import { tbo_workSearchableFieldNames } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 
 export interface FacetValue {
@@ -80,7 +80,7 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 					.documents()
 					.search({
 						q: searchQuery || "*",
-						query_by: tbo_workQueryableFieldNames.join(","),
+						query_by: tbo_workSearchableFieldNames.join(","),
 						facet_by: fieldNames.join(","),
 						limit: 0,
 						...(filterBy != null ? { filter_by: filterBy } : {}),

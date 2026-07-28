@@ -42,8 +42,10 @@ async function main() {
 			return fieldDef;
 		});
 
-		// Extract field names by category (mirrors schema.ts type logic)
-		// Only include top-level fields (no dots) for queryable/searchable since nested fields can't be searched
+		// Extract field names by category (mirrors schema.ts type logic).
+		// Searchable (query_by / full-text) fields are the string-typed fields, INCLUDING nested
+		// object sub-fields such as `authors.name`; object fields themselves are not searchable.
+		// Typesense reports nested fields more than once, so duplicates are removed.
 		const searchableFieldTypes = ["string", "string[]", "string*"];
 		const isTopLevelField = (fieldName: string) => {
 			return !fieldName.includes(".");
@@ -55,15 +57,17 @@ async function main() {
 			.map((f) => {
 				return f.name;
 			});
-		const searchableFieldNames = collection.fields
-			.filter((f) => {
-				return (
-					f.index !== false && isTopLevelField(f.name) && searchableFieldTypes.includes(f.type)
-				);
-			})
-			.map((f) => {
-				return f.name;
-			});
+		const searchableFieldNames = Array.from(
+			new Set(
+				collection.fields
+					.filter((f) => {
+						return f.index !== false && searchableFieldTypes.includes(f.type);
+					})
+					.map((f) => {
+						return f.name;
+					}),
+			),
+		);
 		const filterableFieldNames = collection.fields
 			.filter((f) => {
 				return f.index !== false;

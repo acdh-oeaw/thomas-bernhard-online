@@ -1,9 +1,4 @@
-import type {
-	CollectionCreateSchema,
-	CollectionFieldSchema,
-	DocumentSchema,
-	SearchResponseHit,
-} from "typesense";
+import type { CollectionCreateSchema, CollectionFieldSchema, SearchResponseHit } from "typesense";
 
 type StrictFieldSchema = CollectionFieldSchema &
 	({ index?: true | undefined } | { index: false; facet?: never; sort?: never });
@@ -210,13 +205,14 @@ function getFacetableFields<F extends ReadonlyArray<CollectionFieldSchema>>(
 		}) as Array<FacetableFieldNames<F[number]>>;
 }
 
-export type CollectionDocument<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> =
-	DocumentFromFields<C["fields"]>;
+export type CollectionDocument<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> = {
+	/** Every typesense document has an `id`, even though it is not part of the field schema. */
+	id: string;
+} & DocumentFromFields<C["fields"]>;
 
-/** A single entry from a search hit's `highlights` array, as typed by the typesense client. */
-export type SearchHighlight<T extends DocumentSchema = DocumentSchema> = NonNullable<
-	SearchResponseHit<T>["highlights"]
->[number];
+/** A full search hit for a collection (document + object-form `highlight`), as typed by typesense. */
+export type CollectionSearchHit<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> =
+	SearchResponseHit<CollectionDocument<C>>;
 export type CollectionQueryableFieldName<
 	C extends { fields: ReadonlyArray<CollectionFieldSchema> },
 > = QueryableFieldNames<C["fields"][number]>;

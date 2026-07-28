@@ -33,7 +33,18 @@ export const tbo_workQueryableFieldNames = [
 	"category",
 	"title",
 ] as const;
-export const tbo_workSearchableFieldNames = ["sameas", "category", "title"] as const;
+export const tbo_workSearchableFieldNames = [
+	"authors.id",
+	"performances.id",
+	"expressions.title",
+	"performances.label",
+	"expressions.id",
+	"expressions.language",
+	"authors.name",
+	"sameas",
+	"category",
+	"title",
+] as const;
 export const tbo_workFilterableFieldNames = [
 	"authors.id",
 	"performances.id",

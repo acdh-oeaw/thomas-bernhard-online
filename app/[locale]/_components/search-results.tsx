@@ -20,9 +20,9 @@ import {
 	ResultStatus,
 } from "@/components/typesense";
 import { SearchInput } from "@/components/ui/search-input";
-import { tbo_workCollection, tbo_workQueryableFieldNames } from "@/lib/typesense/collections";
+import { tbo_workCollection, tbo_workSearchableFieldNames } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
-import type { CollectionDocument, SearchHighlight } from "@/lib/typesense/schema";
+import type { CollectionDocument, CollectionSearchHit } from "@/lib/typesense/schema";
 
 import { WorkResultCard } from "./work-result-card";
 
@@ -37,10 +37,7 @@ const filterUiRadioClassName =
 
 type WorkDocument = CollectionDocument<typeof tbo_workCollection>;
 
-type WorkDocumentWithHighlights = WorkDocument & {
-	id: string;
-	highlights?: Array<SearchHighlight<WorkDocument>>;
-};
+type WorkSearchHit = CollectionSearchHit<typeof tbo_workCollection>;
 
 export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const { collectionName } = props;
@@ -59,7 +56,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		parseAsStringLiteral(filterUiOptions).withDefault("dropdown"),
 	);
 
-	const [documents, setDocuments] = useState<Array<WorkDocumentWithHighlights>>([]);
+	const [hits, setHits] = useState<Array<WorkSearchHit>>([]);
 	const [totalDocuments, setTotalDocuments] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const perPage = 12;
@@ -89,27 +86,18 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					.documents()
 					.search({
 						q: searchQuery || "*",
-						query_by: tbo_workQueryableFieldNames.join(","),
-						highlight_fields: tbo_workQueryableFieldNames.join(","),
+						query_by: tbo_workSearchableFieldNames.join(","),
+						highlight_fields: tbo_workSearchableFieldNames.join(","),
 						page: currentPage,
 						per_page: perPage,
 						...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
 					});
 
-				const results =
-					searchResults.hits?.map((hit) => {
-						return {
-							...hit.document,
-							id: String((hit.document as Record<string, unknown>).id),
-							highlights: hit.highlights,
-						};
-					}) ?? [];
-
-				setDocuments(results);
+				setHits(searchResults.hits ?? []);
 				setTotalDocuments(searchResults.found || 0);
 			} catch (error) {
 				console.error("Failed to fetch search results:", error);
-				setDocuments([]);
+				setHits([]);
 			} finally {
 				setIsLoading(false);
 			}
@@ -157,16 +145,14 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	);
 
 	const resultsContent =
-		documents.length > 0 ? (
+		hits.length > 0 ? (
 			<>
 				<ul
 					className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,28rem),1fr))] gap-8"
 					role="list"
 				>
-					{documents.map((doc) => {
-						return (
-							<WorkResultCard key={doc.id} document={doc} highlights={doc.highlights} id={doc.id} />
-						);
+					{hits.map((hit) => {
+						return <WorkResultCard key={hit.document.id} hit={hit} />;
 					})}
 				</ul>
 				<div className="flex justify-center pt-8">
@@ -211,7 +197,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					{t("title")}
 				</h1>
 				<ResultStatus
-					endIndex={(currentPage - 1) * perPage + documents.length}
+					endIndex={(currentPage - 1) * perPage + hits.length}
 					isLoading={isLoading}
 					startIndex={(currentPage - 1) * perPage + 1}
 					totalCount={totalDocuments}
