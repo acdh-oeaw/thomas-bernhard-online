@@ -90,10 +90,10 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 				const categoryFilter =
 					selectedCategories.size > 0
 						? `(${Array.from(selectedCategories)
-							.map((cat) => {
-								return `category:="${cat}"`;
-							})
-							.join(" || ")})`
+								.map((cat) => {
+									return `category:="${cat}"`;
+								})
+								.join(" || ")})`
 						: undefined;
 
 				const searchResults = await searchCollection<WorkDocument>(collectionName, {
@@ -101,8 +101,6 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					query_by: collections.tbo_work.searchableFieldNames.join(","),
 					highlight_full_fields: ["title"],
 					page: currentPage,
-					prioritize_token_position: true,
-					text_match_type: "sum_score",
 					sort_by: `_text_match:desc,${sortBy}`,
 					...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
 				});

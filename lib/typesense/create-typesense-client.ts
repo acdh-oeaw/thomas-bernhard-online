@@ -2,7 +2,7 @@ import { assert } from "@acdh-oeaw/lib";
 import { Client } from "typesense";
 
 import { env } from "@/config/env.config";
-import { cacheSearchResultsForSeconds } from "@/config/search.config";
+import { cacheSearchResultsForSeconds } from "@/config/typesense.config";
 
 export function createTypesenseClient(): Client {
 	const apiKey = env.NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY;
