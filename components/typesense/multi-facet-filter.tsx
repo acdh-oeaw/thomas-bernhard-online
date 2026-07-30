@@ -17,6 +17,7 @@ import {
 
 import { type FacetValue, useFacetCounts } from "@/components/typesense/use-facet-counts";
 import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/schema";
+import type { CollectionName } from "@/lib/typesense/search";
 
 const EMPTY_SELECTION = new Set<string>();
 
@@ -90,7 +91,7 @@ interface FacetConfig<C extends Collection<ReadonlyArray<never>>> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface MultiFacetFilterProps<C extends Collection<any>> {
 	collection: C;
-	collectionName: string;
+	collectionName: CollectionName;
 	label: string;
 	facets: ReadonlyArray<FacetConfig<C>>;
 	selectedValues: Record<string, Set<string>>;

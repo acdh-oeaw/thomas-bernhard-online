@@ -1,6 +1,13 @@
-import type { SearchParams } from "typesense";
+import type { ConfigurationOptions, DocumentSchema, SearchParams } from "typesense";
 
-export const cacheSearchResultsForSeconds = 60 * 60;
+/**
+ * Static typesense client options. Env-dependent options (`apiKey`, `nodes`) are supplied by
+ * `createTypesenseClient`.
+ */
+export const clientConfig = {
+	connectionTimeoutSeconds: 3,
+	cacheSearchResultsForSeconds: 60 * 60,
+} satisfies Partial<ConfigurationOptions>;
 
 /**
  * Default `SearchParams` applied to every typesense `search()` call (via `searchCollection`).
@@ -20,7 +27,7 @@ export const defaultSearchParams = {
 	 * @see https://github.com/typesense/typesense/issues/2131
 	 */
 	max_facet_values: 250,
-} satisfies Partial<SearchParams<Record<string, unknown>>>;
+} satisfies SearchParams<DocumentSchema>;
 
 export const defaultVisibleFacetValues = 10;
 

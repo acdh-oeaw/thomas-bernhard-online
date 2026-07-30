@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { collections } from "@/lib/typesense/collections";
-import { searchCollection } from "@/lib/typesense/search";
+import { type CollectionName, searchCollection } from "@/lib/typesense/search";
 
 export interface FacetValue {
 	value: string;
@@ -11,7 +11,7 @@ export interface FacetValue {
 }
 
 interface UseFacetCountsParams {
-	collectionName: string;
+	collectionName: CollectionName;
 	searchQuery: string;
 	facetFields: ReadonlyArray<string>;
 	selectedValues: Record<string, Set<string>>;

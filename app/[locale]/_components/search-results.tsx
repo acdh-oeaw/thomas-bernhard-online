@@ -22,13 +22,13 @@ import {
 } from "@/components/typesense";
 import { SearchInput } from "@/components/ui/search-input";
 import { collections } from "@/lib/typesense/collections";
-import type { CollectionDocument, CollectionSearchHit } from "@/lib/typesense/schema";
-import { searchCollection } from "@/lib/typesense/search";
+import type { CollectionSearchHit } from "@/lib/typesense/schema";
+import { type CollectionName, searchCollection } from "@/lib/typesense/search";
 
 import { WorkResultCard } from "./work-result-card";
 
 interface SearchResultsProps {
-	collectionName: string;
+	collectionName: CollectionName;
 }
 
 const filterUiOptions = ["dropdown", "tags", "list"] as const;
@@ -46,8 +46,6 @@ const filterUiRadioClassName =
 	"interactive flex cursor-pointer items-center rounded-2 border border-stroke-weak px-3 py-1.5 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong";
 
 const workCollection = collections.tbo_work.collection;
-
-type WorkDocument = CollectionDocument<typeof workCollection>;
 
 type WorkSearchHit = CollectionSearchHit<typeof workCollection>;
 
@@ -96,7 +94,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 								.join(" || ")})`
 						: undefined;
 
-				const searchResults = await searchCollection<WorkDocument>(collectionName, {
+				const searchResults = await searchCollection(collectionName, {
 					q: searchQuery || "*",
 					query_by: collections.tbo_work.searchableFieldNames.join(","),
 					highlight_full_fields: ["title"],

@@ -19,6 +19,7 @@ import {
 
 import { useFacetCounts } from "@/components/typesense/use-facet-counts";
 import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/schema";
+import type { CollectionName } from "@/lib/typesense/search";
 
 // NOTE: The ListBox is uncontrolled (`defaultSelectedKeys`). Its selection is mirrored into local
 // state and propagated to the parent from the selection handlers (not via a `useEffect` syncing on
@@ -29,7 +30,7 @@ import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/s
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FacetDropdownProps<C extends Collection<any>> {
 	collection: C;
-	collectionName: string;
+	collectionName: CollectionName;
 	label: string;
 	fieldName: CollectionFacetableFieldName<C>;
 	selectedValues: Set<string>;

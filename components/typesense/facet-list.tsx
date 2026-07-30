@@ -8,6 +8,7 @@ import { CheckBox } from "@/components/ui/checkbox";
 import { CheckBoxGroup, CheckBoxList } from "@/components/ui/checkbox-group";
 import { Label } from "@/components/ui/label";
 import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/schema";
+import type { CollectionName } from "@/lib/typesense/search";
 
 const EMPTY_SELECTION = new Set<string>();
 
@@ -73,7 +74,7 @@ interface FacetConfig<C extends Collection<ReadonlyArray<never>>> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FacetListProps<C extends Collection<any>> {
 	collection: C;
-	collectionName: string;
+	collectionName: CollectionName;
 	label: string;
 	facets: ReadonlyArray<FacetConfig<C>>;
 	selectedValues: Record<string, Set<string>>;
