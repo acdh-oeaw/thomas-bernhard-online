@@ -107,7 +107,12 @@ makes it obvious whether you are pulling in a type, plain data or the runtime cl
   `Client` from the env vars above and the shared client options.
 - [`search.ts`](./lib/typesense/search.ts): `searchCollection(name, params, options)` — a typed
   `search()` wrapper that applies the shared defaults and infers `params` and hit types from the
-  named collection. pass `options.abortSignal` to cancel an in-flight request.
+  named collection. the field-name params (`query_by`, `sort_by`, `facet_by`,
+  `highlight_full_fields`, …) are constrained via `CollectionSearchParams` to fields that actually
+  exist on the collection, so a typo becomes a compile error instead of a runtime "could not find a
+  field". pass `options.abortSignal` to cancel an in-flight request. when a field list is only known
+  at runtime (e.g. a sort or facet built from url state), use `searchCollectionUnchecked`, which
+  takes the raw typesense `SearchParams` but still infers the response type.
 - configuration (default search params, client options, facet-value limits) lives in
   [`config/typesense.config.ts`](./config/typesense.config.ts).
 

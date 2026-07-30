@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { abortableEffect } from "@/lib/abortable-effect";
 import { collections } from "@/lib/typesense/collections";
-import { type CollectionName, searchCollection } from "@/lib/typesense/search";
+import { type CollectionName, searchCollectionUnchecked } from "@/lib/typesense/search";
 
 export interface FacetValue {
 	value: string;
@@ -72,7 +72,9 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 
 			setIsFetching(true);
 			try {
-				const searchResults = await searchCollection(
+				// `facet_by` is assembled from the runtime `facetFields`, so the field-name params can't be
+				// statically checked here — use the unchecked search variant.
+				const searchResults = await searchCollectionUnchecked(
 					collectionName,
 					{
 						q: searchQuery || "*",

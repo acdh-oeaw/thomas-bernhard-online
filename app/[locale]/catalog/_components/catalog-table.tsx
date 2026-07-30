@@ -19,7 +19,7 @@ import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { abortableEffect } from "@/lib/abortable-effect";
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionSearchHit } from "@/lib/typesense/schema";
-import { type CollectionName, searchCollection } from "@/lib/typesense/search";
+import { type CollectionName, searchCollectionUnchecked } from "@/lib/typesense/search";
 
 interface CatalogTableProps {
 	collectionName: CollectionName;
@@ -87,7 +87,9 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 		return abortableEffect(async (signal) => {
 			setIsLoading(true);
 			try {
-				const results = await searchCollection(
+				// `sortBy` is a runtime string built from the active react-aria column, so the field-name
+				// params can't be statically checked here — use the unchecked search variant.
+				const results = await searchCollectionUnchecked(
 					collectionName,
 					{
 						q: "*",
