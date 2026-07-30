@@ -21,6 +21,7 @@ import {
 	ResultStatus,
 } from "@/components/typesense";
 import { SearchInput } from "@/components/ui/search-input";
+import { abortableEffect } from "@/lib/abortable-effect";
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionSearchHit } from "@/lib/typesense/schema";
 import { type CollectionName, searchCollection } from "@/lib/typesense/search";
@@ -81,8 +82,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	}, [categoryFilters]);
 
 	useEffect(() => {
-		// Trigger fetch when any of these change
-		const fetchResults = async () => {
+		return abortableEffect(async (signal) => {
 			setIsLoading(true);
 			try {
 				const categoryFilter =
@@ -94,14 +94,20 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 								.join(" || ")})`
 						: undefined;
 
-				const searchResults = await searchCollection(collectionName, {
-					q: searchQuery || "*",
-					query_by: collections.tbo_work.searchableFieldNames.join(","),
-					highlight_full_fields: ["title"],
-					page: currentPage,
-					sort_by: `_text_match:desc,${sortBy}`,
-					...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
-				});
+				const searchResults = await searchCollection(
+					collectionName,
+					{
+						q: searchQuery || "*",
+						query_by: collections.tbo_work.searchableFieldNames.join(","),
+						highlight_full_fields: ["title"],
+						page: currentPage,
+						sort_by: `_text_match:desc,${sortBy}`,
+						...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
+					},
+					{ abortSignal: signal },
+				);
+
+				if (signal.aborted) return;
 
 				setHits(searchResults.hits ?? []);
 				setPagination({
@@ -110,15 +116,17 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					perPage: searchResults.request_params.per_page ?? 0,
 				});
 			} catch (error) {
+				// A superseded request rejects with an abort error; ignore it.
+				if (signal.aborted) return;
 				console.error("Failed to fetch search results:", error);
 				setHits([]);
 				setPagination({ found: 0, page: 1, perPage: 0 });
 			} finally {
-				setIsLoading(false);
+				if (!signal.aborted) {
+					setIsLoading(false);
+				}
 			}
-		};
-
-		void fetchResults();
+		});
 	}, [currentPage, selectedCategories, searchQuery, sortBy, collectionName]);
 
 	const sectionRef = useRef<HTMLElement>(null);

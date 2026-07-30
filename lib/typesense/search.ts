@@ -1,4 +1,4 @@
-import type { SearchParams, SearchResponse } from "typesense";
+import type { SearchOptions, SearchParams, SearchResponse } from "typesense";
 
 import { defaultSearchParams } from "@/config/typesense.config";
 import type { collections } from "@/lib/typesense/collections";
@@ -15,17 +15,22 @@ type CollectionDoc<K extends CollectionName> = CollectionDocument<
  * Runs a typesense search against one of the generated `collections`, applying the shared
  * `defaultSearchParams`. The collection's document type is inferred from `collectionName`, so
  * `params` and the returned hits are fully typed. Values in `params` override the defaults (e.g. a
- * facet-only search can pass `per_page: 0`).
+ * facet-only search can pass `per_page: 0`). Pass `options.abortSignal` to cancel an in-flight
+ * request.
  */
 export function searchCollection<K extends CollectionName>(
 	collectionName: K,
 	params: SearchParams<CollectionDoc<K>>,
+	options?: SearchOptions,
 ): Promise<SearchResponse<CollectionDoc<K>>> {
 	return createTypesenseClient()
 		.collections<CollectionDoc<K>>(collectionName)
 		.documents()
-		.search({
-			...defaultSearchParams,
-			...params,
-		});
+		.search(
+			{
+				...defaultSearchParams,
+				...params,
+			},
+			options,
+		);
 }

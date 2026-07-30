@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { abortableEffect } from "@/lib/abortable-effect";
 import { collections } from "@/lib/typesense/collections";
 import { type CollectionName, searchCollection } from "@/lib/typesense/search";
 
@@ -63,9 +64,7 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 	const facetFieldsKey = facetFields.join(",");
 
 	useEffect(() => {
-		let fetchMounted = true;
-
-		const fetchFacetValues = async () => {
+		return abortableEffect(async (signal) => {
 			const fieldNames = facetFieldsKey.split(",").filter(Boolean);
 			if (fieldNames.length === 0) {
 				return;
@@ -73,16 +72,20 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 
 			setIsFetching(true);
 			try {
-				const searchResults = await searchCollection(collectionName, {
-					q: searchQuery || "*",
-					query_by: collections.tbo_work.searchableFieldNames.join(","),
-					facet_by: fieldNames.join(","),
-					// Facet-only search: no document hits needed.
-					per_page: 0,
-					...(filterBy != null ? { filter_by: filterBy } : {}),
-				});
+				const searchResults = await searchCollection(
+					collectionName,
+					{
+						q: searchQuery || "*",
+						query_by: collections.tbo_work.searchableFieldNames.join(","),
+						facet_by: fieldNames.join(","),
+						// Facet-only search: no document hits needed.
+						per_page: 0,
+						...(filterBy != null ? { filter_by: filterBy } : {}),
+					},
+					{ abortSignal: signal },
+				);
 
-				if (!fetchMounted) return;
+				if (signal.aborted) return;
 
 				const next: Record<string, Array<FacetValue>> = {};
 				for (const fieldName of fieldNames) {
@@ -100,22 +103,16 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 					return areFacetDataEqual(previous, next, fieldNames) ? previous : next;
 				});
 			} catch (error) {
+				// A superseded request rejects with an abort error; ignore it.
+				if (signal.aborted) return;
 				console.error("Failed to fetch facet values:", error);
-				if (fetchMounted) {
-					setFacetData({});
-				}
+				setFacetData({});
 			} finally {
-				if (fetchMounted) {
+				if (!signal.aborted) {
 					setIsFetching(false);
 				}
 			}
-		};
-
-		void fetchFacetValues();
-
-		return () => {
-			fetchMounted = false;
-		};
+		});
 	}, [collectionName, searchQuery, facetFieldsKey, filterBy]);
 
 	const displayData = useMemo(() => {
