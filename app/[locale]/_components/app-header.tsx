@@ -18,11 +18,6 @@ export function AppHeader(): ReactNode {
 			href: createHref({ pathname: "/" }),
 			label: t("navigation.items.home"),
 		},
-		about: {
-			type: "link",
-			href: createHref({ pathname: "/about" }),
-			label: t("navigation.items.about"),
-		},
 		search: {
 			type: "link",
 			href: createHref({ pathname: "/search" }),

@@ -4,12 +4,6 @@
 		"invalid-form-fields": "Invalid or missing fields.",
 		"too-many-requests": "Too many requests."
 	},
-	"AboutPage": {
-		"meta": {
-			"title": "About the project"
-		},
-		"title": "About the project"
-	},
 	"AppFooter": {
 		"creator": "Austrian Centre for Digital Humanities",
 		"navigation": {
@@ -39,7 +33,6 @@
 				"open": "Open navigation menu"
 			},
 			"items": {
-				"about": "About the project",
 				"catalog": "Catalog",
 				"documentation": "Documentation",
 				"example": "Example",
