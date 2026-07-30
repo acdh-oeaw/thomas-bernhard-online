@@ -28,6 +28,11 @@ export function AppHeader(): ReactNode {
 			href: createHref({ pathname: "/search" }),
 			label: t("navigation.items.search"),
 		},
+		catalog: {
+			type: "link",
+			href: createHref({ pathname: "/catalog" }),
+			label: t("navigation.items.catalog"),
+		},
 	} satisfies Record<string, NavigationItem>;
 
 	return (

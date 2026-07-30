@@ -40,6 +40,7 @@
 			},
 			"items": {
 				"about": "About the project",
+				"catalog": "Catalog",
 				"documentation": "Documentation",
 				"example": "Example",
 				"home": "Home",
@@ -47,6 +48,13 @@
 			},
 			"label": "Primary"
 		}
+	},
+	"CatalogPage": {
+		"meta": {
+			"title": "Catalog"
+		},
+		"no-results": "No documents found.",
+		"title": "Catalog"
 	},
 	"ColorSchemeSwitcher": {
 		"change-color-scheme": "Change color scheme",
