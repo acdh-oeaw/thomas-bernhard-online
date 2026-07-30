@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { Fragment, type ReactNode } from "react";
 
 import { LanguageLabel } from "@/components/language-label";
-import { HighlightedSnippet } from "@/components/typesense/highlight";
+import { HighlightedSnippet } from "@/components/typesense";
 import type { collections } from "@/lib/typesense/collections";
 import type { CollectionDocument, CollectionSearchHit } from "@/lib/typesense/schema";
 
