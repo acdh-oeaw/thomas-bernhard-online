@@ -2,7 +2,7 @@
 
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
+import { parseAsInteger, parseAsStringLiteral, useQueryState } from "nuqs";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import {
 	Cell,
@@ -19,7 +19,7 @@ import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { abortableEffect } from "@/lib/abortable-effect";
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionSearchHit } from "@/lib/typesense/schema";
-import { type CollectionName, searchCollectionUnchecked } from "@/lib/typesense/search";
+import { type CollectionName, searchCollection } from "@/lib/typesense/search";
 
 interface CatalogTableProps {
 	collectionName: CollectionName;
@@ -71,11 +71,24 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 	// Only fields flagged sortable in the schema can be used in a typesense `sort_by`.
 	const sortableColumns = new Set<string>(collection.sortableFieldNames);
 
+	// Every valid `${sortableField}:${direction}` clause for this collection. Deriving them from the
+	// typed `sortableFieldNames` preserves their literal types, so `sortBy` stays assignable to
+	// `searchCollection`'s `sort_by` without needing the unchecked escape hatch.
+	const sortOptions = collection.sortableFieldNames.flatMap((field) => {
+		return [`${field}:asc`, `${field}:desc`] as const;
+	});
+	type SortOption = (typeof sortOptions)[number];
+
 	// Default to ascending order on the first sortable field defined in the schema.
-	const defaultSort = `${collection.sortableFieldNames[0]}:asc`;
+	const defaultSort: SortOption = `${collection.sortableFieldNames[0]}:asc`;
 
 	const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-	const [sortBy, setSortBy] = useQueryState("sort", parseAsString.withDefault(defaultSort));
+	// `parseAsStringLiteral` validates the url value against the known clauses, so `sortBy` is always
+	// a valid `SortOption` (falling back to `defaultSort` for anything else).
+	const [sortBy, setSortBy] = useQueryState(
+		"sort",
+		parseAsStringLiteral(sortOptions).withDefault(defaultSort),
+	);
 
 	const [hits, setHits] = useState<Array<CatalogHit>>([]);
 	// Pagination status is read straight off the last search response.
@@ -87,15 +100,13 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 		return abortableEffect(async (signal) => {
 			setIsLoading(true);
 			try {
-				// `sortBy` is a runtime string built from the active react-aria column, so the field-name
-				// params can't be statically checked here — use the unchecked search variant.
-				const results = await searchCollectionUnchecked(
+				const results = await searchCollection(
 					collectionName,
 					{
 						q: "*",
-						query_by: collections[collectionName].searchableFieldNames.join(","),
+						query_by: collection.searchableFieldNames,
 						page,
-						...(sortBy ? { sort_by: sortBy } : {}),
+						sort_by: sortBy,
 					},
 					{ abortSignal: signal },
 				);
@@ -120,7 +131,7 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 				}
 			}
 		});
-	}, [collectionName, page, sortBy]);
+	}, [collection, collectionName, page, sortBy]);
 
 	const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -134,10 +145,17 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 	const handleSortChange = useCallback(
 		(descriptor: SortDescriptor) => {
 			const direction = descriptor.direction === "descending" ? "desc" : "asc";
-			void setSortBy(`${String(descriptor.column)}:${direction}`);
-			void setPage(1);
+			// Recover the field's literal type from the typed schema list; this also guards against
+			// columns that aren't actually sortable.
+			const field = collection.sortableFieldNames.find((sortableField) => {
+				return sortableField === descriptor.column;
+			});
+			if (field != null) {
+				void setSortBy(`${field}:${direction}`);
+				void setPage(1);
+			}
 		},
-		[setSortBy, setPage],
+		[collection, setSortBy, setPage],
 	);
 
 	const handlePageChange = useCallback(
