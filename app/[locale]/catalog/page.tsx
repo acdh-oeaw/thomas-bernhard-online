@@ -47,6 +47,8 @@ export default async function CatalogPage(props: Readonly<CatalogPageProps>): Pr
 					{t("title")}
 				</h1>
 
+				<p className="max-w-text text-pretty text-text-weak">{t("intro")}</p>
+
 				<NuqsProvider>
 					{/* The collection is generated from this same env var, so its name is a known key. */}
 					<CatalogTable collectionName={env.NEXT_PUBLIC_TYPESENSE_COLLECTION as CollectionName} />

@@ -43,6 +43,7 @@
 		}
 	},
 	"CatalogPage": {
+		"intro": "A complete listing of every entry in the archive — more an archival index than a search. Filter and order the catalogue by the entries' attributes.",
 		"meta": {
 			"title": "Catalog"
 		},
@@ -98,6 +99,7 @@
 		"filter-ui-list": "List",
 		"filter-ui-tags": "Tags",
 		"filters": "Filters",
+		"intro": "Free-text search across one or more fields at once. Results are ranked primarily by how closely they match your query; attribute filters can still be applied to narrow them down.",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
 		"order-by": "Order by",
 		"order-title-asc": "Title (A–Z)",

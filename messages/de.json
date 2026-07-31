@@ -43,6 +43,7 @@
 		}
 	},
 	"CatalogPage": {
+		"intro": "Ein vollständiges Verzeichnis aller Einträge im Archiv – eher ein archivarischer Index als eine Suche. Filtern und sortieren Sie den Katalog nach den Attributen der Einträge.",
 		"meta": {
 			"title": "Katalog"
 		},
@@ -98,6 +99,7 @@
 		"filter-ui-list": "Liste",
 		"filter-ui-tags": "Tags",
 		"filters": "Filter",
+		"intro": "Freitextsuche über ein oder mehrere Felder gleichzeitig. Die Ergebnisse werden in erster Linie danach sortiert, wie gut sie zur Suchanfrage passen; über Attributfilter lässt sich die Trefferliste zusätzlich eingrenzen.",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
 		"order-by": "Sortieren nach",
 		"order-title-asc": "Titel (A–Z)",

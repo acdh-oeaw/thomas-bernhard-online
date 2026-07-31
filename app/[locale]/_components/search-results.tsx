@@ -96,7 +96,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	});
 	const isLoading = status === "loading";
 
-	const sectionRef = useRef<HTMLElement>(null);
+	const sectionRef = useRef<HTMLDivElement>(null);
 
 	const handlePageChange = useCallback(
 		(page: number) => {
@@ -181,7 +181,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		);
 
 	return (
-		<section ref={sectionRef} className="relative layout-subgrid gap-y-12 py-16 xs:py-24">
+		<div ref={sectionRef} className="grid gap-y-12">
 			<RadioGroup
 				className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
 				onChange={(value) => {
@@ -202,17 +202,12 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 				</Radio>
 			</RadioGroup>
 
-			<header className="grid max-w-text gap-y-4">
-				<h1 className="font-heading text-heading-2 font-strong text-balance text-text-strong">
-					{t("title")}
-				</h1>
-				<ResultStatus
-					endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
-					isLoading={isLoading}
-					startIndex={(pagination.page - 1) * pagination.perPage + 1}
-					totalCount={pagination.found}
-				/>
-			</header>
+			<ResultStatus
+				endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
+				isLoading={isLoading}
+				startIndex={(pagination.page - 1) * pagination.perPage + 1}
+				totalCount={pagination.found}
+			/>
 			<div className="flex max-w-text flex-wrap items-center gap-4">
 				<SearchInput
 					aria-label={t("search-placeholder")}
@@ -297,6 +292,6 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 			) : (
 				resultsContent
 			)}
-		</section>
+		</div>
 	);
 }
