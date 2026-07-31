@@ -87,7 +87,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	// `useCollectionSearch` runs the query, aborts superseded requests and exposes a loading / error /
 	// success state machine (see below). `pagination` reads found/page/perPage straight off it.
 	const { status, hits, error, retry, ...pagination } = useCollectionSearch(collectionName, {
-		q: searchQuery || "*",
+		q: searchQuery, // it works to pass an empty string here, even though it shouldn't
 		query_by: collections.tbo_work.searchableFieldNames,
 		highlight_full_fields: ["title"],
 		page: currentPage,

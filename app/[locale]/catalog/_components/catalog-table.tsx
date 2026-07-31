@@ -90,8 +90,6 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 	// Runs the query, aborts superseded requests and exposes a loading / error / success state
 	// machine; `pagination` reads found/page/perPage straight off it.
 	const { status, hits, error, retry, ...pagination } = useCollectionSearch(collectionName, {
-		q: "*",
-		query_by: collection.searchableFieldNames,
 		page,
 		sort_by: sortBy,
 	});
