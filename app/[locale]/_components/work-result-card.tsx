@@ -134,6 +134,7 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 	const { hit } = props;
 	const { document, highlight } = hit;
 	const t = useTranslations("WorkPage");
+	const tField = useTranslations("Collection.field");
 	const href = `/work/${document.id}`;
 
 	const titleMarkup = fieldHighlight(highlight, "title");
@@ -187,7 +188,7 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 
 						return (
 							<div key={field}>
-								<dt className="text-tiny font-strong text-text-weak">{t(field)}</dt>
+								<dt className="text-tiny font-strong text-text-weak">{tField(field)}</dt>
 								<dd className="text-small text-text-weak">{value}</dd>
 							</div>
 						);

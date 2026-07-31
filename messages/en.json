@@ -50,6 +50,20 @@
 		"no-results": "No documents found.",
 		"title": "Catalog"
 	},
+	"Collection": {
+		"field": {
+			"authors": "Authors",
+			"category": "Category",
+			"expressions": "Expressions",
+			"performances": "Performances",
+			"sameas": "References",
+			"title": "Title"
+		},
+		"sort": {
+			"title-asc": "Title (A–Z)",
+			"title-desc": "Title (Z–A)"
+		}
+	},
 	"ColorSchemeSwitcher": {
 		"change-color-scheme": "Change color scheme",
 		"color-schemes": {
@@ -91,7 +105,6 @@
 		"title": "Page not found"
 	},
 	"SearchResults": {
-		"category": "Category",
 		"clear-search": "Clear search",
 		"filter-categories": "filter categories",
 		"filter-ui": "Filter UI",
@@ -102,8 +115,6 @@
 		"intro": "Free-text search across one or more fields at once. Results are ranked primarily by how closely they match your query; attribute filters can still be applied to narrow them down.",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
 		"order-by": "Order by",
-		"order-title-asc": "Title (A–Z)",
-		"order-title-desc": "Title (Z–A)",
 		"search-placeholder": "Search works...",
 		"title": "Search Results"
 	},
@@ -144,13 +155,8 @@
 		"search-placeholder": "Search options..."
 	},
 	"WorkPage": {
-		"authors": "Authors",
-		"category": "Category",
 		"default-title": "Work",
-		"expressions": "Expressions",
-		"performances": "Performances",
 		"raw-data": "Raw data",
-		"references": "References",
 		"unknown": "Unknown",
 		"untitled": "Untitled"
 	}

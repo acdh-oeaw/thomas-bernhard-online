@@ -50,6 +50,20 @@
 		"no-results": "Keine Dokumente gefunden.",
 		"title": "Katalog"
 	},
+	"Collection": {
+		"field": {
+			"authors": "Autoren",
+			"category": "Kategorie",
+			"expressions": "Ausdrücke",
+			"performances": "Aufführungen",
+			"sameas": "Referenzen",
+			"title": "Titel"
+		},
+		"sort": {
+			"title-asc": "Titel (A–Z)",
+			"title-desc": "Titel (Z–A)"
+		}
+	},
 	"ColorSchemeSwitcher": {
 		"change-color-scheme": "Farbschema ändern",
 		"color-schemes": {
@@ -91,7 +105,6 @@
 		"title": "Seite nicht gefunden"
 	},
 	"SearchResults": {
-		"category": "Kategorie",
 		"clear-search": "Suche zurücksetzen",
 		"filter-categories": "Kategorien filtern",
 		"filter-ui": "Filter-Ansicht",
@@ -102,8 +115,6 @@
 		"intro": "Freitextsuche über ein oder mehrere Felder gleichzeitig. Die Ergebnisse werden in erster Linie danach sortiert, wie gut sie zur Suchanfrage passen; über Attributfilter lässt sich die Trefferliste zusätzlich eingrenzen.",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
 		"order-by": "Sortieren nach",
-		"order-title-asc": "Titel (A–Z)",
-		"order-title-desc": "Titel (Z–A)",
 		"search-placeholder": "Werke durchsuchen...",
 		"title": "Suchergebnisse"
 	},
@@ -144,13 +155,8 @@
 		"search-placeholder": "Optionen durchsuchen..."
 	},
 	"WorkPage": {
-		"authors": "Autoren",
-		"category": "Kategorie",
 		"default-title": "Werk",
-		"expressions": "Ausdrücke",
-		"performances": "Aufführungen",
 		"raw-data": "Rohdaten",
-		"references": "Referenzen",
 		"unknown": "Unbekannt",
 		"untitled": "Ohne Titel"
 	}

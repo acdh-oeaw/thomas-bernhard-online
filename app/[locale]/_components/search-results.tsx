@@ -34,9 +34,19 @@ interface SearchResultsProps {
 
 const filterUiOptions = ["dropdown", "tags", "list"] as const;
 
+/** A typesense `field:direction` sort value mapped to its `Collection.sort` message key. */
+type SortLabelKey<V extends string> = V extends `${infer Field}:${infer Direction}`
+	? `${Field}-${Direction}`
+	: V;
+
+function sortLabelKey<V extends string>(value: V): SortLabelKey<V> {
+	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
+	return value.replace(":", "-") as SortLabelKey<V>;
+}
+
 const orderOptions = [
-	{ value: "title:asc", labelKey: "order-title-asc", icon: ArrowDownAZIcon },
-	{ value: "title:desc", labelKey: "order-title-desc", icon: ArrowDownZAIcon },
+	{ value: "title:asc", icon: ArrowDownAZIcon },
+	{ value: "title:desc", icon: ArrowDownZAIcon },
 ] as const;
 
 const orderValues = orderOptions.map((option) => {
@@ -53,6 +63,9 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const t = useTranslations("SearchResults");
 	const tLoading = useTranslations("Loading");
 	const tSearch = useTranslations("Typesense.CollectionSearch");
+	// Reusable, collection-specific field/sort labels.
+	const tField = useTranslations("Collection.field");
+	const tSort = useTranslations("Collection.sort");
 	const [searchQuery, setSearchQuery] = useQueryState("q", {
 		defaultValue: "",
 		clearOnDefault: true,
@@ -116,14 +129,14 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	);
 
 	const facets = useMemo(() => {
-		return [{ fieldName: "category", label: t("category") }] as const;
-	}, [t]);
+		return [{ fieldName: "category", label: tField("category") }] as const;
+	}, [tField]);
 
 	const orderByOptions = useMemo(() => {
 		return orderOptions.map((option) => {
-			return { value: option.value, label: t(option.labelKey), icon: option.icon };
+			return { value: option.value, label: tSort(sortLabelKey(option.value)), icon: option.icon };
 		});
-	}, [t]);
+	}, [tSort]);
 
 	const facetSelection = useMemo(() => {
 		return { category: selectedCategories };
@@ -251,7 +264,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 						collectionName={collectionName}
 						fieldName="category"
 						isLoading={isLoading}
-						label={t("category")}
+						label={tField("category")}
 						onChange={(values) => {
 							handleFacetChange("category", values);
 						}}

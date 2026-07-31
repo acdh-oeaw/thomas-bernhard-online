@@ -65,6 +65,8 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 	setRequestLocale(locale);
 
 	const t = await getTranslations("WorkPage");
+	// Reusable, collection-specific field labels.
+	const tField = await getTranslations("Collection.field");
 	const client = createTypesenseClient();
 	const collectionName = env.NEXT_PUBLIC_TYPESENSE_COLLECTION;
 
@@ -92,7 +94,7 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 
 				<div className="grid max-w-text gap-y-6">
 					{authors && authors.length > 0 ? (
-						<MetadataSection title={t("authors")}>
+						<MetadataSection title={tField("authors")}>
 							{authors.map((author, index) => {
 								return (
 									<li key={author.id ?? index} className="text-small text-text-weak">
@@ -104,7 +106,7 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 					) : null}
 
 					{performances && performances.length > 0 ? (
-						<MetadataSection title={t("performances")}>
+						<MetadataSection title={tField("performances")}>
 							{performances.map((performance, index) => {
 								return (
 									<li key={performance.id ?? index} className="text-small text-text-weak">
@@ -116,7 +118,7 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 					) : null}
 
 					{expressions && expressions.length > 0 ? (
-						<MetadataSection title={t("expressions")}>
+						<MetadataSection title={tField("expressions")}>
 							{expressions.map((expression, index) => {
 								return (
 									<li key={expression.id ?? index} className="text-small text-text-weak">
@@ -141,7 +143,7 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 					) : null}
 
 					{sameas.length > 0 ? (
-						<MetadataSection title={t("references")}>
+						<MetadataSection title={tField("sameas")}>
 							{sameas.map((reference) => {
 								return (
 									<li key={reference} className="text-small break-all text-text-weak">
