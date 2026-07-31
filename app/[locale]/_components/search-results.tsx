@@ -9,7 +9,7 @@ import {
 	parseAsStringLiteral,
 	useQueryState,
 } from "nuqs";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useMemo, useRef } from "react";
 import { Button, Input, Label, Radio, RadioGroup } from "react-aria-components";
 
 import {
@@ -19,12 +19,12 @@ import {
 	OrderBy,
 	Pagination,
 	ResultStatus,
+	useCollectionSearch,
 } from "@/components/typesense";
+import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { SearchInput } from "@/components/ui/search-input";
-import { abortableEffect } from "@/lib/abortable-effect";
 import { collections } from "@/lib/typesense/collections";
-import type { CollectionSearchHit } from "@/lib/typesense/schema";
-import { type CollectionName, searchCollection } from "@/lib/typesense/search";
+import type { CollectionName } from "@/lib/typesense/search";
 
 import { WorkResultCard } from "./work-result-card";
 
@@ -48,11 +48,10 @@ const filterUiRadioClassName =
 
 const workCollection = collections.tbo_work.collection;
 
-type WorkSearchHit = CollectionSearchHit<typeof workCollection>;
-
 export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const { collectionName } = props;
 	const t = useTranslations("SearchResults");
+	const tLoading = useTranslations("Loading");
 	const [searchQuery, setSearchQuery] = useQueryState("q", {
 		defaultValue: "",
 		clearOnDefault: true,
@@ -71,63 +70,30 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		parseAsStringLiteral(orderValues).withDefault("title:asc"),
 	);
 
-	const [hits, setHits] = useState<Array<WorkSearchHit>>([]);
-	// Pagination status is read straight off the last search response.
-	const [pagination, setPagination] = useState({ found: 0, page: 1, perPage: 0 });
-	// Starts true because a search is always run on mount; avoids a flash of "no results".
-	const [isLoading, setIsLoading] = useState(true);
-
 	const selectedCategories = useMemo(() => {
 		return new Set(categoryFilters);
 	}, [categoryFilters]);
 
-	useEffect(() => {
-		return abortableEffect(async (signal) => {
-			setIsLoading(true);
-			try {
-				const categoryFilter =
-					selectedCategories.size > 0
-						? `(${Array.from(selectedCategories)
-								.map((cat) => {
-									return `category:="${cat}"`;
-								})
-								.join(" || ")})`
-						: undefined;
+	const categoryFilter =
+		selectedCategories.size > 0
+			? `(${Array.from(selectedCategories)
+					.map((cat) => {
+						return `category:="${cat}"`;
+					})
+					.join(" || ")})`
+			: undefined;
 
-				const searchResults = await searchCollection(
-					collectionName,
-					{
-						q: searchQuery || "*",
-						query_by: collections.tbo_work.searchableFieldNames,
-						highlight_full_fields: ["title"],
-						page: currentPage,
-						sort_by: ["_text_match:desc", sortBy],
-						...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
-					},
-					{ abortSignal: signal },
-				);
-
-				if (signal.aborted) return;
-
-				setHits(searchResults.hits ?? []);
-				setPagination({
-					found: searchResults.found,
-					page: searchResults.page,
-					perPage: searchResults.request_params.per_page ?? 0,
-				});
-			} catch (error) {
-				// A superseded request rejects with an abort error; ignore it.
-				if (signal.aborted) return;
-				console.error("Failed to fetch search results:", error);
-				setHits([]);
-				setPagination({ found: 0, page: 1, perPage: 0 });
-			} finally {
-				if (!signal.aborted) {
-					setIsLoading(false);
-				}
-			}
-		});
-	}, [currentPage, selectedCategories, searchQuery, sortBy, collectionName]);
+	// `useCollectionSearch` runs the query, aborts superseded requests and exposes a loading / error /
+	// success state machine (see below). `pagination` reads found/page/perPage straight off it.
+	const { status, hits, error, retry, ...pagination } = useCollectionSearch(collectionName, {
+		q: searchQuery || "*",
+		query_by: collections.tbo_work.searchableFieldNames,
+		highlight_full_fields: ["title"],
+		page: currentPage,
+		sort_by: ["_text_match:desc", sortBy],
+		...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
+	});
+	const isLoading = status === "loading";
 
 	const sectionRef = useRef<HTMLElement>(null);
 
@@ -174,7 +140,21 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	);
 
 	const resultsContent =
-		hits.length > 0 ? (
+		isLoading && hits.length === 0 ? (
+			<div className="flex justify-center p-8">
+				<LoadingIndicator aria-label={tLoading("loading")} size="small" />
+			</div>
+		) : error != null ? (
+			<div className="grid justify-items-start gap-y-4 rounded-4 border border-stroke-weak bg-background-raised p-8">
+				<p className="text-small text-text-weak">{t("error")}</p>
+				<Button
+					className="interactive rounded-2 border border-stroke-strong px-3 py-1.5 text-small font-strong text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline"
+					onPress={retry}
+				>
+					{t("retry")}
+				</Button>
+			</div>
+		) : hits.length > 0 ? (
 			<>
 				<ul
 					className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,28rem),1fr))] gap-8"
@@ -193,11 +173,11 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					/>
 				</div>
 			</>
-		) : !isLoading ? (
+		) : (
 			<div className="grid gap-y-4 rounded-4 border border-stroke-weak bg-background-raised p-8">
 				<p className="text-small text-text-weak">{t("no-results")}</p>
 			</div>
-		) : null;
+		);
 
 	return (
 		<section ref={sectionRef} className="relative layout-subgrid gap-y-12 py-16 xs:py-24">

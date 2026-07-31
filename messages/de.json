@@ -43,10 +43,12 @@
 		}
 	},
 	"CatalogPage": {
+		"error": "Beim Laden des Katalogs ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
 		"meta": {
 			"title": "Katalog"
 		},
 		"no-results": "Keine Dokumente gefunden.",
+		"retry": "Erneut versuchen",
 		"title": "Katalog"
 	},
 	"ColorSchemeSwitcher": {
@@ -97,6 +99,7 @@
 	"SearchResults": {
 		"category": "Kategorie",
 		"clear-search": "Suche zurücksetzen",
+		"error": "Bei der Suche ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
 		"filter-categories": "Kategorien filtern",
 		"filter-ui": "Filter-Ansicht",
 		"filter-ui-dropdown": "Dropdown",
@@ -107,6 +110,7 @@
 		"order-by": "Sortieren nach",
 		"order-title-asc": "Titel (A–Z)",
 		"order-title-desc": "Titel (Z–A)",
+		"retry": "Erneut versuchen",
 		"search-placeholder": "Werke durchsuchen...",
 		"title": "Suchergebnisse"
 	},

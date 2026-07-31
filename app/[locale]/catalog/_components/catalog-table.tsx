@@ -3,8 +3,9 @@
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { parseAsInteger, parseAsStringLiteral, useQueryState } from "nuqs";
-import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { type ReactNode, useCallback, useRef } from "react";
 import {
+	Button,
 	Cell,
 	Column,
 	Row,
@@ -14,19 +15,14 @@ import {
 	TableHeader,
 } from "react-aria-components";
 
-import { Pagination } from "@/components/typesense";
+import { Pagination, useCollectionSearch } from "@/components/typesense";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
-import { abortableEffect } from "@/lib/abortable-effect";
 import { collections } from "@/lib/typesense/collections";
-import type { CollectionSearchHit } from "@/lib/typesense/schema";
-import { type CollectionName, searchCollection } from "@/lib/typesense/search";
+import type { CollectionName } from "@/lib/typesense/search";
 
 interface CatalogTableProps {
 	collectionName: CollectionName;
 }
-
-// A hit for whichever collection is being rendered.
-type CatalogHit = CollectionSearchHit<(typeof collections)[CollectionName]["collection"]>;
 
 function formatCell(value: unknown): string {
 	if (value == null) {
@@ -90,48 +86,15 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 		parseAsStringLiteral(sortOptions).withDefault(defaultSort),
 	);
 
-	const [hits, setHits] = useState<Array<CatalogHit>>([]);
-	// Pagination status is read straight off the last search response.
-	const [pagination, setPagination] = useState({ found: 0, page: 1, perPage: 0 });
-	// Starts true because a search is always run on mount; avoids a flash of "no results".
-	const [isLoading, setIsLoading] = useState(true);
-
-	useEffect(() => {
-		return abortableEffect(async (signal) => {
-			setIsLoading(true);
-			try {
-				const results = await searchCollection(
-					collectionName,
-					{
-						q: "*",
-						query_by: collection.searchableFieldNames,
-						page,
-						sort_by: sortBy,
-					},
-					{ abortSignal: signal },
-				);
-
-				if (signal.aborted) return;
-
-				setHits(results.hits ?? []);
-				setPagination({
-					found: results.found,
-					page: results.page,
-					perPage: results.request_params.per_page ?? 0,
-				});
-			} catch (error) {
-				// A superseded request rejects with an abort error; ignore it.
-				if (signal.aborted) return;
-				console.error("Failed to fetch catalog results:", error);
-				setHits([]);
-				setPagination({ found: 0, page: 1, perPage: 0 });
-			} finally {
-				if (!signal.aborted) {
-					setIsLoading(false);
-				}
-			}
-		});
-	}, [collection, collectionName, page, sortBy]);
+	// Runs the query, aborts superseded requests and exposes a loading / error / success state
+	// machine; `pagination` reads found/page/perPage straight off it.
+	const { status, hits, error, retry, ...pagination } = useCollectionSearch(collectionName, {
+		q: "*",
+		query_by: collection.searchableFieldNames,
+		page,
+		sort_by: sortBy,
+	});
+	const isLoading = status === "loading";
 
 	const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -214,13 +177,27 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 					</TableHeader>
 					<TableBody
 						renderEmptyState={() => {
-							return isLoading ? (
-								<div className="flex justify-center p-8">
-									<LoadingIndicator aria-label={tLoading("loading")} size="small" />
-								</div>
-							) : (
-								<p className="p-8 text-center text-small text-text-weak">{t("no-results")}</p>
-							);
+							if (isLoading) {
+								return (
+									<div className="flex justify-center p-8">
+										<LoadingIndicator aria-label={tLoading("loading")} size="small" />
+									</div>
+								);
+							}
+							if (error != null) {
+								return (
+									<div className="grid justify-items-center gap-y-3 p-8">
+										<p className="text-small text-text-weak">{t("error")}</p>
+										<Button
+											className="interactive rounded-2 border border-stroke-strong px-3 py-1.5 text-small font-strong text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline"
+											onPress={retry}
+										>
+											{t("retry")}
+										</Button>
+									</div>
+								);
+							}
+							return <p className="p-8 text-center text-small text-text-weak">{t("no-results")}</p>;
 						}}
 					>
 						{hits.map((hit) => {

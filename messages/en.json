@@ -43,10 +43,12 @@
 		}
 	},
 	"CatalogPage": {
+		"error": "Something went wrong while loading the catalog. Please try again.",
 		"meta": {
 			"title": "Catalog"
 		},
 		"no-results": "No documents found.",
+		"retry": "Try again",
 		"title": "Catalog"
 	},
 	"ColorSchemeSwitcher": {
@@ -97,6 +99,7 @@
 	"SearchResults": {
 		"category": "Category",
 		"clear-search": "Clear search",
+		"error": "Something went wrong while searching. Please try again.",
 		"filter-categories": "filter categories",
 		"filter-ui": "Filter UI",
 		"filter-ui-dropdown": "Dropdown",
@@ -107,6 +110,7 @@
 		"order-by": "Order by",
 		"order-title-asc": "Title (A–Z)",
 		"order-title-desc": "Title (Z–A)",
+		"retry": "Try again",
 		"search-placeholder": "Search works...",
 		"title": "Search Results"
 	},
