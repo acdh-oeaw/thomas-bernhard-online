@@ -43,12 +43,10 @@
 		}
 	},
 	"CatalogPage": {
-		"error": "Beim Laden des Katalogs ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
 		"meta": {
 			"title": "Katalog"
 		},
 		"no-results": "Keine Dokumente gefunden.",
-		"retry": "Erneut versuchen",
 		"title": "Katalog"
 	},
 	"ColorSchemeSwitcher": {
@@ -91,15 +89,9 @@
 		},
 		"title": "Seite nicht gefunden"
 	},
-	"ResultStatus": {
-		"loading": "Wird geladen...",
-		"no-documents": "Keine Dokumente gefunden.",
-		"results": "Zeige {startIndex}–{endIndex} von {totalCount} {count, plural, one {Dokument} other {Dokumente}}"
-	},
 	"SearchResults": {
 		"category": "Kategorie",
 		"clear-search": "Suche zurücksetzen",
-		"error": "Bei der Suche ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.",
 		"filter-categories": "Kategorien filtern",
 		"filter-ui": "Filter-Ansicht",
 		"filter-ui-dropdown": "Dropdown",
@@ -110,26 +102,36 @@
 		"order-by": "Sortieren nach",
 		"order-title-asc": "Titel (A–Z)",
 		"order-title-desc": "Titel (Z–A)",
-		"retry": "Erneut versuchen",
 		"search-placeholder": "Werke durchsuchen...",
 		"title": "Suchergebnisse"
 	},
-	"FacetDropdown": {
-		"clear-selection": "Auswahl löschen",
-		"filter-values": "Werte filtern",
-		"loading": "Wird geladen...",
-		"no-results": "Keine Ergebnisse",
-		"options-count": "{count, plural, one {# Option} other {# Optionen}}",
-		"search": "Suchen"
-	},
-	"FacetList": {
-		"loading": "Wird geladen…",
-		"no-values": "Keine Werte"
-	},
-	"MultiFacetFilter": {
-		"clear-all": "Alle Filter zurücksetzen",
-		"loading": "Wird geladen…",
-		"no-values": "Keine Werte"
+	"Typesense": {
+		"CollectionSearch": {
+			"error": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+			"retry": "Erneut versuchen"
+		},
+		"FacetDropdown": {
+			"clear-selection": "Auswahl löschen",
+			"filter-values": "Werte filtern",
+			"loading": "Wird geladen...",
+			"no-results": "Keine Ergebnisse",
+			"options-count": "{count, plural, one {# Option} other {# Optionen}}",
+			"search": "Suchen"
+		},
+		"FacetList": {
+			"loading": "Wird geladen…",
+			"no-values": "Keine Werte"
+		},
+		"MultiFacetFilter": {
+			"clear-all": "Alle Filter zurücksetzen",
+			"loading": "Wird geladen…",
+			"no-values": "Keine Werte"
+		},
+		"ResultStatus": {
+			"loading": "Wird geladen...",
+			"no-documents": "Keine Dokumente gefunden.",
+			"results": "Zeige {startIndex}–{endIndex} von {totalCount} {count, plural, one {Dokument} other {Dokumente}}"
+		}
 	},
 	"PopoverAutocomplete": {
 		"button-label-empty": "Optionen auswählen",

@@ -43,12 +43,10 @@
 		}
 	},
 	"CatalogPage": {
-		"error": "Something went wrong while loading the catalog. Please try again.",
 		"meta": {
 			"title": "Catalog"
 		},
 		"no-results": "No documents found.",
-		"retry": "Try again",
 		"title": "Catalog"
 	},
 	"ColorSchemeSwitcher": {
@@ -91,15 +89,9 @@
 		},
 		"title": "Page not found"
 	},
-	"ResultStatus": {
-		"loading": "Loading...",
-		"no-documents": "No documents found.",
-		"results": "Showing {startIndex}–{endIndex} of {totalCount} {count, plural, one {document} other {documents}}"
-	},
 	"SearchResults": {
 		"category": "Category",
 		"clear-search": "Clear search",
-		"error": "Something went wrong while searching. Please try again.",
 		"filter-categories": "filter categories",
 		"filter-ui": "Filter UI",
 		"filter-ui-dropdown": "Dropdown",
@@ -110,26 +102,36 @@
 		"order-by": "Order by",
 		"order-title-asc": "Title (A–Z)",
 		"order-title-desc": "Title (Z–A)",
-		"retry": "Try again",
 		"search-placeholder": "Search works...",
 		"title": "Search Results"
 	},
-	"FacetDropdown": {
-		"clear-selection": "Clear selection",
-		"filter-values": "filter values",
-		"loading": "Loading...",
-		"no-results": "No results",
-		"options-count": "{count, plural, one {# option} other {# options}}",
-		"search": "Search"
-	},
-	"FacetList": {
-		"loading": "Loading…",
-		"no-values": "No values"
-	},
-	"MultiFacetFilter": {
-		"clear-all": "Clear all filters",
-		"loading": "Loading…",
-		"no-values": "No values"
+	"Typesense": {
+		"CollectionSearch": {
+			"error": "Something went wrong. Please try again.",
+			"retry": "Try again"
+		},
+		"FacetDropdown": {
+			"clear-selection": "Clear selection",
+			"filter-values": "filter values",
+			"loading": "Loading...",
+			"no-results": "No results",
+			"options-count": "{count, plural, one {# option} other {# options}}",
+			"search": "Search"
+		},
+		"FacetList": {
+			"loading": "Loading…",
+			"no-values": "No values"
+		},
+		"MultiFacetFilter": {
+			"clear-all": "Clear all filters",
+			"loading": "Loading…",
+			"no-values": "No values"
+		},
+		"ResultStatus": {
+			"loading": "Loading...",
+			"no-documents": "No documents found.",
+			"results": "Showing {startIndex}–{endIndex} of {totalCount} {count, plural, one {document} other {documents}}"
+		}
 	},
 	"PopoverAutocomplete": {
 		"button-label-empty": "Select options",

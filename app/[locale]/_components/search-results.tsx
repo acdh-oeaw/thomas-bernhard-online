@@ -52,6 +52,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const { collectionName } = props;
 	const t = useTranslations("SearchResults");
 	const tLoading = useTranslations("Loading");
+	const tSearch = useTranslations("Typesense.CollectionSearch");
 	const [searchQuery, setSearchQuery] = useQueryState("q", {
 		defaultValue: "",
 		clearOnDefault: true,
@@ -146,12 +147,12 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 			</div>
 		) : error != null ? (
 			<div className="grid justify-items-start gap-y-4 rounded-4 border border-stroke-weak bg-background-raised p-8">
-				<p className="text-small text-text-weak">{t("error")}</p>
+				<p className="text-small text-text-weak">{tSearch("error")}</p>
 				<Button
 					className="interactive rounded-2 border border-stroke-strong px-3 py-1.5 text-small font-strong text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline"
 					onPress={retry}
 				>
-					{t("retry")}
+					{tSearch("retry")}
 				</Button>
 			</div>
 		) : hits.length > 0 ? (

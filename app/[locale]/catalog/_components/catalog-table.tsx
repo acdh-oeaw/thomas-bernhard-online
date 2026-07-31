@@ -48,6 +48,7 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 	const { collectionName } = props;
 	const t = useTranslations("CatalogPage");
 	const tLoading = useTranslations("Loading");
+	const tSearch = useTranslations("Typesense.CollectionSearch");
 
 	const collection = collections[collectionName];
 
@@ -187,12 +188,12 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 							if (error != null) {
 								return (
 									<div className="grid justify-items-center gap-y-3 p-8">
-										<p className="text-small text-text-weak">{t("error")}</p>
+										<p className="text-small text-text-weak">{tSearch("error")}</p>
 										<Button
 											className="interactive rounded-2 border border-stroke-strong px-3 py-1.5 text-small font-strong text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline"
 											onPress={retry}
 										>
-											{t("retry")}
+											{tSearch("retry")}
 										</Button>
 									</div>
 								);

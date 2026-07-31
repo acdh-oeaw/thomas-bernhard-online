@@ -45,7 +45,7 @@ interface FacetDropdownProps<C extends Collection<any>> {
 export function FacetDropdown<C extends Collection<any>>(
 	props: Readonly<FacetDropdownProps<C>>,
 ): ReactNode {
-	const t = useTranslations("FacetDropdown");
+	const t = useTranslations("Typesense.FacetDropdown");
 	const {
 		collection: _collection,
 		collectionName,

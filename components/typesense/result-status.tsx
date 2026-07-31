@@ -9,7 +9,7 @@ interface ResultStatusProps {
 }
 
 export function ResultStatus(props: Readonly<ResultStatusProps>): ReactNode {
-	const t = useTranslations("ResultStatus");
+	const t = useTranslations("Typesense.ResultStatus");
 	const { startIndex, endIndex, totalCount, isLoading = false } = props;
 
 	if (isLoading) {

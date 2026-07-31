@@ -45,7 +45,7 @@ interface FacetTagGroupProps {
  * its result count. Modelled on the filter panel in the React Aria CRUD example.
  */
 function FacetTagGroup(props: Readonly<FacetTagGroupProps>): ReactNode {
-	const t = useTranslations("MultiFacetFilter");
+	const t = useTranslations("Typesense.MultiFacetFilter");
 	const { label, values, selectedKeys, onSelectionChange } = props;
 
 	return (
@@ -108,7 +108,7 @@ interface MultiFacetFilterProps<C extends Collection<any>> {
 export function MultiFacetFilter<C extends Collection<any>>(
 	props: Readonly<MultiFacetFilterProps<C>>,
 ): ReactNode {
-	const t = useTranslations("MultiFacetFilter");
+	const t = useTranslations("Typesense.MultiFacetFilter");
 	const {
 		collection: _collection,
 		collectionName,

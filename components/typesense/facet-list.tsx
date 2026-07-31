@@ -25,7 +25,7 @@ interface FacetCheckBoxListProps {
  * result count.
  */
 function FacetCheckBoxList(props: Readonly<FacetCheckBoxListProps>): ReactNode {
-	const t = useTranslations("FacetList");
+	const t = useTranslations("Typesense.FacetList");
 	const { label, values, selectedKeys, isLoading, onChange } = props;
 
 	const value = useMemo(() => {
