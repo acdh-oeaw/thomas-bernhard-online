@@ -78,7 +78,7 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 					collectionName,
 					{
 						q: searchQuery || "*",
-						query_by: collections.tbo_work.searchableFieldNames.join(","),
+						query_by: collections[collectionName].searchableFieldNames.join(","),
 						facet_by: fieldNames.join(","),
 						// Facet-only search: no document hits needed.
 						per_page: 0,
