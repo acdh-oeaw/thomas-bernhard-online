@@ -8,9 +8,9 @@ import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 // Collections to generate schema + field metadata for. Add further collection names here.
 const collectionNames = [env.NEXT_PUBLIC_TYPESENSE_COLLECTION];
 
-// Searchable (query_by / full-text) fields are the string-typed fields, INCLUDING nested object
-// sub-fields such as `authors.name`; object fields themselves are not searchable.
-const searchableFieldTypes = ["string", "string[]", "string*"];
+// Queryable (query_by / full-text) fields are the string-typed fields, INCLUDING nested object
+// sub-fields such as `authors.name`; object fields themselves are not queryable.
+const queryableFieldTypes = ["string", "string[]", "string*"];
 
 // Scalar field types — the only ones that can hold a `const` discriminant (see `StrictFieldSchema`).
 const scalarFieldTypes = ["string", "int32", "int64", "float", "bool"];
@@ -73,8 +73,7 @@ interface CollectionEntry {
 	code: string;
 	counts: {
 		fields: number;
-		searchable: number;
-		filterable: number;
+		queryable: number;
 		sortable: number;
 		facetable: number;
 	};
@@ -161,20 +160,20 @@ async function buildCollectionEntry(
 		})
 		.join("\n");
 
-	// Sorted searchable field names. Typesense reports nested fields more than once, so the first
+	// Sorted queryable field names. Typesense reports nested fields more than once, so the first
 	// occurrence of each name is kept before sorting.
-	const uniqueSearchableFields = Array.from(
+	const uniqueQueryableFields = Array.from(
 		new Map(
 			collection.fields
 				.filter((f) => {
-					return f.index !== false && searchableFieldTypes.includes(f.type);
+					return f.index !== false && queryableFieldTypes.includes(f.type);
 				})
 				.map((f) => {
 					return [f.name, f] as const;
 				}),
 		).values(),
 	);
-	const searchableFieldNames = uniqueSearchableFields
+	const queryableFieldNames = uniqueQueryableFields
 		.sort((a, b) => {
 			// Shallower fields (fewer periods) come first.
 			const levelDiff = nestingLevel(a.name) - nestingLevel(b.name);
@@ -183,13 +182,6 @@ async function buildCollectionEntry(
 			}
 			// Within a nesting level, order by the search priority heuristic.
 			return searchPriority(b) - searchPriority(a);
-		})
-		.map((f) => {
-			return f.name;
-		});
-	const filterableFieldNames = collection.fields
-		.filter((f) => {
-			return f.index !== false;
 		})
 		.map((f) => {
 			return f.name;
@@ -215,8 +207,7 @@ async function buildCollectionEntry(
 ${fieldLines}
 			] as const,
 		}),
-		searchableFieldNames: ${JSON.stringify(searchableFieldNames)},
-		filterableFieldNames: ${JSON.stringify(filterableFieldNames)},
+		queryableFieldNames: ${JSON.stringify(queryableFieldNames)},
 		sortableFieldNames: ${JSON.stringify(sortableFieldNames)},
 		facetableFieldNames: ${JSON.stringify(facetableFieldNames)},
 	},`;
@@ -225,8 +216,7 @@ ${fieldLines}
 		code,
 		counts: {
 			fields: collection.fields.length,
-			searchable: searchableFieldNames.length,
-			filterable: filterableFieldNames.length,
+			queryable: queryableFieldNames.length,
 			sortable: sortableFieldNames.length,
 			facetable: facetableFieldNames.length,
 		},
@@ -243,7 +233,7 @@ async function main() {
 			const { code, counts } = await buildCollectionEntry(client, collectionName);
 			entries.push(code);
 			console.warn(
-				`✓ ${collectionName}: ${String(counts.fields)} fields (searchable ${String(counts.searchable)}, filterable ${String(counts.filterable)}, sortable ${String(counts.sortable)}, facetable ${String(counts.facetable)})`,
+				`✓ ${collectionName}: ${String(counts.fields)} fields (queryable ${String(counts.queryable)}, sortable ${String(counts.sortable)}, facetable ${String(counts.facetable)})`,
 			);
 		}
 

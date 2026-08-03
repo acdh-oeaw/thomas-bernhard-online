@@ -13,7 +13,7 @@ import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import type {
 	CollectionDocument,
 	CollectionFacetableFieldName,
-	CollectionSearchableFieldName,
+	CollectionQueryableFieldName,
 	CollectionSortableFieldName,
 } from "@/lib/typesense/schema";
 
@@ -23,7 +23,7 @@ type CollectionSchema<K extends CollectionName> = (typeof collections)[K]["colle
 
 type CollectionDoc<K extends CollectionName> = CollectionDocument<CollectionSchema<K>>;
 
-type SearchableField<K extends CollectionName> = CollectionSearchableFieldName<CollectionSchema<K>>;
+type QueryableField<K extends CollectionName> = CollectionQueryableFieldName<CollectionSchema<K>>;
 type SortableField<K extends CollectionName> = CollectionSortableFieldName<CollectionSchema<K>>;
 type FacetableField<K extends CollectionName> = CollectionFacetableFieldName<CollectionSchema<K>>;
 
@@ -49,12 +49,12 @@ type SortClause<K extends CollectionName> =
  * ignore unknown fields, and `filter_by` is a whole expression grammar not worth modelling here.
  */
 interface FieldConstrainedParams<K extends CollectionName> {
-	query_by?: OneOrMany<SearchableField<K>>;
+	query_by?: OneOrMany<QueryableField<K>>;
 	sort_by?: OneOrMany<SortClause<K>>;
 	facet_by?: OneOrMany<FacetableField<K>>;
 	group_by?: OneOrMany<FacetableField<K>>;
-	highlight_fields?: OneOrMany<SearchableField<K>>;
-	highlight_full_fields?: OneOrMany<SearchableField<K>>;
+	highlight_fields?: OneOrMany<QueryableField<K>>;
+	highlight_full_fields?: OneOrMany<QueryableField<K>>;
 }
 
 /**

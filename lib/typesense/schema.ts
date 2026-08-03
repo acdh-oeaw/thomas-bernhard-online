@@ -35,25 +35,8 @@ interface FieldTypeMap {
 	geopolygon: unknown;
 }
 
-type SearchableFieldType = "string" | "string[]" | "string*";
-
-type QueryableFieldNames<T extends CollectionFieldSchema> = T extends { index: false }
-	? never
-	: T["name"];
-type SearchableFieldNames<T extends CollectionFieldSchema> = T extends { index: false }
-	? never
-	: T["type"] extends SearchableFieldType
-		? T["name"]
-		: never;
-type FilterableFieldNames<T extends CollectionFieldSchema> = T extends { index: false }
-	? never
-	: T["name"];
-type SortableFieldNames<T extends CollectionFieldSchema> = T extends { sort: true }
-	? T["name"]
-	: never;
-type FacetableFieldNames<T extends CollectionFieldSchema> = T extends { facet: true }
-	? T["name"]
-	: never;
+/** Field types usable in `query_by` (full-text search); nested string sub-fields included. */
+type QueryableFieldType = "string" | "string[]" | "string*";
 
 /**
  * Typesense flattens nested object sub-fields into dot-separated schema entries: an `object[]`
@@ -161,21 +144,32 @@ export type CollectionDocument<C extends { fields: ReadonlyArray<CollectionField
 /** A full search hit for a collection (document + object-form `highlight`), as typed by typesense. */
 export type CollectionSearchHit<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> =
 	SearchResponseHit<CollectionDocument<C>>;
+/** Field names usable in `query_by`: indexed `string` / `string[]` / `string*` fields. */
 export type CollectionQueryableFieldName<
 	C extends { fields: ReadonlyArray<CollectionFieldSchema> },
-> = QueryableFieldNames<C["fields"][number]>;
-export type CollectionSearchableFieldName<
-	C extends { fields: ReadonlyArray<CollectionFieldSchema> },
-> = SearchableFieldNames<C["fields"][number]>;
-export type CollectionFilterableFieldName<
-	C extends { fields: ReadonlyArray<CollectionFieldSchema> },
-> = FilterableFieldNames<C["fields"][number]>;
+> = C["fields"][number] extends infer Field extends CollectionFieldSchema
+	? Field extends { index: false }
+		? never
+		: Field["type"] extends QueryableFieldType
+			? Field["name"]
+			: never
+	: never;
+/** Field names flagged `sort: true`. */
 export type CollectionSortableFieldName<
 	C extends { fields: ReadonlyArray<CollectionFieldSchema> },
-> = SortableFieldNames<C["fields"][number]>;
+> = C["fields"][number] extends infer Field extends CollectionFieldSchema
+	? Field extends { sort: true }
+		? Field["name"]
+		: never
+	: never;
+/** Field names flagged `facet: true`. */
 export type CollectionFacetableFieldName<
 	C extends { fields: ReadonlyArray<CollectionFieldSchema> },
-> = FacetableFieldNames<C["fields"][number]>;
+> = C["fields"][number] extends infer Field extends CollectionFieldSchema
+	? Field extends { facet: true }
+		? Field["name"]
+		: never
+	: never;
 
 export interface Collection<F extends ReadonlyArray<CollectionFieldSchema>> {
 	fields: F;
