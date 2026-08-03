@@ -12,6 +12,50 @@ const collectionNames = [env.NEXT_PUBLIC_TYPESENSE_COLLECTION];
 // sub-fields such as `authors.name`; object fields themselves are not searchable.
 const searchableFieldTypes = ["string", "string[]", "string*"];
 
+// Scalar field types — the only ones that can hold a `const` discriminant (see `StrictFieldSchema`).
+const scalarFieldTypes = ["string", "int32", "int64", "float", "bool"];
+
+// High cap so the reported facet cardinality is accurate for anything that could plausibly be a
+// discriminator. `total_values` is capped by this, so a field reporting exactly 1 is single-valued.
+const maxFacetValuesForCardinality = 1000;
+
+// Discriminator acceptance, opt-in via `--accept-discriminators`: detected single-valued facetable
+// scalar fields are written as `const: <value>` markers; the rest are annotated with a comment. The
+// flag may be bare (accept every detected discriminator) or carry field names to restrict which are
+// accepted — e.g. `--accept-discriminators=category` (comma-separated, repeatable, or as trailing
+// positional names). Cardinality is always inspected and reported regardless.
+const cliArgs = process.argv.slice(2);
+const acceptDiscriminators = cliArgs.some((arg) => {
+	return arg === "--accept-discriminators" || arg.startsWith("--accept-discriminators=");
+});
+const acceptedFieldNames = new Set(
+	cliArgs
+		.flatMap((arg) => {
+			if (arg.startsWith("--accept-discriminators=")) {
+				return arg.slice("--accept-discriminators=".length).split(",");
+			}
+			// Trailing positional (non-flag) arguments are treated as field names too.
+			return arg.startsWith("--") ? [] : [arg];
+		})
+		.map((name) => {
+			return name.trim();
+		})
+		.filter(Boolean),
+);
+// A bare `--accept-discriminators` (no field names anywhere) accepts every detected discriminator.
+const acceptAllDiscriminators = acceptDiscriminators && acceptedFieldNames.size === 0;
+
+/** Whether a detected discriminator field should be written as a `const` (vs. annotated). */
+const shouldEmitConst = (fieldName: string): boolean => {
+	return acceptDiscriminators && (acceptAllDiscriminators || acceptedFieldNames.has(fieldName));
+};
+
+/** Formats a facet value as a TypeScript literal for the field's scalar `type`. */
+const constLiteral = (type: string, value: string): string => {
+	// String values are quoted/escaped; numeric and boolean values are emitted as bare tokens.
+	return type === "string" ? JSON.stringify(value) : value;
+};
+
 const nestingLevel = (name: string) => {
 	return (name.match(/\./g) ?? []).length;
 };
@@ -42,9 +86,78 @@ async function buildCollectionEntry(
 ): Promise<CollectionEntry> {
 	const collection = await client.collections(collectionName).retrieve();
 
+	// Facetable scalar fields are the only possible `const` discriminators. Always inspect their
+	// cardinality — a field with a single distinct value across the whole collection is a usable
+	// discriminant — and report it. Accepted discriminators (see `--accept-discriminators`) get a
+	// `const` marker; the rest are annotated with a comment.
+	const facetableScalarFields = collection.fields.filter((field) => {
+		return field.facet === true && scalarFieldTypes.includes(field.type);
+	});
+
+	const constByField = new Map<string, string>();
+
+	if (facetableScalarFields.length > 0) {
+		const facetResults = await client
+			.collections(collectionName)
+			.documents()
+			.search({
+				q: "*",
+				facet_by: facetableScalarFields
+					.map((field) => {
+						return field.name;
+					})
+					.join(","),
+				max_facet_values: maxFacetValuesForCardinality,
+				per_page: 0,
+			});
+
+		console.warn(
+			`  Checking facetable scalar fields in ${collectionName} for potential discriminators:`,
+		);
+		for (const field of facetableScalarFields) {
+			const facet = facetResults.facet_counts?.find((entry) => {
+				return entry.field_name === field.name;
+			});
+			const cardinality = facet?.stats.total_values ?? facet?.counts.length ?? 0;
+			const soleValue = cardinality === 1 ? facet?.counts[0]?.value : undefined;
+			const literal = soleValue != null ? constLiteral(field.type, soleValue) : undefined;
+
+			let message: string;
+			if (literal == null) {
+				const valueWord = cardinality === 1 ? "value" : "values";
+				message = `  ➖ ${field.name} (${field.type}): ${String(cardinality)} distinct ${valueWord} — cannot be a discriminator (needs exactly 1)`;
+			} else {
+				constByField.set(field.name, literal);
+				message = shouldEmitConst(field.name)
+					? `  🎯 ${field.name} (${field.type}): 1 distinct value — accepted, writing const: ${literal}`
+					: `  🎯 ${field.name} (${field.type}): 1 distinct value — potential discriminator (const would be ${literal})`;
+			}
+			console.warn(message);
+		}
+
+		const commentedCount = Array.from(constByField.keys()).filter((name) => {
+			return !shouldEmitConst(name);
+		}).length;
+		if (commentedCount > 0) {
+			console.warn(
+				`  ${String(commentedCount)} potential discriminator(s) left as comments — pass --accept-discriminators[=field,…] to write their \`const\` markers.`,
+			);
+		}
+	}
+
 	const fieldLines = collection.fields
 		.map((field) => {
-			return `				{ name: "${field.name}", type: "${field.type}"${field.optional ? ", optional: true" : ""}${field.index === false ? ", index: false" : ""}${field.facet ? ", facet: true" : ""}${field.sort ? ", sort: true" : ""} },`;
+			const constValue = constByField.get(field.name);
+			const accepted = constValue != null && shouldEmitConst(field.name);
+			const constMarker = accepted ? `, const: ${constValue}` : "";
+			const line = `				{ name: "${field.name}", type: "${field.type}"${field.optional ? ", optional: true" : ""}${field.index === false ? ", index: false" : ""}${field.facet ? ", facet: true" : ""}${field.sort ? ", sort: true" : ""}${constMarker} },`;
+			// Potential discriminators that aren't being accepted are annotated so they can be
+			// reviewed and added by hand.
+			const discriminatorComment =
+				constValue != null && !accepted
+					? `				// 🎯 potential discriminator — const value would be ${constValue} (re-run with --accept-discriminators to add it)\n`
+					: "";
+			return `${discriminatorComment}${line}`;
 		})
 		.join("\n");
 

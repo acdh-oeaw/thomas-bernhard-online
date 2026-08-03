@@ -1,7 +1,18 @@
 import type { CollectionCreateSchema, CollectionFieldSchema, SearchResponseHit } from "typesense";
 
+/** Scalar field types — the only ones that can carry a `const` discriminant literal. */
+type ScalarFieldType = "bool" | "float" | "int32" | "int64" | "string";
+
 type StrictFieldSchema = CollectionFieldSchema &
-	({ index?: true | undefined } | { index: false; facet?: never; sort?: never });
+	({ index?: true | undefined } | { index: false; facet?: never; sort?: never }) &
+	/**
+	 * A `const` literal may only be attached to a *scalar* field. It types that field as the exact
+	 * literal in the document type (rather than the general `type`), so a field indexed with the same
+	 * value across every document in a collection becomes a discriminant for narrowing a union of
+	 * collection document types. Array and object fields cannot serve as discriminated-union tags, so
+	 * they may not carry `const`.
+	 */
+	({ type: ScalarFieldType; const?: boolean | number | string } | { const?: never });
 
 interface FieldTypeMap {
 	string: string;
@@ -115,11 +126,13 @@ type FieldValue<
 > =
 	Extract<Fields, { name: Name }> extends infer Field
 		? Field extends CollectionFieldSchema
-			? Field["type"] extends "object[]"
-				? Array<DocumentFromPrefix<Fields, `${Name}.`, true>>
-				: Field["type"] extends "object"
-					? DocumentFromPrefix<Fields, `${Name}.`, InArray>
-					: FieldTypeMap[InArray extends true ? SingularFieldType<Field["type"]> : Field["type"]]
+			? Field extends { const: infer Literal extends boolean | number | string }
+				? Literal
+				: Field["type"] extends "object[]"
+					? Array<DocumentFromPrefix<Fields, `${Name}.`, true>>
+					: Field["type"] extends "object"
+						? DocumentFromPrefix<Fields, `${Name}.`, InArray>
+						: FieldTypeMap[InArray extends true ? SingularFieldType<Field["type"]> : Field["type"]]
 			: never
 		: never;
 
