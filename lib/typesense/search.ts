@@ -1,4 +1,11 @@
-import type { SearchOptions, SearchParams, SearchResponse } from "typesense";
+import type {
+	MultiSearchRequestsWithUnionSchema,
+	MultiSearchUnionParameters,
+	SearchOptions,
+	SearchParams,
+	SearchResponse,
+	UnionSearchResponse,
+} from "typesense";
 
 import { defaultSearchParams } from "@/config/typesense.config";
 import type { collections } from "@/lib/typesense/collections";
@@ -110,4 +117,40 @@ export function searchCollectionUnchecked<K extends CollectionName>(
 	options?: SearchOptions,
 ): Promise<SearchResponse<CollectionDoc<K>>> {
 	return runSearch(collectionName, params, options);
+}
+
+/** Union of the document types of the collections named in a `searchCollections` tuple. */
+type UnionDoc<C extends ReadonlyArray<CollectionName>> = CollectionDoc<C[number]>;
+
+/**
+ * Runs a typesense federated (`union: true`) multi-search across several — possibly different —
+ * collections and merges the matches into a single ranked result list. Each entry pairs a
+ * `collection` with that collection's typed `CollectionSearchParams` (field-name params are
+ * constrained per collection), the shared `defaultSearchParams` are applied to each, and
+ * `commonParams` apply across the whole union.
+ *
+ * Because the searched collections may differ, the response is a `UnionSearchResponse` whose hits
+ * carry the **union** of the collections' document types — so `hit.document` must be narrowed (e.g.
+ * on a discriminating field) before its collection-specific fields can be read.
+ *
+ * @see https://typesense.org/docs/latest/api/federated-multi-search.html#union-search
+ */
+export function searchCollections<const C extends ReadonlyArray<CollectionName>>(
+	searches: {
+		readonly [I in keyof C]: { readonly collection: C[I] } & CollectionSearchParams<C[I]>;
+	},
+	commonParams?: MultiSearchUnionParameters<UnionDoc<C>, string>,
+	options?: SearchOptions,
+): Promise<UnionSearchResponse<UnionDoc<C>>> {
+	// The per-collection narrowing lives in the `searches` type; typesense types each search as the
+	// looser `SearchParams<UnionDoc>`, so widening back to its request shape here is safe.
+	const searchRequests = searches.map((search) => {
+		return { ...defaultSearchParams, ...search };
+	}) as MultiSearchRequestsWithUnionSchema<UnionDoc<C>, string>["searches"];
+
+	return createTypesenseClient().multiSearch.perform<Array<UnionDoc<C>>>(
+		{ union: true, searches: searchRequests },
+		commonParams,
+		options,
+	);
 }
