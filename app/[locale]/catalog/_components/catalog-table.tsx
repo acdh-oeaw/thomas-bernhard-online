@@ -49,6 +49,14 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 	const t = useTranslations("CatalogPage");
 	const tLoading = useTranslations("Loading");
 	const tSearch = useTranslations("Typesense.CollectionSearch");
+	const tField = useTranslations("Collection.field");
+
+	// Translate a column to its field label, falling back to the raw name for columns without one
+	// (e.g. the synthetic `id` column, which is not a schema field).
+	const columnLabel = (column: string): string => {
+		const key = column as Parameters<typeof tField>[0];
+		return tField.has(key) ? tField(key) : column;
+	};
 
 	const collection = collections[collectionName];
 
@@ -161,7 +169,7 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 									{(renderProps) => {
 										return (
 											<span className="inline-flex items-center gap-x-1">
-												{column}
+												{columnLabel(column)}
 												{renderProps.sortDirection === "ascending" ? (
 													<ArrowUpIcon aria-hidden={true} className="size-4" data-slot="icon" />
 												) : renderProps.sortDirection === "descending" ? (
