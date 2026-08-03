@@ -40,7 +40,6 @@ type SortLabelKey<V extends string> = V extends `${infer Field}:${infer Directio
 	: V;
 
 function sortLabelKey<V extends string>(value: V): SortLabelKey<V> {
-	// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 	return value.replace(":", "-") as SortLabelKey<V>;
 }
 
