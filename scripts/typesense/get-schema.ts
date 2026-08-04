@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { format, resolveConfig } from "prettier";
 import type { CollectionFieldSchema } from "typesense";
 
 import { env } from "@/config/env.config";
@@ -111,7 +112,7 @@ async function buildCollectionEntry(
 			});
 
 		console.warn(
-			`  Checking facetable scalar fields in ${collectionName} for potential discriminators:`,
+			`\n  Checking facetable scalar fields in ${collectionName} for potential discriminators:`,
 		);
 		for (const field of facetableScalarFields) {
 			const facet = facetResults.facet_counts?.find((entry) => {
@@ -143,6 +144,29 @@ async function buildCollectionEntry(
 			);
 		}
 	}
+
+	// List every field in the order it will be written to collections.ts.
+	console.warn(`\n  Fields for ${collectionName}, in the order they are written to collections.ts:`);
+	collection.fields.forEach((field, index) => {
+		const flags = [
+			field.optional === true ? "optional" : null,
+			field.index === false ? "index: false" : null,
+			field.facet === true ? "facet" : null,
+			field.sort === true ? "sort" : null,
+		].filter((flag) => {
+			return flag != null;
+		});
+		console.warn(
+			`    ${String(index + 1).padStart(2)}. ${field.name} (${field.type}${flags.length > 0 ? `, ${flags.join(", ")}` : ""})`,
+		);
+	});
+	console.warn(
+		"\n  Note: this raw field order does not drive the UI. The catalog's default result-table column",
+	);
+	console.warn(
+		"  order comes from the queryableFieldNames list below — reorder that list by hand in the",
+	);
+	console.warn("  generated collections.ts to change it.");
 
 	const fieldLines = collection.fields
 		.map((field) => {
@@ -233,7 +257,7 @@ async function main() {
 			const { code, counts } = await buildCollectionEntry(client, collectionName);
 			entries.push(code);
 			console.warn(
-				`✓ ${collectionName}: ${String(counts.fields)} fields (queryable ${String(counts.queryable)}, sortable ${String(counts.sortable)}, facetable ${String(counts.facetable)})`,
+				`\n✓ ${collectionName}: ${String(counts.fields)} fields (queryable ${String(counts.queryable)}, sortable ${String(counts.sortable)}, facetable ${String(counts.facetable)})`,
 			);
 		}
 
@@ -246,7 +270,12 @@ ${entries.join("\n")}
 
 		const outputPath = path.join(process.cwd(), "lib/typesense/collections.ts");
 
-		fs.writeFileSync(outputPath, code);
+		// Format with the project's prettier config so the generated file conforms to the same
+		// formatting rules as the rest of the codebase (and re-generating produces no formatting churn).
+		const prettierConfig = await resolveConfig(outputPath);
+		const formatted = await format(code, { ...prettierConfig, filepath: outputPath });
+
+		fs.writeFileSync(outputPath, formatted);
 		console.warn(
 			`✓ Schema for ${String(collectionNames.length)} collection(s) written to ${outputPath}`,
 		);
