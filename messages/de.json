@@ -54,9 +54,9 @@
 		"field": {
 			"authors": "Autoren",
 			"category": "Kategorie",
-			"expressions": "Ausdrücke",
+			"expressions": "Expressions",
 			"performances": "Aufführungen",
-			"sameas": "Referenzen",
+			"sameas": "Identisch mit",
 			"title": "Titel"
 		},
 		"sort": {

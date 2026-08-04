@@ -2,8 +2,14 @@
 
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { parseAsInteger, parseAsStringLiteral, useQueryState } from "nuqs";
-import { type ReactNode, useCallback, useRef } from "react";
+import {
+	parseAsArrayOf,
+	parseAsInteger,
+	parseAsString,
+	parseAsStringLiteral,
+	useQueryState,
+} from "nuqs";
+import { type ReactNode, useCallback, useMemo, useRef } from "react";
 import {
 	Button,
 	Cell,
@@ -15,7 +21,7 @@ import {
 	TableHeader,
 } from "react-aria-components";
 
-import { Pagination, useCollectionSearch } from "@/components/typesense";
+import { FacetDropdown, Pagination, useCollectionSearch } from "@/components/typesense";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionName } from "@/lib/typesense/search";
@@ -60,17 +66,35 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 
 	const collection = collections[collectionName];
 
-	// One column per top-level field of the document schema: `id` plus every field whose name is not
-	// a nested (dotted) sub-field.
+	// One column per top-level field of the document schema (fields whose name is not a nested,
+	// dotted sub-field), plus the synthetic `id` column first.
+	const topLevelFields = collection.collection.fields
+		.filter((field) => {
+			return !field.name.includes(".");
+		})
+		.map((field) => {
+			return field.name;
+		});
+	const topLevelFieldSet = new Set<string>(topLevelFields);
+
+	// Order the columns by the curated `queryableFieldNames` list (using each name's top-level
+	// segment, so `authors.id` → `authors`) rather than raw schema order — this puts e.g. `title`
+	// first. Top-level fields with no queryable descendant are appended in schema order.
+	const queryableOrder = [
+		...new Set(
+			collection.queryableFieldNames.map((name) => {
+				return name.replace(/\..*$/, "");
+			}),
+		),
+	].filter((field) => {
+		return topLevelFieldSet.has(field);
+	});
 	const columns = [
 		"id",
-		...collection.collection.fields
-			.filter((field) => {
-				return !field.name.includes(".");
-			})
-			.map((field) => {
-				return field.name;
-			}),
+		...queryableOrder,
+		...topLevelFields.filter((field) => {
+			return !queryableOrder.includes(field);
+		}),
 	];
 
 	// Only fields flagged sortable in the schema can be used in a typesense `sort_by`.
@@ -94,12 +118,30 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 		"sort",
 		parseAsStringLiteral(sortOptions).withDefault(defaultSort),
 	);
+	const [categoryFilters, setCategoryFilters] = useQueryState(
+		"categories",
+		parseAsArrayOf(parseAsString).withDefault([]),
+	);
+	const selectedCategories = useMemo(() => {
+		return new Set(categoryFilters);
+	}, [categoryFilters]);
+
+	// A typesense `filter_by` narrowing to the selected categories (OR-combined).
+	const categoryFilter =
+		selectedCategories.size > 0
+			? `(${Array.from(selectedCategories)
+					.map((category) => {
+						return `category:="${category}"`;
+					})
+					.join(" || ")})`
+			: undefined;
 
 	// Runs the query, aborts superseded requests and exposes a loading / error / success state
 	// machine; `pagination` reads found/page/perPage straight off it.
 	const { status, hits, error, retry, ...pagination } = useCollectionSearch(collectionName, {
 		page,
 		sort_by: sortBy,
+		...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
 	});
 	const isLoading = status === "loading";
 
@@ -128,6 +170,15 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 		[collection, setSortBy, setPage],
 	);
 
+	const handleCategoryChange = useCallback(
+		(values: Set<string>) => {
+			void setCategoryFilters(Array.from(values));
+			// A changed filter means a new result set, so return to the first page.
+			void setPage(1);
+		},
+		[setCategoryFilters, setPage],
+	);
+
 	const handlePageChange = useCallback(
 		(nextPage: number) => {
 			void setPage(nextPage);
@@ -144,6 +195,19 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 
 	return (
 		<div ref={sectionRef} className="grid gap-y-8">
+			<div className="flex flex-wrap items-center gap-4">
+				<FacetDropdown
+					collection={collection.collection}
+					collectionName={collectionName}
+					fieldName="category"
+					isLoading={isLoading}
+					label={tField("category")}
+					onChange={handleCategoryChange}
+					searchQuery=""
+					selectedValues={selectedCategories}
+				/>
+			</div>
+
 			<div className="relative overflow-x-auto rounded-4 border border-stroke-weak">
 				<Table
 					aria-busy={isLoading}
@@ -171,9 +235,9 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 											<span className="inline-flex items-center gap-x-1">
 												{columnLabel(column)}
 												{renderProps.sortDirection === "ascending" ? (
-													<ArrowUpIcon aria-hidden={true} className="size-4" data-slot="icon" />
-												) : renderProps.sortDirection === "descending" ? (
 													<ArrowDownIcon aria-hidden={true} className="size-4" data-slot="icon" />
+												) : renderProps.sortDirection === "descending" ? (
+													<ArrowUpIcon aria-hidden={true} className="size-4" data-slot="icon" />
 												) : null}
 											</span>
 										);
