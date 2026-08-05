@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, ChevronDownIcon, SearchIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, FilterIcon, SearchIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useMemo, useState } from "react";
 import {
@@ -39,6 +39,12 @@ interface FacetDropdownProps<C extends Collection<any>> {
 	onChange: (selectedValues: Set<string>) => void;
 	isLoading?: boolean;
 	searchPlaceholder?: string;
+	/**
+	 * Render a compact icon trigger (a filter icon plus a count badge when values are selected) with no
+	 * visible label, instead of the default labelled text button. Use where the field name is already
+	 * shown next to the control, e.g. inside a table column header.
+	 */
+	compact?: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -58,6 +64,7 @@ export function FacetDropdown<C extends Collection<any>>(
 		isLoading = false,
 		// eslint-disable-next-line @eslint-react/no-unstable-default-props
 		searchPlaceholder = t("filter-values"),
+		compact = false,
 	} = props;
 
 	const [internalSelected, setInternalSelected] = useState<Set<string>>(() => {
@@ -123,14 +130,32 @@ export function FacetDropdown<C extends Collection<any>>(
 
 	return (
 		<div className="flex items-center gap-x-2">
-			<Label className="text-small font-strong text-text-strong">{label}</Label>
+			{compact ? null : <Label className="text-small font-strong text-text-strong">{label}</Label>}
 			<DialogTrigger>
 				<Button
-					className="interactive flex w-fit items-center justify-between rounded-2 border border-stroke-weak bg-background-raised px-3 py-2 text-small text-text-strong hover:hover-overlay focus-visible:focus-outline disabled:opacity-50"
+					aria-label={compact ? label : undefined}
+					className={
+						compact
+							? "interactive flex w-fit items-center gap-x-1.5 rounded-2 border border-stroke-weak bg-background-raised px-2 py-1.5 text-text-strong hover:hover-overlay focus-visible:focus-outline disabled:opacity-50"
+							: "interactive flex w-fit items-center justify-between rounded-2 border border-stroke-weak bg-background-raised px-3 py-2 text-small text-text-strong hover:hover-overlay focus-visible:focus-outline disabled:opacity-50"
+					}
 					isDisabled={isLoading || isFetching}
 				>
-					<span className="truncate">{buttonLabel}</span>
-					<ChevronDownIcon aria-hidden={true} className="size-4 shrink-0" data-slot="icon" />
+					{compact ? (
+						<>
+							<FilterIcon aria-hidden={true} className="size-4 shrink-0" data-slot="icon" />
+							{selectedCount > 0 ? (
+								<span className="grid min-w-5 place-content-center rounded-full bg-fill-brand-strong px-1 text-tiny text-text-inverse-strong">
+									{selectedCount}
+								</span>
+							) : null}
+						</>
+					) : (
+						<>
+							<span className="truncate">{buttonLabel}</span>
+							<ChevronDownIcon aria-hidden={true} className="size-4 shrink-0" data-slot="icon" />
+						</>
+					)}
 				</Button>
 				<Popover>
 					<Dialog

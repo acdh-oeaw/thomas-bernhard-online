@@ -2,200 +2,58 @@
 
 import { ArrowDownIcon, ArrowUpIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-	parseAsArrayOf,
-	parseAsInteger,
-	parseAsString,
-	parseAsStringLiteral,
-	useQueryState,
-} from "nuqs";
-import { type ReactNode, useCallback, useMemo, useRef } from "react";
-import {
-	Button,
-	Cell,
-	Column,
-	Row,
-	type SortDescriptor,
-	Table,
-	TableBody,
-	TableHeader,
-} from "react-aria-components";
+import type { ReactNode } from "react";
+import { Column, type SortDescriptor, Table, TableBody, TableHeader } from "react-aria-components";
 
-import { FacetDropdown, Pagination, useCollectionSearch } from "@/components/typesense";
-import { LoadingIndicator } from "@/components/ui/loading-indicator";
-import { collections } from "@/lib/typesense/collections";
+import { FacetDropdown } from "@/components/typesense";
 import type { CollectionName } from "@/lib/typesense/search";
+
+import { catalogRows, CatalogTableEmptyState, CatalogTableShell } from "./catalog-table-shell";
+import { useCatalogTable } from "./use-catalog-table";
 
 interface CatalogTableProps {
 	collectionName: CollectionName;
 }
 
-function formatCell(value: unknown): string {
-	if (value == null) {
-		return "";
-	}
-	if (typeof value === "string") {
-		return value;
-	}
-	if (typeof value === "number" || typeof value === "boolean") {
-		return String(value);
-	}
-	if (Array.isArray(value)) {
-		return value
-			.map((item) => {
-				return typeof item === "string" ? item : JSON.stringify(item);
-			})
-			.join(", ");
-	}
-	return JSON.stringify(value);
-}
-
+/**
+ * The default catalog table. It uses react-aria's native `allowsSorting`, so the whole column header
+ * is the sort control and react-aria manages `aria-sort`, keyboard interaction and screen-reader
+ * announcements. Because that makes the header itself the button, per-column filter controls can't
+ * live inside it, so category filtering sits in a toolbar above the table. Compare `CatalogFilterTable`.
+ */
 export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 	const { collectionName } = props;
 	const t = useTranslations("CatalogPage");
-	const tLoading = useTranslations("Loading");
-	const tSearch = useTranslations("Typesense.CollectionSearch");
 	const tField = useTranslations("Collection.field");
-
-	// Translate a column to its field label, falling back to the raw name for columns without one
-	// (e.g. the synthetic `id` column, which is not a schema field).
-	const columnLabel = (column: string): string => {
-		const key = column as Parameters<typeof tField>[0];
-		return tField.has(key) ? tField(key) : column;
-	};
-
-	const collection = collections[collectionName];
-
-	// One column per top-level field of the document schema (fields whose name is not a nested,
-	// dotted sub-field), plus the synthetic `id` column first.
-	const topLevelFields = collection.collection.fields
-		.filter((field) => {
-			return !field.name.includes(".");
-		})
-		.map((field) => {
-			return field.name;
-		});
-	const topLevelFieldSet = new Set<string>(topLevelFields);
-
-	// Order the columns by the curated `queryableFieldNames` list (using each name's top-level
-	// segment, so `authors.id` → `authors`) rather than raw schema order — this puts e.g. `title`
-	// first. Top-level fields with no queryable descendant are appended in schema order.
-	const queryableOrder = [
-		...new Set(
-			collection.queryableFieldNames.map((name) => {
-				return name.replace(/\..*$/, "");
-			}),
-		),
-	].filter((field) => {
-		return topLevelFieldSet.has(field);
-	});
-	const columns = [
-		"id",
-		...queryableOrder,
-		...topLevelFields.filter((field) => {
-			return !queryableOrder.includes(field);
-		}),
-	];
-
-	// Only fields flagged sortable in the schema can be used in a typesense `sort_by`.
-	const sortableColumns = new Set<string>(collection.sortableFieldNames);
-
-	// Every valid `${sortableField}:${direction}` clause for this collection. Deriving them from the
-	// typed `sortableFieldNames` preserves their literal types, so `sortBy` stays assignable to
-	// `searchCollection`'s `sort_by` without needing the unchecked escape hatch.
-	const sortOptions = collection.sortableFieldNames.flatMap((field) => {
-		return [`${field}:asc`, `${field}:desc`] as const;
-	});
-	type SortOption = (typeof sortOptions)[number];
-
-	// Default to ascending order on the first sortable field defined in the schema.
-	const defaultSort: SortOption = `${collection.sortableFieldNames[0]}:asc`;
-
-	const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-	// `parseAsStringLiteral` validates the url value against the known clauses, so `sortBy` is always
-	// a valid `SortOption` (falling back to `defaultSort` for anything else).
-	const [sortBy, setSortBy] = useQueryState(
-		"sort",
-		parseAsStringLiteral(sortOptions).withDefault(defaultSort),
-	);
-	const [categoryFilters, setCategoryFilters] = useQueryState(
-		"categories",
-		parseAsArrayOf(parseAsString).withDefault([]),
-	);
-	const selectedCategories = useMemo(() => {
-		return new Set(categoryFilters);
-	}, [categoryFilters]);
-
-	// A typesense `filter_by` narrowing to the selected categories (OR-combined).
-	const categoryFilter =
-		selectedCategories.size > 0
-			? `(${Array.from(selectedCategories)
-					.map((category) => {
-						return `category:="${category}"`;
-					})
-					.join(" || ")})`
-			: undefined;
-
-	// Runs the query, aborts superseded requests and exposes a loading / error / success state
-	// machine; `pagination` reads found/page/perPage straight off it.
-	const { status, hits, error, retry, ...pagination } = useCollectionSearch(collectionName, {
-		page,
-		sort_by: sortBy,
-		...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
-	});
-	const isLoading = status === "loading";
-
-	const sectionRef = useRef<HTMLDivElement>(null);
-
-	const [sortField, sortDirection] = sortBy.split(":");
+	const table = useCatalogTable(collectionName);
+	const {
+		collection,
+		columns,
+		columnLabel,
+		sortableColumns,
+		sortField,
+		sortDirection,
+		applySort,
+		selectedCategories,
+		handleCategoryChange,
+		search,
+		isLoading,
+		isRefetching,
+	} = table;
 
 	const sortDescriptor: SortDescriptor = {
 		column: sortField ?? "",
 		direction: sortDirection === "desc" ? "descending" : "ascending",
 	};
 
-	const handleSortChange = useCallback(
-		(descriptor: SortDescriptor) => {
-			const direction = descriptor.direction === "descending" ? "desc" : "asc";
-			// Recover the field's literal type from the typed schema list; this also guards against
-			// columns that aren't actually sortable.
-			const field = collection.sortableFieldNames.find((sortableField) => {
-				return sortableField === descriptor.column;
-			});
-			if (field != null) {
-				void setSortBy(`${field}:${direction}`);
-				void setPage(1);
-			}
-		},
-		[collection, setSortBy, setPage],
-	);
-
-	const handleCategoryChange = useCallback(
-		(values: Set<string>) => {
-			void setCategoryFilters(Array.from(values));
-			// A changed filter means a new result set, so return to the first page.
-			void setPage(1);
-		},
-		[setCategoryFilters, setPage],
-	);
-
-	const handlePageChange = useCallback(
-		(nextPage: number) => {
-			void setPage(nextPage);
-			sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-		},
-		[setPage],
-	);
-
-	const totalPages = pagination.perPage > 0 ? Math.ceil(pagination.found / pagination.perPage) : 0;
-
-	// Keep the current rows visible but dim them while a re-sort/re-page request is in flight, so it
-	// is clear the (still stale) content is being refreshed.
-	const isRefetching = isLoading && hits.length > 0;
+	const handleSortChange = (descriptor: SortDescriptor): void => {
+		applySort(String(descriptor.column), descriptor.direction === "descending" ? "desc" : "asc");
+	};
 
 	return (
-		<div ref={sectionRef} className="grid gap-y-8">
-			<div className="flex flex-wrap items-center gap-4">
+		<CatalogTableShell
+			table={table}
+			toolbar={
 				<FacetDropdown
 					collection={collection.collection}
 					collectionName={collectionName}
@@ -206,106 +64,59 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 					searchQuery=""
 					selectedValues={selectedCategories}
 				/>
-			</div>
-
-			<div className="relative overflow-x-auto rounded-4 border border-stroke-weak">
-				<Table
-					aria-busy={isLoading}
-					aria-label={t("title")}
-					className={
-						isRefetching
-							? "w-full border-collapse text-small opacity-50 transition-opacity"
-							: "w-full border-collapse text-small transition-opacity"
-					}
-					onSortChange={handleSortChange}
-					sortDescriptor={sortDescriptor}
+			}
+		>
+			<Table
+				aria-busy={isLoading}
+				aria-label={t("title")}
+				className={
+					isRefetching
+						? "w-full border-collapse text-small opacity-50 transition-opacity"
+						: "w-full border-collapse text-small transition-opacity"
+				}
+				onSortChange={handleSortChange}
+				sortDescriptor={sortDescriptor}
+			>
+				<TableHeader>
+					{columns.map((column) => {
+						return (
+							<Column
+								key={column}
+								allowsSorting={sortableColumns.has(column)}
+								className="cursor-default border-b border-stroke-weak bg-background-raised px-4 py-3 text-left font-strong whitespace-nowrap text-text-strong outline-transparent focus-visible:focus-outline allows-sorting:cursor-pointer"
+								id={column}
+								isRowHeader={column === "id"}
+							>
+								{(renderProps) => {
+									return (
+										<span className="inline-flex items-center gap-x-1">
+											{columnLabel(column)}
+											{renderProps.sortDirection === "ascending" ? (
+												<ArrowDownIcon aria-hidden={true} className="size-4" data-slot="icon" />
+											) : renderProps.sortDirection === "descending" ? (
+												<ArrowUpIcon aria-hidden={true} className="size-4" data-slot="icon" />
+											) : null}
+										</span>
+									);
+								}}
+							</Column>
+						);
+					})}
+				</TableHeader>
+				<TableBody
+					renderEmptyState={() => {
+						return (
+							<CatalogTableEmptyState
+								error={search.error}
+								isLoading={isLoading}
+								onRetry={search.retry}
+							/>
+						);
+					}}
 				>
-					<TableHeader>
-						{columns.map((column) => {
-							return (
-								<Column
-									key={column}
-									allowsSorting={sortableColumns.has(column)}
-									className="cursor-default border-b border-stroke-weak bg-background-raised px-4 py-3 text-left font-strong whitespace-nowrap text-text-strong outline-transparent focus-visible:focus-outline allows-sorting:cursor-pointer"
-									id={column}
-									isRowHeader={column === "id"}
-								>
-									{(renderProps) => {
-										return (
-											<span className="inline-flex items-center gap-x-1">
-												{columnLabel(column)}
-												{renderProps.sortDirection === "ascending" ? (
-													<ArrowDownIcon aria-hidden={true} className="size-4" data-slot="icon" />
-												) : renderProps.sortDirection === "descending" ? (
-													<ArrowUpIcon aria-hidden={true} className="size-4" data-slot="icon" />
-												) : null}
-											</span>
-										);
-									}}
-								</Column>
-							);
-						})}
-					</TableHeader>
-					<TableBody
-						renderEmptyState={() => {
-							if (isLoading) {
-								return (
-									<div className="flex justify-center p-8">
-										<LoadingIndicator aria-label={tLoading("loading")} size="small" />
-									</div>
-								);
-							}
-							if (error != null) {
-								return (
-									<div className="grid justify-items-center gap-y-3 p-8">
-										<p className="text-small text-text-weak">{tSearch("error")}</p>
-										<Button
-											className="interactive rounded-2 border border-stroke-strong px-3 py-1.5 text-small font-strong text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline"
-											onPress={retry}
-										>
-											{tSearch("retry")}
-										</Button>
-									</div>
-								);
-							}
-							return <p className="p-8 text-center text-small text-text-weak">{t("no-results")}</p>;
-						}}
-					>
-						{hits.map((hit) => {
-							return (
-								<Row
-									key={hit.document.id}
-									className="border-b border-stroke-weak last:border-b-0"
-									id={hit.document.id}
-								>
-									{columns.map((column) => {
-										return (
-											<Cell key={column} className="px-4 py-3 align-top text-text-weak">
-												{formatCell((hit.document as Record<string, unknown>)[column])}
-											</Cell>
-										);
-									})}
-								</Row>
-							);
-						})}
-					</TableBody>
-				</Table>
-
-				{isRefetching ? (
-					<div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center p-8">
-						<LoadingIndicator aria-label={tLoading("loading")} size="small" />
-					</div>
-				) : null}
-			</div>
-
-			<div className="flex justify-center">
-				<Pagination
-					currentPage={page}
-					isLoading={isLoading}
-					onPageChange={handlePageChange}
-					totalPages={totalPages}
-				/>
-			</div>
-		</div>
+					{catalogRows(search.hits, columns)}
+				</TableBody>
+			</Table>
+		</CatalogTableShell>
 	);
 }

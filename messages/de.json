@@ -44,11 +44,16 @@
 	},
 	"CatalogPage": {
 		"intro": "Ein vollständiges Verzeichnis aller Einträge im Archiv – eher ein archivarischer Index als eine Suche. Filtern und sortieren Sie den Katalog nach den Attributen der Einträge.",
+		"intro-filters": "Diese Variante integriert in jede Spaltenüberschrift ein Filterelement. Das ist kompakter, doch da ein Filter-Button nicht in die native sortierbare Überschrift von React Aria passt, wird für die Sortierung ein eigenes Element verwendet – wodurch das eingebaute Sortierverhalten von React Aria und dessen Barrierefreiheits-Standards entfallen.",
+		"intro-standard": "Die Standardtabelle verwendet die sortierbaren Spalten von React Aria, sodass jede Überschrift ihr eigenes Sortierelement mit voller Tastatur- und Screenreader-Unterstützung ist. Da React Aria die Überschrift kontrolliert, müssen Filter außerhalb der Tabelle liegen – in der Werkzeugleiste darüber.",
 		"meta": {
 			"title": "Katalog"
 		},
 		"no-results": "Keine Dokumente gefunden.",
-		"title": "Katalog"
+		"title": "Katalog",
+		"view": "Tabellenansicht",
+		"view-filters": "Spaltenfilter",
+		"view-standard": "Standard"
 	},
 	"Collection": {
 		"field": {
@@ -109,8 +114,11 @@
 		"filter-categories": "Kategorien filtern",
 		"filter-ui": "Filter-Ansicht",
 		"filter-ui-dropdown": "Dropdown",
+		"filter-ui-dropdown-intro": "Ein durchsuchbares Dropdown der möglichen Faceting-Werte für jedes Faceting-Feld, mit expliziter Auflistung der aktuellen Filter-Einstellungen.",
 		"filter-ui-list": "Liste",
+		"filter-ui-list-intro": "Faceting-Sidepanel(s) die alle Filterwerte neben den Ergebnissen auflisten. Mehrfachauswahl möglich.",
 		"filter-ui-tags": "Tags",
+		"filter-ui-tags-intro": "Alle Faceting-Werte als auswählbare Tags in einem einzigen Popover. Ohne Suche/Filter der Faceting-Werte, daher nur geeignet für Faceting-Felder mit wenigen möglichen Werten.",
 		"filters": "Filter",
 		"intro": "Freitextsuche über ein oder mehrere Felder gleichzeitig. Die Ergebnisse werden in erster Linie danach sortiert, wie gut sie zur Suchanfrage passen; über Attributfilter lässt sich die Trefferliste zusätzlich eingrenzen.",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
@@ -135,6 +143,11 @@
 			"loading": "Wird geladen…",
 			"no-values": "Keine Werte"
 		},
+		"FilterDropdown": {
+			"filter": "Filtern",
+			"not-implemented": "Das Filtern nach {field} ist noch nicht verfügbar.",
+			"selected-count": "{count, plural, one {# Filter} other {# Filter}}"
+		},
 		"MultiFacetFilter": {
 			"clear-all": "Alle Filter zurücksetzen",
 			"loading": "Wird geladen…",
@@ -143,7 +156,7 @@
 		"ResultStatus": {
 			"loading": "Wird geladen...",
 			"no-documents": "Keine Dokumente gefunden.",
-			"results": "Zeige {startIndex}–{endIndex} von {totalCount} {count, plural, one {Dokument} other {Dokumente}}"
+			"results": "Zeige {startIndex}–{endIndex} von {totalCount} {count, plural, one {Dokument} other {Dokumenten}}"
 		}
 	},
 	"PopoverAutocomplete": {

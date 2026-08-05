@@ -8,7 +8,7 @@ import { env } from "@/config/env.config";
 import type { IntlLocale } from "@/lib/i18n/locales";
 import type { CollectionName } from "@/lib/typesense/search";
 
-import { CatalogTable } from "./_components/catalog-table";
+import { CatalogView } from "./_components/catalog-view";
 
 interface CatalogPageProps {
 	params: Promise<{
@@ -51,7 +51,7 @@ export default async function CatalogPage(props: Readonly<CatalogPageProps>): Pr
 
 				<NuqsProvider>
 					{/* The collection is generated from this same env var, so its name is a known key. */}
-					<CatalogTable collectionName={env.NEXT_PUBLIC_TYPESENSE_COLLECTION as CollectionName} />
+					<CatalogView collectionName={env.NEXT_PUBLIC_TYPESENSE_COLLECTION as CollectionName} />
 				</NuqsProvider>
 			</section>
 		</MainContent>

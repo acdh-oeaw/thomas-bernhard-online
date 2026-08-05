@@ -44,11 +44,16 @@
 	},
 	"CatalogPage": {
 		"intro": "A complete listing of every entry in the archive — more an archival index than a search. Filter and order the catalogue by the entries' attributes.",
+		"intro-filters": "This variant folds a filter control into every column header. It is more compact, but because a filter button cannot sit inside React Aria's native sortable header, sorting falls back to a custom control — giving up React Aria's built-in sorting behaviour and its accessibility defaults.",
+		"intro-standard": "The default table uses React Aria's sortable columns, so each header is its own sort control with full keyboard and screen-reader support. Because React Aria owns the header, any filter controls have to live outside the table, in the toolbar above it.",
 		"meta": {
 			"title": "Catalog"
 		},
 		"no-results": "No documents found.",
-		"title": "Catalog"
+		"title": "Catalog",
+		"view": "Table view",
+		"view-filters": "Column filters",
+		"view-standard": "Standard"
 	},
 	"Collection": {
 		"field": {
@@ -109,8 +114,11 @@
 		"filter-categories": "filter categories",
 		"filter-ui": "Filter UI",
 		"filter-ui-dropdown": "Dropdown",
+		"filter-ui-dropdown-intro": "A searchable dropdown of the possible facet values for each facet field, with the current filter settings listed explicitly.",
 		"filter-ui-list": "List",
+		"filter-ui-list-intro": "Facet side panel(s) listing every filter value next to the results. Multiple selection is possible.",
 		"filter-ui-tags": "Tags",
+		"filter-ui-tags-intro": "All facet values as selectable tags in a single popover. The facet values themselves can't be searched or filtered, so it only suits facet fields with a small number of possible values.",
 		"filters": "Filters",
 		"intro": "Free-text search across one or more fields at once. Results are ranked primarily by how closely they match your query; attribute filters can still be applied to narrow them down.",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
@@ -134,6 +142,11 @@
 		"FacetList": {
 			"loading": "Loading…",
 			"no-values": "No values"
+		},
+		"FilterDropdown": {
+			"filter": "Filter",
+			"not-implemented": "Filtering by {field} is not available yet.",
+			"selected-count": "{count, plural, one {# filter} other {# filters}}"
 		},
 		"MultiFacetFilter": {
 			"clear-all": "Clear all filters",

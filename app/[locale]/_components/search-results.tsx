@@ -9,8 +9,8 @@ import {
 	parseAsStringLiteral,
 	useQueryState,
 } from "nuqs";
-import { type ReactNode, useCallback, useMemo, useRef } from "react";
-import { Button, Input, Label, Radio, RadioGroup } from "react-aria-components";
+import { type ReactNode, useCallback, useId, useMemo, useRef } from "react";
+import { Button, Input, Radio, RadioGroup } from "react-aria-components";
 
 import {
 	FacetDropdown,
@@ -109,6 +109,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const isLoading = status === "loading";
 
 	const sectionRef = useRef<HTMLDivElement>(null);
+	const filterUiHeadingId = useId();
 
 	const handlePageChange = useCallback(
 		(page: number) => {
@@ -194,25 +195,34 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 
 	return (
 		<div ref={sectionRef} className="grid gap-y-12">
-			<RadioGroup
-				className="flex flex-wrap items-center justify-end gap-x-3 gap-y-2"
-				onChange={(value) => {
-					void setFilterUi(value === "tags" ? "tags" : value === "list" ? "list" : "dropdown");
-				}}
-				orientation="horizontal"
-				value={filterUi}
-			>
-				<Label className="text-small font-strong text-text-strong">{t("filter-ui")}</Label>
-				<Radio className={filterUiRadioClassName} value="dropdown">
-					{t("filter-ui-dropdown")}
-				</Radio>
-				<Radio className={filterUiRadioClassName} value="tags">
-					{t("filter-ui-tags")}
-				</Radio>
-				<Radio className={filterUiRadioClassName} value="list">
-					{t("filter-ui-list")}
-				</Radio>
-			</RadioGroup>
+			<div className="grid gap-y-3">
+				<h2 className="text-small font-strong text-text-strong" id={filterUiHeadingId}>
+					{t("filter-ui")}
+				</h2>
+				<RadioGroup
+					aria-labelledby={filterUiHeadingId}
+					className="flex flex-wrap items-center gap-2"
+					onChange={(value) => {
+						void setFilterUi(value === "tags" ? "tags" : value === "list" ? "list" : "dropdown");
+					}}
+					orientation="horizontal"
+					value={filterUi}
+				>
+					<Radio className={filterUiRadioClassName} value="dropdown">
+						{t("filter-ui-dropdown")}
+					</Radio>
+					<Radio className={filterUiRadioClassName} value="tags">
+						{t("filter-ui-tags")}
+					</Radio>
+					<Radio className={filterUiRadioClassName} value="list">
+						{t("filter-ui-list")}
+					</Radio>
+				</RadioGroup>
+
+				<p className="max-w-text text-small text-pretty text-text-weak">
+					{t(`filter-ui-${filterUi}-intro`)}
+				</p>
+			</div>
 
 			<ResultStatus
 				endIndex={(pagination.page - 1) * pagination.perPage + hits.length}

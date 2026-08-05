@@ -6,6 +6,7 @@
 
 export { FacetDropdown } from "./facet-dropdown";
 export { FacetList } from "./facet-list";
+export { FilterDropdown } from "./filter-dropdown";
 export { HighlightedSnippet } from "./highlight";
 export { MultiFacetFilter } from "./multi-facet-filter";
 export { OrderBy } from "./order-by";
