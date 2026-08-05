@@ -11,6 +11,7 @@ import { defaultSearchParams } from "@/config/typesense.config";
 import type { collections } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import type {
+	CollectionDocumentWithJoins,
 	CollectionFacetableFieldName,
 	CollectionQueryableFieldName,
 	CollectionSortableFieldName,
@@ -22,6 +23,16 @@ export type CollectionName = keyof typeof collections;
 type CollectionSchema<K extends CollectionName> = (typeof collections)[K]["collection"];
 
 type DocumentForName<K extends CollectionName> = DocumentFromSchema<CollectionSchema<K>>;
+
+/**
+ * A collection's document with its optional joined documents (see `CollectionDocumentWithJoins`).
+ * This is the *response* document type — `params` stay typed against the base `DocumentForName`, since
+ * joined fields are not part of the `filter_by` / `sort_by` / `query_by` grammar.
+ */
+type CollectionDocWithJoins<K extends CollectionName> = CollectionDocumentWithJoins<
+	typeof collections,
+	K
+>;
 
 type QueryableField<K extends CollectionName> = CollectionQueryableFieldName<CollectionSchema<K>>;
 type SortableField<K extends CollectionName> = CollectionSortableFieldName<CollectionSchema<K>>;
@@ -70,9 +81,9 @@ function runSearch<K extends CollectionName>(
 	collectionName: K,
 	params: SearchParams<DocumentForName<K>>,
 	options?: SearchOptions,
-): Promise<SearchResponse<DocumentForName<K>>> {
+): Promise<SearchResponse<CollectionDocWithJoins<K>>> {
 	return createTypesenseClient()
-		.collections<DocumentForName<K>>(collectionName)
+		.collections<CollectionDocWithJoins<K>>(collectionName)
 		.documents()
 		.search(
 			{
@@ -99,7 +110,7 @@ export function searchCollection<K extends CollectionName>(
 	collectionName: K,
 	params: CollectionSearchParams<K>,
 	options?: SearchOptions,
-): Promise<SearchResponse<DocumentForName<K>>> {
+): Promise<SearchResponse<CollectionDocWithJoins<K>>> {
 	// The narrowing lives in `CollectionSearchParams`; typesense itself only types these params as
 	// `string | string[]`, so widening back to the raw `SearchParams` here is safe.
 	return runSearch(collectionName, params as SearchParams<DocumentForName<K>>, options);
@@ -115,7 +126,7 @@ export function searchCollectionUnchecked<K extends CollectionName>(
 	collectionName: K,
 	params: SearchParams<DocumentForName<K>>,
 	options?: SearchOptions,
-): Promise<SearchResponse<DocumentForName<K>>> {
+): Promise<SearchResponse<CollectionDocWithJoins<K>>> {
 	return runSearch(collectionName, params, options);
 }
 

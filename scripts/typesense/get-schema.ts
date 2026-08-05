@@ -146,7 +146,9 @@ async function buildCollectionEntry(
 	}
 
 	// List every field in the order it will be written to collections.ts.
-	console.warn(`\n  Fields for ${collectionName}, in the order they are written to collections.ts:`);
+	console.warn(
+		`\n  Fields for ${collectionName}, in the order they are written to collections.ts:`,
+	);
 	collection.fields.forEach((field, index) => {
 		const flags = [
 			field.optional === true ? "optional" : null,
@@ -173,7 +175,11 @@ async function buildCollectionEntry(
 			const constValue = constByField.get(field.name);
 			const accepted = constValue != null && shouldEmitConst(field.name);
 			const constMarker = accepted ? `, const: ${constValue}` : "";
-			const line = `				{ name: "${field.name}", type: "${field.type}"${field.optional ? ", optional: true" : ""}${field.index === false ? ", index: false" : ""}${field.facet ? ", facet: true" : ""}${field.sort ? ", sort: true" : ""}${constMarker} },`;
+			// A `reference: "<collection>.<field>"` foreign key encodes a Typesense JOIN. It arrives on
+			// the untyped index signature of CollectionFieldSchema, so read it defensively.
+			const referenceMarker =
+				typeof field.reference === "string" ? `, reference: "${field.reference}"` : "";
+			const line = `				{ name: "${field.name}", type: "${field.type}"${field.optional ? ", optional: true" : ""}${field.index === false ? ", index: false" : ""}${field.facet ? ", facet: true" : ""}${field.sort ? ", sort: true" : ""}${referenceMarker}${constMarker} },`;
 			// Potential discriminators that aren't being accepted are annotated so they can be
 			// reviewed and added by hand.
 			const discriminatorComment =
