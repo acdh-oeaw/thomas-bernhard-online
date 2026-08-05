@@ -6,11 +6,11 @@ import { Fragment, type ReactNode } from "react";
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
 import type { collections } from "@/lib/typesense/collections";
-import type { CollectionDocument, CollectionSearchHit } from "@/lib/typesense/schema";
+import type { CollectionSearchHit, DocumentFromSchema } from "@/lib/typesense/schema";
 
 import { SearchResultCard } from "./search-result-card";
 
-type WorkDocument = CollectionDocument<typeof collections.tbo_work.collection>;
+type WorkDocument = DocumentFromSchema<typeof collections.tbo_work.collection>;
 type WorkSearchHit = CollectionSearchHit<typeof collections.tbo_work.collection>;
 type WorkHighlight = WorkSearchHit["highlight"];
 

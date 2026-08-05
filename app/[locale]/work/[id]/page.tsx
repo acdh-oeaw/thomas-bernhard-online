@@ -9,9 +9,9 @@ import { env } from "@/config/env.config";
 import type { IntlLocale } from "@/lib/i18n/locales";
 import type { collections } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
-import type { CollectionDocument } from "@/lib/typesense/schema";
+import type { DocumentFromSchema } from "@/lib/typesense/schema";
 
-type WorkDocument = CollectionDocument<typeof collections.tbo_work.collection>;
+type WorkDocument = DocumentFromSchema<typeof collections.tbo_work.collection>;
 
 interface WorkPageProps {
 	params: Promise<{

@@ -11,17 +11,17 @@ import { defaultSearchParams } from "@/config/typesense.config";
 import type { collections } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import type {
-	CollectionDocument,
 	CollectionFacetableFieldName,
 	CollectionQueryableFieldName,
 	CollectionSortableFieldName,
+	DocumentFromSchema,
 } from "@/lib/typesense/schema";
 
 export type CollectionName = keyof typeof collections;
 
 type CollectionSchema<K extends CollectionName> = (typeof collections)[K]["collection"];
 
-type CollectionDoc<K extends CollectionName> = CollectionDocument<CollectionSchema<K>>;
+type DocumentForName<K extends CollectionName> = DocumentFromSchema<CollectionSchema<K>>;
 
 type QueryableField<K extends CollectionName> = CollectionQueryableFieldName<CollectionSchema<K>>;
 type SortableField<K extends CollectionName> = CollectionSortableFieldName<CollectionSchema<K>>;
@@ -64,15 +64,15 @@ interface FieldConstrainedParams<K extends CollectionName> {
  * are only known at runtime, use `searchCollectionUnchecked` with the raw `SearchParams`.
  */
 export type CollectionSearchParams<K extends CollectionName> = FieldConstrainedParams<K> &
-	Omit<SearchParams<CollectionDoc<K>>, keyof FieldConstrainedParams<K>>;
+	Omit<SearchParams<DocumentForName<K>>, keyof FieldConstrainedParams<K>>;
 
 function runSearch<K extends CollectionName>(
 	collectionName: K,
-	params: SearchParams<CollectionDoc<K>>,
+	params: SearchParams<DocumentForName<K>>,
 	options?: SearchOptions,
-): Promise<SearchResponse<CollectionDoc<K>>> {
+): Promise<SearchResponse<DocumentForName<K>>> {
 	return createTypesenseClient()
-		.collections<CollectionDoc<K>>(collectionName)
+		.collections<DocumentForName<K>>(collectionName)
 		.documents()
 		.search(
 			{
@@ -99,10 +99,10 @@ export function searchCollection<K extends CollectionName>(
 	collectionName: K,
 	params: CollectionSearchParams<K>,
 	options?: SearchOptions,
-): Promise<SearchResponse<CollectionDoc<K>>> {
+): Promise<SearchResponse<DocumentForName<K>>> {
 	// The narrowing lives in `CollectionSearchParams`; typesense itself only types these params as
 	// `string | string[]`, so widening back to the raw `SearchParams` here is safe.
-	return runSearch(collectionName, params as SearchParams<CollectionDoc<K>>, options);
+	return runSearch(collectionName, params as SearchParams<DocumentForName<K>>, options);
 }
 
 /**
@@ -113,14 +113,14 @@ export function searchCollection<K extends CollectionName>(
  */
 export function searchCollectionUnchecked<K extends CollectionName>(
 	collectionName: K,
-	params: SearchParams<CollectionDoc<K>>,
+	params: SearchParams<DocumentForName<K>>,
 	options?: SearchOptions,
-): Promise<SearchResponse<CollectionDoc<K>>> {
+): Promise<SearchResponse<DocumentForName<K>>> {
 	return runSearch(collectionName, params, options);
 }
 
 /** Union of the document types of the collections named in a `searchCollections` tuple. */
-type UnionDoc<C extends ReadonlyArray<CollectionName>> = CollectionDoc<C[number]>;
+type UnionDoc<C extends ReadonlyArray<CollectionName>> = DocumentForName<C[number]>;
 
 /**
  * Runs a typesense federated (`union: true`) multi-search across several — possibly different —

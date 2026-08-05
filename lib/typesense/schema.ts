@@ -136,14 +136,14 @@ type DocumentFromFields<F extends ReadonlyArray<CollectionFieldSchema>> = Docume
 	false
 >;
 
-export type CollectionDocument<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> = {
+export type DocumentFromSchema<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> = {
 	/** Every typesense document has an `id`, even though it is not part of the field schema. */
 	id: string;
 } & DocumentFromFields<C["fields"]>;
 
 /** A full search hit for a collection (document + object-form `highlight`), as typed by typesense. */
 export type CollectionSearchHit<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> =
-	SearchResponseHit<CollectionDocument<C>>;
+	SearchResponseHit<DocumentFromSchema<C>>;
 /** Field names usable in `query_by`: indexed `string` / `string[]` / `string*` fields. */
 export type CollectionQueryableFieldName<
 	C extends { fields: ReadonlyArray<CollectionFieldSchema> },
