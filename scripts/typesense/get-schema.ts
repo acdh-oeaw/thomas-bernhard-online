@@ -6,8 +6,15 @@ import type { CollectionFieldSchema } from "typesense";
 import { env } from "@/config/env.config";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 
-// Collections to generate schema + field metadata for. Add further collection names here.
-const collectionNames = [env.NEXT_PUBLIC_TYPESENSE_COLLECTION];
+// Collections to generate schema + field metadata for. Add further collection names here. The
+// `tbo_test_*` collections are the JOIN-connected counterparts of the flat `tbo_work` collection —
+// see `create-joined-schema.ts`, which creates and seeds them.
+const collectionNames = [
+	env.NEXT_PUBLIC_TYPESENSE_COLLECTION,
+	"tbo_test_work",
+	"tbo_test_expressions",
+	"tbo_test_performances",
+];
 
 // Queryable (query_by / full-text) fields are the string-typed fields, INCLUDING nested object
 // sub-fields such as `authors.name`; object fields themselves are not queryable.
