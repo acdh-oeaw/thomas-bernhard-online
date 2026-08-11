@@ -12,7 +12,7 @@ import { useCallback, useMemo } from "react";
 
 import { type CollectionSearchState, useCollectionSearch } from "@/components/typesense";
 import { collections } from "@/lib/typesense/collections";
-import type { CollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "@/lib/typesense/search";
 
 type SortDirection = "asc" | "desc";
 
@@ -23,7 +23,7 @@ type SortDirection = "asc" | "desc";
  * render the header and where filtering lives, so everything else lives here.
  */
 export interface CatalogTableController {
-	collection: (typeof collections)[CollectionName];
+	collection: (typeof collections)[WorkCollectionName];
 	/** Column ids in display order: the synthetic `id`, then top-level fields by `queryableFieldNames`. */
 	columns: Array<string>;
 	/** Translated header label for a column, falling back to the raw name (e.g. the `id` column). */
@@ -39,12 +39,12 @@ export interface CatalogTableController {
 	handlePageChange: (nextPage: number) => void;
 	selectedCategories: Set<string>;
 	handleCategoryChange: (values: Set<string>) => void;
-	search: CollectionSearchState<CollectionName>;
+	search: CollectionSearchState<WorkCollectionName>;
 	isLoading: boolean;
 	isRefetching: boolean;
 }
 
-export function useCatalogTable(collectionName: CollectionName): CatalogTableController {
+export function useCatalogTable(collectionName: WorkCollectionName): CatalogTableController {
 	const tField = useTranslations("Collection.field");
 
 	// Translate a column to its field label, falling back to the raw name for columns without one
