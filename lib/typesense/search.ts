@@ -20,6 +20,14 @@ import type {
 
 export type CollectionName = keyof typeof collections;
 
+/**
+ * The collection the app's own UI is built around. The registry also holds the `tbo_test_*`
+ * collections (JOIN experiments — see `scripts/typesense/create-joined-schema.ts`), which have
+ * different fields, so components that render *work* documents pin themselves to this name rather
+ * than accepting any `CollectionName`.
+ */
+export type WorkCollectionName = "tbo_work";
+
 type CollectionSchema<K extends CollectionName> = (typeof collections)[K]["collection"];
 
 type DocumentForName<K extends CollectionName> = DocumentFromSchema<CollectionSchema<K>>;

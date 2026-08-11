@@ -6,14 +6,14 @@ import { Button, Cell, Row } from "react-aria-components";
 
 import { type CollectionSearchState, Pagination } from "@/components/typesense";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
-import type { CollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "@/lib/typesense/search";
 
 import { formatCell } from "./format-cell";
 import type { CatalogTableController } from "./use-catalog-table";
 
 /** The `<Row>` elements for the current hits, shared verbatim by both table variants. */
 export function catalogRows(
-	hits: CollectionSearchState<CollectionName>["hits"],
+	hits: CollectionSearchState<WorkCollectionName>["hits"],
 	columns: Array<string>,
 ): ReactNode {
 	return hits.map((hit) => {

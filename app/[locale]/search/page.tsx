@@ -7,7 +7,7 @@ import { SearchResults } from "@/app/[locale]/_components/search-results";
 import { MainContent } from "@/components/ui/main-content";
 import { env } from "@/config/env.config";
 import type { IntlLocale } from "@/lib/i18n/locales";
-import type { CollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "@/lib/typesense/search";
 
 interface SearchPageProps {
 	params: Promise<{
@@ -43,7 +43,9 @@ export default async function SearchPage(props: Readonly<SearchPageProps>): Prom
 
 				<NuqsProvider>
 					{/* The collection is generated from this same env var, so its name is a known key. */}
-					<SearchResults collectionName={env.NEXT_PUBLIC_TYPESENSE_COLLECTION as CollectionName} />
+					<SearchResults
+						collectionName={env.NEXT_PUBLIC_TYPESENSE_COLLECTION as WorkCollectionName}
+					/>
 				</NuqsProvider>
 			</section>
 		</MainContent>

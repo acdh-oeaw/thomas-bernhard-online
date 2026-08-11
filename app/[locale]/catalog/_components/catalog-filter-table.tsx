@@ -7,13 +7,13 @@ import { Button, Column, Table, TableBody, TableHeader } from "react-aria-compon
 
 import { FacetDropdown, FilterDropdown } from "@/components/typesense";
 import type { CollectionFacetableFieldName } from "@/lib/typesense/schema";
-import type { CollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "@/lib/typesense/search";
 
 import { catalogRows, CatalogTableEmptyState, CatalogTableShell } from "./catalog-table-shell";
 import { useCatalogTable } from "./use-catalog-table";
 
 interface CatalogFilterTableProps {
-	collectionName: CollectionName;
+	collectionName: WorkCollectionName;
 }
 
 // A stable empty selection for the not-yet-wired `FilterDropdown` skeletons.

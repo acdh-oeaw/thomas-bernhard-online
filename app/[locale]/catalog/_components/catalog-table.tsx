@@ -6,13 +6,13 @@ import type { ReactNode } from "react";
 import { Column, type SortDescriptor, Table, TableBody, TableHeader } from "react-aria-components";
 
 import { FacetDropdown } from "@/components/typesense";
-import type { CollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "@/lib/typesense/search";
 
 import { catalogRows, CatalogTableEmptyState, CatalogTableShell } from "./catalog-table-shell";
 import { useCatalogTable } from "./use-catalog-table";
 
 interface CatalogTableProps {
-	collectionName: CollectionName;
+	collectionName: WorkCollectionName;
 }
 
 /**

@@ -5,13 +5,13 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { type ReactNode, useId } from "react";
 import { Radio, RadioGroup } from "react-aria-components";
 
-import type { CollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "@/lib/typesense/search";
 
 import { CatalogFilterTable } from "./catalog-filter-table";
 import { CatalogTable } from "./catalog-table";
 
 interface CatalogViewProps {
-	collectionName: CollectionName;
+	collectionName: WorkCollectionName;
 }
 
 const viewOptions = ["standard", "filters"] as const;

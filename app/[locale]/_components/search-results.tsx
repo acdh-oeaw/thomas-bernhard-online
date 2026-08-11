@@ -24,12 +24,12 @@ import {
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { SearchInput } from "@/components/ui/search-input";
 import { collections } from "@/lib/typesense/collections";
-import type { CollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "@/lib/typesense/search";
 
 import { WorkResultCard } from "./work-result-card";
 
 interface SearchResultsProps {
-	collectionName: CollectionName;
+	collectionName: WorkCollectionName;
 }
 
 const filterUiOptions = ["dropdown", "tags", "list"] as const;
