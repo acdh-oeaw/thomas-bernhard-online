@@ -34,4 +34,41 @@ export const collections = {
 		sortableFieldNames: ["title"],
 		facetableFieldNames: ["category"],
 	},
+	tbo_test_work: {
+		collection: defineCollection({
+			fields: [
+				{ name: "sameas", type: "string[]" },
+				{ name: "category", type: "string", optional: true, facet: true },
+				{ name: "title", type: "string", sort: true },
+			] as const,
+		}),
+		queryableFieldNames: ["title", "sameas", "category"],
+		sortableFieldNames: ["title"],
+		facetableFieldNames: ["category"],
+	},
+	tbo_test_expressions: {
+		collection: defineCollection({
+			fields: [
+				{ name: "work_id", type: "string", reference: "tbo_test_work.id" },
+				{ name: "type", type: "string" },
+				{ name: "title", type: "string", optional: true },
+				{ name: "language", type: "string", optional: true },
+			] as const,
+		}),
+		queryableFieldNames: ["work_id", "type", "title", "language"],
+		sortableFieldNames: [],
+		facetableFieldNames: [],
+	},
+	tbo_test_performances: {
+		collection: defineCollection({
+			fields: [
+				{ name: "work_id", type: "string", reference: "tbo_test_work.id" },
+				{ name: "type", type: "string" },
+				{ name: "label", type: "string", optional: true },
+			] as const,
+		}),
+		queryableFieldNames: ["work_id", "type", "label"],
+		sortableFieldNames: [],
+		facetableFieldNames: [],
+	},
 } as const;
