@@ -1,4 +1,5 @@
 import type {
+	DocumentSchema,
 	MultiSearchRequestsWithUnionSchema,
 	MultiSearchUnionParameters,
 	SearchOptions,
@@ -8,10 +9,10 @@ import type {
 } from "typesense";
 
 import { defaultSearchParams } from "@/config/typesense.config";
+import { physicalCollectionName } from "@/lib/typesense/collection-name";
 import type { collections } from "@/lib/typesense/collections";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import type {
-	CollectionDocumentWithJoins,
 	CollectionFacetableFieldName,
 	CollectionQueryableFieldName,
 	CollectionSortableFieldName,
@@ -21,26 +22,16 @@ import type {
 export type CollectionName = keyof typeof collections;
 
 /**
- * The collection the app's own UI is built around. The registry also holds the `tbo_test_*`
- * collections (JOIN experiments — see `scripts/typesense/create-joined-schema.ts`), which have
+ * The collection the app's own UI is built around. The registry also holds the collections it joins
+ * to (`expressions`, `performances` — see `scripts/typesense/create-joined-schema.ts`), which have
  * different fields, so components that render *work* documents pin themselves to this name rather
  * than accepting any `CollectionName`.
  */
-export type WorkCollectionName = "tbo_work";
+export type WorkCollectionName = "work";
 
 type CollectionSchema<K extends CollectionName> = (typeof collections)[K]["collection"];
 
 type DocumentForName<K extends CollectionName> = DocumentFromSchema<CollectionSchema<K>>;
-
-/**
- * A collection's document with its optional joined documents (see `CollectionDocumentWithJoins`).
- * This is the *response* document type — `params` stay typed against the base `DocumentForName`, since
- * joined fields are not part of the `filter_by` / `sort_by` / `query_by` grammar.
- */
-type CollectionDocWithJoins<K extends CollectionName> = CollectionDocumentWithJoins<
-	typeof collections,
-	K
->;
 
 type QueryableField<K extends CollectionName> = CollectionQueryableFieldName<CollectionSchema<K>>;
 type SortableField<K extends CollectionName> = CollectionSortableFieldName<CollectionSchema<K>>;
@@ -85,43 +76,54 @@ interface FieldConstrainedParams<K extends CollectionName> {
 export type CollectionSearchParams<K extends CollectionName> = FieldConstrainedParams<K> &
 	Omit<SearchParams<DocumentForName<K>>, keyof FieldConstrainedParams<K>>;
 
-function runSearch<K extends CollectionName>(
+function runSearch<
+	K extends CollectionName,
+	D extends DocumentForName<K> & DocumentSchema = DocumentForName<K>,
+>(
 	collectionName: K,
 	params: SearchParams<DocumentForName<K>>,
 	options?: SearchOptions,
-): Promise<SearchResponse<CollectionDocWithJoins<K>>> {
-	return createTypesenseClient()
-		.collections<CollectionDocWithJoins<K>>(collectionName)
-		.documents()
-		.search(
-			{
-				...defaultSearchParams,
-				...params,
-			},
-			options,
-		);
+): Promise<SearchResponse<D>> {
+	return (
+		createTypesenseClient()
+			// The registry name is unprefixed; typesense needs the physical one.
+			.collections<D>(physicalCollectionName(collectionName))
+			.documents()
+			.search(
+				{
+					...defaultSearchParams,
+					...params,
+				} as SearchParams<D>,
+				options,
+			)
+	);
 }
 
 /**
  * Runs a typesense search against one of the generated `collections`, applying the shared
- * `defaultSearchParams`. The collection's document type is inferred from `collectionName`, so
+ * `defaultSearchParams`. The collection's base document type is inferred from `collectionName`, so
  * `params` and the returned hits are fully typed, and the field-name params (`query_by`, `sort_by`,
  * `facet_by`, `highlight_full_fields`, …) only accept fields that exist on the collection. Values in
  * `params` override the defaults (e.g. a facet-only search can pass `per_page: 0`). Pass
- * `options.abortSignal` to cancel an in-flight request.
+ * `options.abortSignal` to cancel an in-flight request. `D` defaults to that base document; a
+ * data-access wrapper may supply a more specific `D` when it also owns the `include_fields` and
+ * `filter_by` clauses that produce its joined projection.
  *
  * When a field-name param can only be assembled at runtime (e.g. a `sort_by` or `facet_by` built
  * from url state) and cannot satisfy `CollectionSearchParams`, reach for `searchCollectionUnchecked`
  * instead of casting.
  */
-export function searchCollection<K extends CollectionName>(
+export function searchCollection<
+	K extends CollectionName,
+	D extends DocumentForName<K> & DocumentSchema = DocumentForName<K>,
+>(
 	collectionName: K,
 	params: CollectionSearchParams<K>,
 	options?: SearchOptions,
-): Promise<SearchResponse<CollectionDocWithJoins<K>>> {
+): Promise<SearchResponse<D>> {
 	// The narrowing lives in `CollectionSearchParams`; typesense itself only types these params as
 	// `string | string[]`, so widening back to the raw `SearchParams` here is safe.
-	return runSearch(collectionName, params as SearchParams<DocumentForName<K>>, options);
+	return runSearch<K, D>(collectionName, params as SearchParams<DocumentForName<K>>, options);
 }
 
 /**
@@ -130,12 +132,15 @@ export function searchCollection<K extends CollectionName>(
  * assembled from user or url state); the response document type is still inferred from
  * `collectionName`.
  */
-export function searchCollectionUnchecked<K extends CollectionName>(
+export function searchCollectionUnchecked<
+	K extends CollectionName,
+	D extends DocumentForName<K> & DocumentSchema = DocumentForName<K>,
+>(
 	collectionName: K,
 	params: SearchParams<DocumentForName<K>>,
 	options?: SearchOptions,
-): Promise<SearchResponse<CollectionDocWithJoins<K>>> {
-	return runSearch(collectionName, params, options);
+): Promise<SearchResponse<D>> {
+	return runSearch<K, D>(collectionName, params, options);
 }
 
 /** Union of the document types of the collections named in a `searchCollections` tuple. */
@@ -164,7 +169,12 @@ export function searchCollections<const C extends ReadonlyArray<CollectionName>>
 	// The per-collection narrowing lives in the `searches` type; typesense types each search as the
 	// looser `SearchParams<UnionDoc>`, so widening back to its request shape here is safe.
 	const searchRequests = searches.map((search) => {
-		return { ...defaultSearchParams, ...search };
+		// As in `runSearch`: the physical name is what typesense is addressed with.
+		return {
+			...defaultSearchParams,
+			...search,
+			collection: physicalCollectionName(search.collection),
+		};
 	}) as MultiSearchRequestsWithUnionSchema<UnionDoc<C>, string>["searches"];
 
 	return createTypesenseClient().multiSearch.perform<Array<UnionDoc<C>>>(
