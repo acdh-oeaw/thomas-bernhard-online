@@ -5,9 +5,7 @@ import type { ReactNode } from "react";
 import { NuqsProvider } from "@/app/[locale]/_components/nuqs-adapter";
 import { SearchResults } from "@/app/[locale]/_components/search-results";
 import { MainContent } from "@/components/ui/main-content";
-import { env } from "@/config/env.config";
 import type { IntlLocale } from "@/lib/i18n/locales";
-import type { WorkCollectionName } from "@/lib/typesense/search";
 
 interface SearchPageProps {
 	params: Promise<{
@@ -42,10 +40,7 @@ export default async function SearchPage(props: Readonly<SearchPageProps>): Prom
 				<p className="max-w-text text-pretty text-text-weak">{t("intro")}</p>
 
 				<NuqsProvider>
-					{/* The collection is generated from this same env var, so its name is a known key. */}
-					<SearchResults
-						collectionName={env.NEXT_PUBLIC_TYPESENSE_COLLECTION as WorkCollectionName}
-					/>
+					<SearchResults collectionName="work" />
 				</NuqsProvider>
 			</section>
 		</MainContent>

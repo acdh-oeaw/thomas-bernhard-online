@@ -23,6 +23,7 @@ import {
 } from "@/components/typesense";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { SearchInput } from "@/components/ui/search-input";
+import { getWorksWithRelations } from "@/lib/data";
 import { collections } from "@/lib/typesense/collections";
 import type { WorkCollectionName } from "@/lib/typesense/search";
 
@@ -55,7 +56,7 @@ const orderValues = orderOptions.map((option) => {
 const filterUiRadioClassName =
 	"interactive flex cursor-pointer items-center rounded-2 border border-stroke-weak px-3 py-1.5 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong";
 
-const workCollection = collections.tbo_work.collection;
+const workCollection = collections.work.collection;
 
 export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const { collectionName } = props;
@@ -98,14 +99,18 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 
 	// `useCollectionSearch` runs the query, aborts superseded requests and exposes a loading / error /
 	// success state machine (see below). `pagination` reads found/page/perPage straight off it.
-	const { status, hits, error, retry, ...pagination } = useCollectionSearch(collectionName, {
-		q: searchQuery, // it works to pass an empty string here, even though it shouldn't
-		query_by: collections.tbo_work.queryableFieldNames,
-		highlight_full_fields: ["title"],
-		page: currentPage,
-		sort_by: ["_text_match:desc", sortBy],
-		...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
-	});
+	const { status, hits, error, retry, ...pagination } = useCollectionSearch(
+		collectionName,
+		{
+			q: searchQuery, // it works to pass an empty string here, even though it shouldn't
+			query_by: collections.work.queryableFieldNames,
+			highlight_full_fields: ["title"],
+			page: currentPage,
+			sort_by: ["_text_match:desc", sortBy],
+			...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
+		},
+		getWorksWithRelations,
+	);
 	const isLoading = status === "loading";
 
 	const sectionRef = useRef<HTMLDivElement>(null);
