@@ -2,16 +2,16 @@
 
 import { useTranslations } from "next-intl";
 import { Fragment, type ReactNode } from "react";
+import type { SearchResponseHit } from "typesense";
 
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
-import type { collections } from "@/lib/typesense/collections";
-import type { CollectionSearchHit, DocumentFromSchema } from "@/lib/typesense/schema";
+import type { WorkWithRelations } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
 
-type WorkDocument = DocumentFromSchema<typeof collections.tbo_work.collection>;
-type WorkSearchHit = CollectionSearchHit<typeof collections.tbo_work.collection>;
+type WorkDocument = WorkWithRelations;
+type WorkSearchHit = SearchResponseHit<WorkDocument>;
 type WorkHighlight = WorkSearchHit["highlight"];
 
 const displayFields = [
@@ -92,35 +92,26 @@ function renderExpressions(
 		return null;
 	}
 
-	const entries = expressions
-		.map((expression, index) => {
-			return { expression, index, markup: itemHighlight(highlight, "expressions", index, "title") };
-		})
-		.filter((entry) => {
-			return (
-				entry.markup != null || entry.expression.title != null || entry.expression.language != null
-			);
-		});
+	const entries = expressions.map((expression, index) => {
+		return { expression, index, markup: itemHighlight(highlight, "expressions", index, "title") };
+	});
 
 	if (entries.length === 0) {
 		return null;
 	}
 
 	return entries.map((entry, position) => {
-		const { expression, index, markup } = entry;
-		const hasTitle = markup != null || expression.title != null;
+		const { expression, markup } = entry;
 
 		return (
-			<Fragment key={expression.id ?? index}>
+			<Fragment key={expression.id}>
 				{position > 0 ? ", " : null}
 				{markup != null ? <HighlightedSnippet snippet={markup} /> : expression.title}
-				{expression.language != null ? (
-					<>
-						{hasTitle ? " (" : null}
-						<LanguageLabel code={expression.language} />
-						{hasTitle ? ")" : null}
-					</>
-				) : null}
+				<>
+					{" ("}
+					<LanguageLabel code={expression.language} />
+					{")"}
+				</>
 			</Fragment>
 		);
 	});
@@ -161,7 +152,7 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 			"performances",
 			"label",
 			(document.performances ?? []).map((performance) => {
-				return performance.label;
+				return performance.title;
 			}),
 		),
 		expressions: renderExpressions(highlight, document.expressions),
@@ -177,6 +168,9 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 						document.title || t("untitled")
 					)}
 				</h2>
+				{document.year != null ? (
+					<p className="font-heading text-heading-4 text-text-weak">{document.year}</p>
+				) : null}
 
 				<dl className="grid gap-y-2">
 					{displayFields.map((field) => {

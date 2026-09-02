@@ -4,14 +4,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { LanguageLabel } from "@/components/language-label";
+import { TBNavLink } from "@/components/tb-nav-link";
 import { MainContent } from "@/components/ui/main-content";
-import { env } from "@/config/env.config";
+import { getWork, getWorkWithRelations } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
-import type { collections } from "@/lib/typesense/collections";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
-import type { DocumentFromSchema } from "@/lib/typesense/schema";
-
-type WorkDocument = DocumentFromSchema<typeof collections.tbo_work.collection>;
 
 interface WorkPageProps {
 	params: Promise<{
@@ -31,6 +27,37 @@ function MetadataSection(props: Readonly<{ title: string; children: ReactNode }>
 	);
 }
 
+function RelatedEntities(
+	props: Readonly<{
+		values: ReadonlyArray<{
+			id: string;
+			name: string;
+		}>;
+		path?: string;
+	}>,
+): ReactNode {
+	const { values, path } = props;
+
+	if (values.length === 0) {
+		return null;
+	}
+
+	return values.map((value, index) => {
+		const name = path ? (
+			<TBNavLink href={`${path}/${value.id}`}>{value.name}</TBNavLink>
+		) : (
+			value.name
+		);
+
+		return (
+			<span key={value.id}>
+				{index > 0 ? ", " : null}
+				{name}
+			</span>
+		);
+	});
+}
+
 export async function generateMetadata(
 	props: Readonly<WorkPageProps>,
 	_parent: ResolvingMetadata,
@@ -39,17 +66,11 @@ export async function generateMetadata(
 	const { id } = await params;
 
 	const t = await getTranslations("WorkPage");
-	const client = createTypesenseClient();
-	const collectionName = env.NEXT_PUBLIC_TYPESENSE_COLLECTION;
-
 	try {
-		const document = await client
-			.collections<WorkDocument>(collectionName)
-			.documents(id)
-			.retrieve();
+		const document = await getWork(id);
 
 		return {
-			title: document.title || t("default-title"),
+			title: document?.title ?? t("default-title"),
 		};
 	} catch {
 		return {
@@ -67,18 +88,16 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 	const t = await getTranslations("WorkPage");
 	// Reusable, collection-specific field labels.
 	const tField = await getTranslations("Collection.field");
-	const client = createTypesenseClient();
-	const collectionName = env.NEXT_PUBLIC_TYPESENSE_COLLECTION;
-
-	let document: WorkDocument | null = null;
+	let document: Awaited<ReturnType<typeof getWorkWithRelations>> = null;
 
 	try {
-		document = await client.collections<WorkDocument>(collectionName).documents(id).retrieve();
+		document = await getWorkWithRelations(id);
 	} catch {
 		notFound();
 	}
+	if (document == null) notFound();
 
-	const { title, category, authors, performances, expressions, sameas } = document;
+	const { title, category, authors, performances, expressions, sameas, year } = document;
 
 	return (
 		<MainContent className="layout-grid content-start">
@@ -87,18 +106,21 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{title || t("untitled")}
 					</h1>
+					{year != null ? (
+						<p className="font-heading text-heading-4 text-text-weak">{year}</p>
+					) : null}
 					{category ? (
 						<p className="font-heading text-heading-4 text-text-weak">{category}</p>
 					) : null}
 				</header>
 
-				<div className="grid max-w-text gap-y-6">
+				<div className="grid max-w-text gap-y-8">
 					{authors && authors.length > 0 ? (
 						<MetadataSection title={tField("authors")}>
-							{authors.map((author, index) => {
+							{authors.map((author) => {
 								return (
-									<li key={author.id ?? index} className="text-small text-text-weak">
-										{author.name ?? t("unknown")}
+									<li key={author.id} className="text-small text-text-weak">
+										<TBNavLink href={`/person/${author.id}`}>{author.name}</TBNavLink>
 									</li>
 								);
 							})}
@@ -107,10 +129,42 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 
 					{performances && performances.length > 0 ? (
 						<MetadataSection title={tField("performances")}>
-							{performances.map((performance, index) => {
+							{performances.map((performance) => {
+								const theaters = performance.theaters ?? [];
+								const actors = performance.actors ?? [];
+								const directors = performance.directors ?? [];
+
 								return (
-									<li key={performance.id ?? index} className="text-small text-text-weak">
-										{performance.label ?? t("unknown")}
+									<li key={performance.id} className="text-small text-text-weak">
+										{performance.date_range ? (
+											<>
+												{performance.date_range}
+												{": "}
+											</>
+										) : null}
+										<TBNavLink href={`/performance/${performance.id}`}>
+											{performance.title}
+										</TBNavLink>
+										{theaters.length > 0 ? (
+											<>
+												{" at "}
+												<RelatedEntities path="/group" values={theaters} />
+											</>
+										) : null}
+										{actors.length > 0 ? (
+											<>
+												{" (actors: "}
+												<RelatedEntities path="/person" values={actors} />
+												{")"}
+											</>
+										) : null}
+										{directors.length > 0 ? (
+											<>
+												{" (directors: "}
+												<RelatedEntities path="/person" values={directors} />
+												{")"}
+											</>
+										) : null}
 									</li>
 								);
 							})}
@@ -119,23 +173,28 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 
 					{expressions && expressions.length > 0 ? (
 						<MetadataSection title={tField("expressions")}>
-							{expressions.map((expression, index) => {
+							{expressions.map((expression) => {
+								const translators = expression.translators ?? [];
+
 								return (
-									<li key={expression.id ?? index} className="text-small text-text-weak">
-										{expression.title != null ? (
+									<li key={expression.id} className="text-small text-text-weak">
+										{expression.year != null ? (
 											<>
-												{expression.title}
-												{expression.language != null ? (
-													<span className="ml-2 text-tiny text-text-weak">
-														<LanguageLabel code={expression.language} />
-													</span>
-												) : null}
+												{expression.year}
+												{": "}
 											</>
-										) : expression.language != null ? (
-											<LanguageLabel code={expression.language} />
-										) : (
-											t("unknown")
-										)}
+										) : null}
+										<TBNavLink href={`/expression/${expression.id}`}>{expression.title}</TBNavLink>
+										<span className="ml-2 text-tiny">
+											(<LanguageLabel code={expression.language} /> {"·"} {expression.type})
+										</span>
+										{translators.length > 0 ? (
+											<>
+												{" (translated by "}
+												<RelatedEntities path="/person" values={translators} />
+												{")"}
+											</>
+										) : null}
 									</li>
 								);
 							})}
