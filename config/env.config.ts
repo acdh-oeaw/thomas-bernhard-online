@@ -60,7 +60,31 @@ const result = createEnv({
 					v.integer(),
 					v.minValue(1),
 				),
-				NEXT_PUBLIC_TYPESENSE_COLLECTION: v.pipe(v.string(), v.nonEmpty()),
+				/**
+				 * Prepended to every collection name to form the physical typesense collection (e.g.
+				 * prefix "tbo_test_" + "work" → "tbo_test_work"), so one server can host several
+				 * deployments of the same schema. Optional: an empty prefix means the names are used
+				 * as-is. Only `physicalCollectionName` should apply it.
+				 */
+				NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX: v.optional(v.string(), ""),
+				/**
+				 * The collections this deployment uses, comma-separated and *without* the prefix —
+				 * these are the names the generated collection registry is keyed by.
+				 */
+				NEXT_PUBLIC_TYPESENSE_COLLECTIONS: v.pipe(
+					v.string(),
+					v.nonEmpty(),
+					v.transform((value) => {
+						return value
+							.split(",")
+							.map((name) => {
+								return name.trim();
+							})
+							.filter(Boolean);
+					}),
+					v.array(v.pipe(v.string(), v.nonEmpty())),
+					v.minLength(1),
+				),
 				NEXT_PUBLIC_TYPESENSE_HOST: v.pipe(v.string(), v.nonEmpty()),
 				NEXT_PUBLIC_TYPESENSE_PORT: v.pipe(
 					v.string(),
@@ -102,7 +126,8 @@ const result = createEnv({
 		NEXT_PUBLIC_MATOMO_BASE_URL: process.env.NEXT_PUBLIC_MATOMO_BASE_URL,
 		NEXT_PUBLIC_MATOMO_ID: process.env.NEXT_PUBLIC_MATOMO_ID,
 		NEXT_PUBLIC_REDMINE_ID: process.env.NEXT_PUBLIC_REDMINE_ID,
-		NEXT_PUBLIC_TYPESENSE_COLLECTION: process.env.NEXT_PUBLIC_TYPESENSE_COLLECTION,
+		NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX: process.env.NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX,
+		NEXT_PUBLIC_TYPESENSE_COLLECTIONS: process.env.NEXT_PUBLIC_TYPESENSE_COLLECTIONS,
 		NEXT_PUBLIC_TYPESENSE_HOST: process.env.NEXT_PUBLIC_TYPESENSE_HOST,
 		NEXT_PUBLIC_TYPESENSE_PORT: process.env.NEXT_PUBLIC_TYPESENSE_PORT,
 		NEXT_PUBLIC_TYPESENSE_PROTOCOL: process.env.NEXT_PUBLIC_TYPESENSE_PROTOCOL,

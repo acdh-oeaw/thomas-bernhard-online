@@ -145,69 +145,6 @@ export type DocumentFromSchema<C extends { fields: ReadonlyArray<CollectionField
 	id: string;
 } & DocumentFromFields<C["fields"]>;
 
-/**
- * A registry of collections keyed by name — the shape of the generated `collections` object, seen
- * structurally so this stays decoupled from it. Join resolution needs the whole registry because a
- * `reference` points at a *sibling* collection, not something derivable from the owning collection's
- * own fields.
- */
-type CollectionRegistry = Record<
-	string,
-	{ collection: { fields: ReadonlyArray<CollectionFieldSchema> } }
->;
-
-/** The referenced collection name in a `reference` string ("tbo_person.id" → "tbo_person"). */
-type ReferencedCollection<Ref extends string> = Ref extends `${infer Coll}.${string}`
-	? Coll
-	: never;
-
-/** The `reference`-carrying (join) fields of collection `K`. */
-type ReferenceFieldsOf<R extends CollectionRegistry, K extends keyof R> = Extract<
-	R[K]["collection"]["fields"][number],
-	{ reference: string }
->;
-
-/**
- * The joined document for one reference field: the target collection's document, wrapped in an array
- * when the *local* reference field is itself an array (a one-to-many join — see the cardinality
- * caveat below). Yields `never` for a `reference` whose target isn't a known collection in `R`.
- */
-type JoinedValue<R extends CollectionRegistry, F extends { reference: string; type: string }> =
-	ReferencedCollection<F["reference"]> extends infer Coll extends keyof R
-		? F["type"] extends `${string}[]`
-			? Array<DocumentFromSchema<R[Coll]["collection"]>>
-			: DocumentFromSchema<R[Coll]["collection"]>
-		: never;
-
-/**
- * The joined documents pulled in by a Typesense JOIN. For each `reference` field on collection `K`,
- * adds an **optional** property keyed by the referenced collection name, holding that collection's
- * document (or an array of them for a one-to-many join).
- *
- * Every property is optional on purpose: whether a join is actually materialised depends on the
- * runtime `include_fields` (`$tbo_person(...)`) of the individual search, which is deliberately not
- * modelled at the type level. So a joined field is `T | undefined` and callers must narrow before
- * reading it — which is exactly the runtime contract.
- *
- * CAVEATS: cardinality is inferred from the local field being an array (`string[]` → many), so the
- * reverse join direction (another collection referencing this one, always an array) is not modelled;
- * aliases (`… as author`) and `strategy: merge` flattening are not modelled (the property is always
- * keyed by the target collection name and always nested); and two references to the same collection
- * collapse onto one key. Use `searchCollectionUnchecked` where these don't hold.
- */
-type JoinedDocuments<R extends CollectionRegistry, K extends keyof R> = {
-	[F in ReferenceFieldsOf<R, K> as ReferencedCollection<F["reference"] & string>]?: JoinedValue<
-		R,
-		F & { reference: string; type: string }
-	>;
-};
-
-/** A collection's document plus its (optional) joined documents. */
-export type CollectionDocumentWithJoins<
-	R extends CollectionRegistry,
-	K extends keyof R,
-> = DocumentFromSchema<R[K]["collection"]> & JoinedDocuments<R, K>;
-
 /** A full search hit for a collection (document + object-form `highlight`), as typed by typesense. */
 export type CollectionSearchHit<C extends { fields: ReadonlyArray<CollectionFieldSchema> }> =
 	SearchResponseHit<DocumentFromSchema<C>>;

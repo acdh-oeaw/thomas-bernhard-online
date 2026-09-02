@@ -4,17 +4,24 @@ import { format, resolveConfig } from "prettier";
 import type { CollectionFieldSchema } from "typesense";
 
 import { env } from "@/config/env.config";
+import { physicalCollectionName } from "@/lib/typesense/collection-name";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 
-// Collections to generate schema + field metadata for. Add further collection names here. The
-// `tbo_test_*` collections are the JOIN-connected counterparts of the flat `tbo_work` collection —
-// see `create-joined-schema.ts`, which creates and seeds them.
-const collectionNames = [
-	env.NEXT_PUBLIC_TYPESENSE_COLLECTION,
-	"tbo_test_work",
-	"tbo_test_expressions",
-	"tbo_test_performances",
-];
+// Collections to generate schema + field metadata for, configured by NEXT_PUBLIC_TYPESENSE_COLLECTIONS.
+// These are the *unprefixed* names the registry is keyed by; each is fetched from the physical
+// collection `physicalCollectionName(name)`.
+const collectionNames = env.NEXT_PUBLIC_TYPESENSE_COLLECTIONS;
+
+/**
+ * Rewrites a `reference` foreign key from physical to registry names ("tbo_test_work.id" →
+ * "work.id"), so a join's target resolves against the generated registry (see `JoinedDocuments`).
+ * A reference to a collection outside this deployment's prefix is left untouched — it would not
+ * resolve either way, and silently rewriting it would hide that.
+ */
+const toRegistryReference = (reference: string): string => {
+	const prefix = env.NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX;
+	return prefix !== "" && reference.startsWith(prefix) ? reference.slice(prefix.length) : reference;
+};
 
 // Queryable (query_by / full-text) fields are the string-typed fields, INCLUDING nested object
 // sub-fields such as `authors.name`; object fields themselves are not queryable.
@@ -91,7 +98,9 @@ async function buildCollectionEntry(
 	client: ReturnType<typeof createTypesenseClient>,
 	collectionName: string,
 ): Promise<CollectionEntry> {
-	const collection = await client.collections(collectionName).retrieve();
+	// The registry is keyed by `collectionName`; typesense is addressed by the physical name.
+	const physicalName = physicalCollectionName(collectionName);
+	const collection = await client.collections(physicalName).retrieve();
 
 	// Facetable scalar fields are the only possible `const` discriminators. Always inspect their
 	// cardinality — a field with a single distinct value across the whole collection is a usable
@@ -105,7 +114,7 @@ async function buildCollectionEntry(
 
 	if (facetableScalarFields.length > 0) {
 		const facetResults = await client
-			.collections(collectionName)
+			.collections(physicalName)
 			.documents()
 			.search({
 				q: "*",
@@ -183,9 +192,12 @@ async function buildCollectionEntry(
 			const accepted = constValue != null && shouldEmitConst(field.name);
 			const constMarker = accepted ? `, const: ${constValue}` : "";
 			// A `reference: "<collection>.<field>"` foreign key encodes a Typesense JOIN. It arrives on
-			// the untyped index signature of CollectionFieldSchema, so read it defensively.
+			// the untyped index signature of CollectionFieldSchema, so read it defensively, and is
+			// rewritten to the registry's unprefixed naming (see `toRegistryReference`).
 			const referenceMarker =
-				typeof field.reference === "string" ? `, reference: "${field.reference}"` : "";
+				typeof field.reference === "string"
+					? `, reference: "${toRegistryReference(field.reference)}"`
+					: "";
 			const line = `				{ name: "${field.name}", type: "${field.type}"${field.optional ? ", optional: true" : ""}${field.index === false ? ", index: false" : ""}${field.facet ? ", facet: true" : ""}${field.sort ? ", sort: true" : ""}${referenceMarker}${constMarker} },`;
 			// Potential discriminators that aren't being accepted are annotated so they can be
 			// reviewed and added by hand.
@@ -266,7 +278,9 @@ async function main() {
 	try {
 		const entries: Array<string> = [];
 		for (const collectionName of collectionNames) {
-			console.warn(`Fetching schema for collection: ${collectionName}`);
+			console.warn(
+				`Fetching schema for collection: ${collectionName} (${physicalCollectionName(collectionName)})`,
+			);
 			const { code, counts } = await buildCollectionEntry(client, collectionName);
 			entries.push(code);
 			console.warn(
