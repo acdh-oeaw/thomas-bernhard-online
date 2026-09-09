@@ -401,9 +401,13 @@ export function getPeople(
 	options?: SearchOptions,
 ): Promise<SearchResponse<PersonWithRelations>> {
 	const includeFields = [
-		defineJoin("expression", `*,${defineJoin("work", "*").clause},strategy:nest_array`, {
-			alias: "expressions",
-		}).clause,
+		defineJoin(
+			"expression",
+			`*,${defineJoin("work", "*").clause},sort_by:year:asc,strategy:nest_array`,
+			{
+				alias: "expressions",
+			},
+		).clause,
 		defineJoin("performance", nestArray, { alias: "performances" }).clause,
 	].join(",");
 
