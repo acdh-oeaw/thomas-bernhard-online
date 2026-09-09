@@ -11,10 +11,27 @@ export interface FacetValue {
 	count: number;
 }
 
+/** Decade buckets for the work year facet; range ends are exclusive in Typesense. */
+export const YEAR_FACET_QUERY =
+	"year(1960s:[1960,1970], 1970s:[1970,1980], 1980s:[1980,1990], 1990s:[1990,2000], 2000s:[2000,2010], 2010-:[2010,])";
+
+const yearFacetFilters: Record<string, string> = {
+	"1960s": "year:[1960..1969]",
+	"1970s": "year:[1970..1979]",
+	"1980s": "year:[1980..1989]",
+	"1990s": "year:[1990..1999]",
+	"2000s": "year:[2000..2009]",
+	"2010-": "year:>=2010",
+};
+
+export function yearFacetFilter(value: string): string {
+	return yearFacetFilters[value] ?? `year:=${value}`;
+}
+
 interface UseFacetCountsParams {
 	collectionName: CollectionName;
 	searchQuery: string;
-	facetFields: ReadonlyArray<string>;
+	facetFields: ReadonlyArray<string | { name: string; query: string }>;
 	selectedValues: Record<string, Set<string>>;
 	/** Optional typesense `filter_by` expression applied when fetching the counts. */
 	filterBy?: string;
@@ -59,14 +76,23 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 	const [facetData, setFacetData] = useState<Record<string, Array<FacetValue>>>({});
 	const [isFetching, setIsFetching] = useState(false);
 
+	const facetFieldConfigs = useMemo(() => {
+		return facetFields.map((field) => {
+			return typeof field === "string" ? { name: field, query: field } : field;
+		});
+	}, [facetFields]);
+
 	// Primitive key so the fetch only re-runs when the set of faceted fields actually changes,
 	// regardless of the `facetFields` array identity.
-	const facetFieldsKey = facetFields.join(",");
+	const facetFieldsKey = facetFieldConfigs
+		.map((field) => {
+			return `${field.name}=${field.query}`;
+		})
+		.join(",");
 
 	useEffect(() => {
 		return abortableEffect(async (signal) => {
-			const fieldNames = facetFieldsKey.split(",").filter(Boolean);
-			if (fieldNames.length === 0) {
+			if (facetFieldConfigs.length === 0) {
 				return;
 			}
 
@@ -79,7 +105,11 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 					{
 						q: searchQuery || "*",
 						query_by: collections[collectionName].queryableFieldNames.join(","),
-						facet_by: fieldNames.join(","),
+						facet_by: facetFieldConfigs
+							.map((field) => {
+								return field.query;
+							})
+							.join(","),
 						// Facet-only search: no document hits needed.
 						per_page: 0,
 						...(filterBy != null ? { filter_by: filterBy } : {}),
@@ -90,11 +120,13 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 				if (signal.aborted) return;
 
 				const next: Record<string, Array<FacetValue>> = {};
-				for (const fieldName of fieldNames) {
-					next[fieldName] =
+				for (const field of facetFieldConfigs) {
+					next[field.name] =
 						searchResults.facet_counts
 							?.find((facetCount) => {
-								return facetCount.field_name === fieldName;
+								return (
+									facetCount.field_name === field.name || facetCount.field_name === field.query
+								);
 							})
 							?.counts.map((count) => {
 								return { value: count.value, count: count.count };
@@ -102,7 +134,15 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 				}
 
 				setFacetData((previous) => {
-					return areFacetDataEqual(previous, next, fieldNames) ? previous : next;
+					return areFacetDataEqual(
+						previous,
+						next,
+						facetFieldConfigs.map((field) => {
+							return field.name;
+						}),
+					)
+						? previous
+						: next;
 				});
 			} catch (error) {
 				// A superseded request rejects with an abort error; ignore it.
@@ -115,14 +155,14 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 				}
 			}
 		});
-	}, [collectionName, searchQuery, facetFieldsKey, filterBy]);
+	}, [collectionName, searchQuery, facetFieldsKey, facetFieldConfigs, filterBy]);
 
 	const displayData = useMemo(() => {
 		const result: Record<string, Array<FacetValue>> = {};
 
-		for (const fieldName of facetFields) {
-			const counts = facetData[fieldName] ?? [];
-			const selected = selectedValues[fieldName];
+		for (const field of facetFieldConfigs) {
+			const counts = facetData[field.name] ?? [];
+			const selected = selectedValues[field.name];
 
 			const missing =
 				selected != null
@@ -137,11 +177,11 @@ export function useFacetCounts(params: Readonly<UseFacetCountsParams>): {
 							})
 					: [];
 
-			result[fieldName] = missing.length > 0 ? [...counts, ...missing] : counts;
+			result[field.name] = missing.length > 0 ? [...counts, ...missing] : counts;
 		}
 
 		return result;
-	}, [facetFields, facetData, selectedValues]);
+	}, [facetFieldConfigs, facetData, selectedValues]);
 
 	return { displayData, isFetching };
 }

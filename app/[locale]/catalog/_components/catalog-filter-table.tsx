@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button, Column, Table, TableBody, TableHeader } from "react-aria-components";
 
-import { FacetDropdown, FilterDropdown } from "@/components/typesense";
+import { FacetDropdown, FilterDropdown, YEAR_FACET_QUERY } from "@/components/typesense";
 import type { CollectionFacetableFieldName } from "@/lib/typesense/schema";
 import type { WorkCollectionName } from "@/lib/typesense/search";
 
@@ -40,8 +40,8 @@ export function CatalogFilterTable(props: Readonly<CatalogFilterTableProps>): Re
 		sortField,
 		sortDirection,
 		applySort,
-		selectedCategories,
-		handleCategoryChange,
+		selectedFacetValues,
+		handleFacetChange,
 		search,
 		isLoading,
 		isRefetching,
@@ -104,19 +104,22 @@ export function CatalogFilterTable(props: Readonly<CatalogFilterTableProps>): Re
 
 									{column !== "id" ? (
 										facetableColumns.has(column) ? (
+											// Guarded by `facetableColumns.has`, so this column is a facetable field name.
 											<FacetDropdown
 												collection={collection.collection}
 												collectionName={collectionName}
 												compact={true}
-												// Guarded by `facetableColumns.has`, so this column is a facetable field name.
+												facetBy={column === "year" ? YEAR_FACET_QUERY : undefined}
 												fieldName={
 													column as CollectionFacetableFieldName<typeof collection.collection>
 												}
 												isLoading={isLoading}
 												label={columnLabel(column)}
-												onChange={handleCategoryChange}
+												onChange={(values) => {
+													handleFacetChange(column, values);
+												}}
 												searchQuery=""
-												selectedValues={selectedCategories}
+												selectedValues={selectedFacetValues[column] ?? new Set()}
 											/>
 										) : (
 											<FilterDropdown

@@ -62,11 +62,14 @@
 			"expressions": "Expressions",
 			"performances": "Aufführungen",
 			"sameas": "Identisch mit",
-			"title": "Titel"
+			"title": "Titel",
+			"year": "Jahr"
 		},
 		"sort": {
 			"title-asc": "Titel (A–Z)",
-			"title-desc": "Titel (Z–A)"
+			"title-desc": "Titel (Z–A)",
+			"year-asc": "Jahr (älteste zuerst)",
+			"year-desc": "Jahr (neueste zuerst)"
 		}
 	},
 	"ColorSchemeSwitcher": {
