@@ -184,17 +184,17 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 												{": "}
 											</>
 										) : null}
-										<TBNavLink href={`/expression/${expression.id}`}>{expression.title}</TBNavLink>
-										<span className="ml-2 text-tiny">
-											(<LanguageLabel code={expression.language} /> {"·"} {expression.type})
+										<TBNavLink href={`/expression/${expression.id}`}>{expression.title}</TBNavLink>{" "}
+										<span className="text-tiny">
+											(<LanguageLabel code={expression.language} />
+											{translators.length > 0 && (
+												<>
+													{", translated by "}
+													<RelatedEntities path="/person" values={translators} />
+												</>
+											)}
+											)
 										</span>
-										{translators.length > 0 ? (
-											<>
-												{" (translated by "}
-												<RelatedEntities path="/person" values={translators} />
-												{")"}
-											</>
-										) : null}
 									</li>
 								);
 							})}
