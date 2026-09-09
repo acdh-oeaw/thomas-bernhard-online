@@ -65,6 +65,7 @@ export default async function PersonPage(props: Readonly<PageProps>): Promise<Re
 								{person.expressions.map((expression) => {
 									return (
 										<li key={expression.id}>
+											{expression.year != null ? `${String(expression.year)}: ` : null}
 											{expression.work ? (
 												<ExpressionOfWork
 													expressionHref={`/expression/${expression.id}`}
