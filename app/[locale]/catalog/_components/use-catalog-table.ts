@@ -10,7 +10,11 @@ import {
 } from "nuqs";
 import { useCallback, useMemo } from "react";
 
-import { type CollectionSearchState, useCollectionSearch } from "@/components/typesense";
+import {
+	type CollectionSearchState,
+	useCollectionSearch,
+	yearFacetFilter,
+} from "@/components/typesense";
 import { collections } from "@/lib/typesense/collections";
 import type { WorkCollectionName } from "@/lib/typesense/search";
 
@@ -37,8 +41,8 @@ export interface CatalogTableController {
 	page: number;
 	totalPages: number;
 	handlePageChange: (nextPage: number) => void;
-	selectedCategories: Set<string>;
-	handleCategoryChange: (values: Set<string>) => void;
+	selectedFacetValues: Record<string, Set<string>>;
+	handleFacetChange: (fieldName: string, values: Set<string>) => void;
 	search: CollectionSearchState<WorkCollectionName>;
 	isLoading: boolean;
 	isRefetching: boolean;
@@ -109,25 +113,42 @@ export function useCatalogTable(collectionName: WorkCollectionName): CatalogTabl
 		"categories",
 		parseAsArrayOf(parseAsString).withDefault([]),
 	);
+	const [yearFilters, setYearFilters] = useQueryState(
+		"years",
+		parseAsArrayOf(parseAsString).withDefault([]),
+	);
 	const selectedCategories = useMemo(() => {
 		return new Set(categoryFilters);
 	}, [categoryFilters]);
+	const selectedYears = useMemo(() => {
+		return new Set(yearFilters);
+	}, [yearFilters]);
 
-	// A typesense `filter_by` narrowing to the selected categories (OR-combined).
-	const categoryFilter =
+	const facetFilterParts = [
 		selectedCategories.size > 0
 			? `(${Array.from(selectedCategories)
 					.map((category) => {
 						return `category:="${category}"`;
 					})
 					.join(" || ")})`
-			: undefined;
+			: null,
+		selectedYears.size > 0
+			? `(${Array.from(selectedYears)
+					.map((year) => {
+						return yearFacetFilter(year);
+					})
+					.join(" || ")})`
+			: null,
+	].filter((part): part is string => {
+		return part != null;
+	});
+	const facetFilter = facetFilterParts.length > 0 ? facetFilterParts.join(" && ") : undefined;
 
 	// Runs the query, aborts superseded requests and exposes a loading / error / success state machine.
 	const search = useCollectionSearch(collectionName, {
 		page,
 		sort_by: sortBy,
-		...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
+		...(facetFilter != null ? { filter_by: facetFilter } : {}),
 	});
 	const isLoading = search.status === "loading";
 
@@ -149,13 +170,17 @@ export function useCatalogTable(collectionName: WorkCollectionName): CatalogTabl
 		[collection, setSortBy, setPage],
 	);
 
-	const handleCategoryChange = useCallback(
-		(values: Set<string>) => {
-			void setCategoryFilters(Array.from(values));
+	const handleFacetChange = useCallback(
+		(fieldName: string, values: Set<string>) => {
+			if (fieldName === "category") {
+				void setCategoryFilters(Array.from(values));
+			} else if (fieldName === "year") {
+				void setYearFilters(Array.from(values));
+			}
 			// A changed filter means a new result set, so return to the first page.
 			void setPage(1);
 		},
-		[setCategoryFilters, setPage],
+		[setCategoryFilters, setPage, setYearFilters],
 	);
 
 	const handlePageChange = useCallback(
@@ -182,8 +207,8 @@ export function useCatalogTable(collectionName: WorkCollectionName): CatalogTabl
 		page,
 		totalPages,
 		handlePageChange,
-		selectedCategories,
-		handleCategoryChange,
+		selectedFacetValues: { category: selectedCategories, year: selectedYears },
+		handleFacetChange,
 		search,
 		isLoading,
 		isRefetching,

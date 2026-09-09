@@ -62,11 +62,14 @@
 			"expressions": "Expressions",
 			"performances": "Performances",
 			"sameas": "References",
-			"title": "Title"
+			"title": "Title",
+			"year": "Year"
 		},
 		"sort": {
 			"title-asc": "Title (A–Z)",
-			"title-desc": "Title (Z–A)"
+			"title-desc": "Title (Z–A)",
+			"year-asc": "Year (oldest first)",
+			"year-desc": "Year (newest first)"
 		}
 	},
 	"ColorSchemeSwitcher": {

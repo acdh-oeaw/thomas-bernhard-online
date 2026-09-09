@@ -13,4 +13,9 @@ export { OrderBy } from "./order-by";
 export { Pagination } from "./pagination";
 export { ResultStatus } from "./result-status";
 export { type CollectionSearchState, useCollectionSearch } from "./use-collection-search";
-export { type FacetValue, useFacetCounts } from "./use-facet-counts";
+export {
+	type FacetValue,
+	useFacetCounts,
+	YEAR_FACET_QUERY,
+	yearFacetFilter,
+} from "./use-facet-counts";

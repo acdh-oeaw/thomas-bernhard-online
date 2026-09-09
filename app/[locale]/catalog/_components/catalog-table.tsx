@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Column, type SortDescriptor, Table, TableBody, TableHeader } from "react-aria-components";
 
-import { FacetDropdown } from "@/components/typesense";
+import { FacetDropdown, YEAR_FACET_QUERY } from "@/components/typesense";
 import type { WorkCollectionName } from "@/lib/typesense/search";
 
 import { catalogRows, CatalogTableEmptyState, CatalogTableShell } from "./catalog-table-shell";
@@ -34,8 +34,8 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 		sortField,
 		sortDirection,
 		applySort,
-		selectedCategories,
-		handleCategoryChange,
+		selectedFacetValues,
+		handleFacetChange,
 		search,
 		isLoading,
 		isRefetching,
@@ -54,16 +54,33 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 		<CatalogTableShell
 			table={table}
 			toolbar={
-				<FacetDropdown
-					collection={collection.collection}
-					collectionName={collectionName}
-					fieldName="category"
-					isLoading={isLoading}
-					label={tField("category")}
-					onChange={handleCategoryChange}
-					searchQuery=""
-					selectedValues={selectedCategories}
-				/>
+				<>
+					<FacetDropdown
+						collection={collection.collection}
+						collectionName={collectionName}
+						fieldName="category"
+						isLoading={isLoading}
+						label={tField("category")}
+						onChange={(values) => {
+							handleFacetChange("category", values);
+						}}
+						searchQuery=""
+						selectedValues={selectedFacetValues.category ?? new Set()}
+					/>
+					<FacetDropdown
+						collection={collection.collection}
+						collectionName={collectionName}
+						facetBy={YEAR_FACET_QUERY}
+						fieldName="year"
+						isLoading={isLoading}
+						label={tField("year")}
+						onChange={(values) => {
+							handleFacetChange("year", values);
+						}}
+						searchQuery=""
+						selectedValues={selectedFacetValues.year ?? new Set()}
+					/>
+				</>
 			}
 		>
 			<Table

@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowDownAZIcon, ArrowDownZAIcon, SearchIcon, XIcon } from "lucide-react";
+import {
+	ArrowDownAZIcon,
+	ArrowDownZAIcon,
+	CalendarArrowDownIcon,
+	CalendarArrowUpIcon,
+	SearchIcon,
+	XIcon,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import {
 	parseAsArrayOf,
@@ -20,6 +27,8 @@ import {
 	Pagination,
 	ResultStatus,
 	useCollectionSearch,
+	YEAR_FACET_QUERY,
+	yearFacetFilter,
 } from "@/components/typesense";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { SearchInput } from "@/components/ui/search-input";
@@ -47,6 +56,8 @@ function sortLabelKey<V extends string>(value: V): SortLabelKey<V> {
 const orderOptions = [
 	{ value: "title:asc", icon: ArrowDownAZIcon },
 	{ value: "title:desc", icon: ArrowDownZAIcon },
+	{ value: "year:asc", icon: CalendarArrowDownIcon },
+	{ value: "year:desc", icon: CalendarArrowUpIcon },
 ] as const;
 
 const orderValues = orderOptions.map((option) => {
@@ -74,6 +85,10 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		"categories",
 		parseAsArrayOf(parseAsString).withDefault([]),
 	);
+	const [yearFilters, setYearFilters] = useQueryState(
+		"years",
+		parseAsArrayOf(parseAsString).withDefault([]),
+	);
 	const [currentPage, setCurrentPage] = useQueryState("page", parseAsInteger.withDefault(1));
 	const [filterUi, setFilterUi] = useQueryState(
 		"ui",
@@ -87,15 +102,29 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	const selectedCategories = useMemo(() => {
 		return new Set(categoryFilters);
 	}, [categoryFilters]);
+	const selectedYears = useMemo(() => {
+		return new Set(yearFilters);
+	}, [yearFilters]);
 
-	const categoryFilter =
+	const facetFilterParts = [
 		selectedCategories.size > 0
 			? `(${Array.from(selectedCategories)
-					.map((cat) => {
-						return `category:="${cat}"`;
+					.map((category) => {
+						return `category:="${category}"`;
 					})
 					.join(" || ")})`
-			: undefined;
+			: null,
+		selectedYears.size > 0
+			? `(${Array.from(selectedYears)
+					.map((year) => {
+						return yearFacetFilter(year);
+					})
+					.join(" || ")})`
+			: null,
+	].filter((part): part is string => {
+		return part != null;
+	});
+	const facetFilter = facetFilterParts.length > 0 ? facetFilterParts.join(" && ") : undefined;
 
 	// `useCollectionSearch` runs the query, aborts superseded requests and exposes a loading / error /
 	// success state machine (see below). `pagination` reads found/page/perPage straight off it.
@@ -107,7 +136,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 			highlight_full_fields: ["title"],
 			page: currentPage,
 			sort_by: ["_text_match:desc", sortBy],
-			...(categoryFilter != null ? { filter_by: categoryFilter } : {}),
+			...(facetFilter != null ? { filter_by: facetFilter } : {}),
 		},
 		getWorksWithRelations,
 	);
@@ -134,7 +163,10 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	);
 
 	const facets = useMemo(() => {
-		return [{ fieldName: "category", label: tField("category") }] as const;
+		return [
+			{ fieldName: "category", label: tField("category") },
+			{ fieldName: "year", label: tField("year"), facetBy: YEAR_FACET_QUERY },
+		] as const;
 	}, [tField]);
 
 	const orderByOptions = useMemo(() => {
@@ -144,18 +176,20 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 	}, [tSort]);
 
 	const facetSelection = useMemo(() => {
-		return { category: selectedCategories };
-	}, [selectedCategories]);
+		return { category: selectedCategories, year: selectedYears };
+	}, [selectedCategories, selectedYears]);
 
 	const handleFacetChange = useCallback(
 		(fieldName: string, values: Set<string>) => {
 			if (fieldName === "category") {
 				void setCategoryFilters(Array.from(values));
-				// A changed filter means a new result set, so return to the first page.
-				void setCurrentPage(1);
+			} else if (fieldName === "year") {
+				void setYearFilters(Array.from(values));
 			}
+			// A changed filter means a new result set, so return to the first page.
+			void setCurrentPage(1);
 		},
-		[setCategoryFilters, setCurrentPage],
+		[setCategoryFilters, setCurrentPage, setYearFilters],
 	);
 
 	const resultsContent =
@@ -273,19 +307,34 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 						selectedValues={facetSelection}
 					/>
 				) : filterUi === "dropdown" ? (
-					<FacetDropdown
-						collection={workCollection}
-						collectionName={collectionName}
-						fieldName="category"
-						isLoading={isLoading}
-						label={tField("category")}
-						onChange={(values) => {
-							handleFacetChange("category", values);
-						}}
-						searchPlaceholder={t("filter-categories")}
-						searchQuery={searchQuery}
-						selectedValues={selectedCategories}
-					/>
+					<>
+						<FacetDropdown
+							collection={workCollection}
+							collectionName={collectionName}
+							fieldName="category"
+							isLoading={isLoading}
+							label={tField("category")}
+							onChange={(values) => {
+								handleFacetChange("category", values);
+							}}
+							searchPlaceholder={t("filter-categories")}
+							searchQuery={searchQuery}
+							selectedValues={selectedCategories}
+						/>
+						<FacetDropdown
+							collection={workCollection}
+							collectionName={collectionName}
+							facetBy={YEAR_FACET_QUERY}
+							fieldName="year"
+							isLoading={isLoading}
+							label={tField("year")}
+							onChange={(values) => {
+								handleFacetChange("year", values);
+							}}
+							searchQuery={searchQuery}
+							selectedValues={selectedYears}
+						/>
+					</>
 				) : null}
 
 				<OrderBy

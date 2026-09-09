@@ -33,6 +33,7 @@ interface FacetDropdownProps<C extends Collection<any>> {
 	collectionName: CollectionName;
 	label: string;
 	fieldName: CollectionFacetableFieldName<C>;
+	facetBy?: string;
 	selectedValues: Set<string>;
 	searchQuery: string;
 	otherFilters?: Set<string>;
@@ -57,6 +58,7 @@ export function FacetDropdown<C extends Collection<any>>(
 		collectionName,
 		label,
 		fieldName,
+		facetBy,
 		selectedValues,
 		searchQuery,
 		otherFilters,
@@ -75,8 +77,8 @@ export function FacetDropdown<C extends Collection<any>>(
 	const field = String(fieldName);
 
 	const facetFields = useMemo(() => {
-		return [field];
-	}, [field]);
+		return [{ name: field, query: facetBy ?? field }];
+	}, [facetBy, field]);
 
 	const selectedByField = useMemo(() => {
 		return { [field]: internalSelected };

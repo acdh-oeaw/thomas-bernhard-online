@@ -86,6 +86,7 @@ function FacetTagGroup(props: Readonly<FacetTagGroupProps>): ReactNode {
 interface FacetConfig<C extends Collection<ReadonlyArray<never>>> {
 	fieldName: CollectionFacetableFieldName<C>;
 	label: string;
+	facetBy?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -122,7 +123,8 @@ export function MultiFacetFilter<C extends Collection<any>>(
 
 	const facetFields = useMemo(() => {
 		return facets.map((facet) => {
-			return String(facet.fieldName);
+			const fieldName = String(facet.fieldName);
+			return { name: fieldName, query: facet.facetBy ?? fieldName };
 		});
 	}, [facets]);
 
