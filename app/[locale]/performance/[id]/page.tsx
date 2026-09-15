@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { TBNavLink } from "@/components/tb-nav-link";
 import { MainContent } from "@/components/ui/main-content";
 import { getPerformance } from "@/lib/data";
@@ -80,6 +81,9 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 	return (
 		<MainContent className="layout-grid content-start">
 			<article className="relative layout-subgrid gap-y-8 py-16 xs:py-24">
+				{performance.work ? (
+					<WorkBreadcrumb items={[{ label: performance.title }]} work={performance.work} />
+				) : null}
 				<header className="grid max-w-text gap-y-4">
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{performance.title}
