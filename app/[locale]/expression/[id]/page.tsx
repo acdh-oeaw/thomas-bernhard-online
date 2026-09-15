@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { LanguageLabel } from "@/components/language-label";
 import { TBNavLink } from "@/components/tb-nav-link";
 import { MainContent } from "@/components/ui/main-content";
@@ -52,9 +53,30 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 	}
 	if (expression == null) notFound();
 
+	const translatorNames =
+		expression.authors
+			?.map((author) => {
+				return author.name;
+			})
+			.filter((name): name is string => {
+				return Boolean(name);
+			}) ?? [];
+
+	const expressionBreadcrumbLabel = (
+		<>
+			{expression.title} {"("}
+			<LanguageLabel code={expression.language} />
+			{translatorNames.length > 0 ? `, tr. ${translatorNames.join(", ")}` : null}
+			{")"}
+		</>
+	);
+
 	return (
 		<MainContent className="layout-grid content-start">
 			<article className="relative layout-subgrid gap-y-8 py-16 xs:py-24">
+				{expression.work ? (
+					<WorkBreadcrumb items={[{ label: expressionBreadcrumbLabel }]} work={expression.work} />
+				) : null}
 				<header className="grid max-w-text gap-y-4">
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{expression.title}
