@@ -159,7 +159,10 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 	} satisfies Record<(typeof displayFields)[number], ReactNode>;
 
 	return (
-		<SearchResultCard href={href}>
+		<SearchResultCard
+			href={href}
+			image={`https://picsum.photos/seed/${encodeURIComponent(document.category ?? "work")}/200/300`}
+		>
 			<div className="grid gap-y-2">
 				<h2 className="font-heading text-heading-4 font-strong text-text-strong">
 					{titleMarkup != null ? (
