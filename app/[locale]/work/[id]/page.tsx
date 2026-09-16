@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
-import { TBNavLink } from "@/components/tb-nav-link";
 import { MainContent } from "@/components/ui/main-content";
 import { getWork, getWorkWithRelations } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";

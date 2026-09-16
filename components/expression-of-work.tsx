@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { TBNavLink } from "@/components/tb-nav-link";
+import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 
 interface ExpressionOfWorkProps {
 	expressionTitle: string;
