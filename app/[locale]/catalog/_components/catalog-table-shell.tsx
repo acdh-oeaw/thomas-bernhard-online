@@ -4,7 +4,7 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, useRef } from "react";
 import { Button, Cell, Row } from "react-aria-components";
 
-import { TBNavLink } from "@/components/tb-nav-link";
+import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { type CollectionSearchState, Pagination } from "@/components/typesense";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import type { WorkCollectionName } from "@/lib/typesense/search";

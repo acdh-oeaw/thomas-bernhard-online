@@ -4,8 +4,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
+import { TBNavLink } from "@/components/entity-links/tb-nav-link";
+import { WorkLink } from "@/components/entity-links/work-link";
 import { LanguageLabel } from "@/components/language-label";
-import { TBNavLink } from "@/components/tb-nav-link";
 import { MainContent } from "@/components/ui/main-content";
 import { getExpression } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
@@ -99,7 +100,7 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 								{"Work"}
 							</h2>
 							<p>
-								<TBNavLink href={`/work/${expression.work.id}`}>{expression.work.title}</TBNavLink>
+								<WorkLink work={expression.work} />
 							</p>
 						</section>
 					) : null}

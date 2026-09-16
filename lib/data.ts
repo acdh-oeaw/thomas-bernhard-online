@@ -114,8 +114,17 @@ export type PersonWithRelations = DocumentWithJoins<
 	Person,
 	object,
 	{
+		works: Array<Work>;
 		expressions: Array<DocumentWithJoins<Expression, { work: Work }>>;
-		performances: Array<Performance>;
+		performances: Array<PerformanceWithRelations>;
+	}
+>;
+
+export type GroupWithRelations = DocumentWithJoins<
+	Group,
+	object,
+	{
+		performances: Array<PerformanceWithRelations>;
 	}
 >;
 
@@ -210,6 +219,7 @@ export type DataSearchParams<K extends CollectionName> = Omit<
 export type WorkSearchParams = DataSearchParams<"work">;
 export type ExpressionSearchParams = DataSearchParams<"expression">;
 export type PerformanceSearchParams = DataSearchParams<"performance">;
+export type GroupSearchParams = DataSearchParams<"group">;
 
 /** The search parameters shared by the expression and performance item collections. */
 export interface ItemSearchParams {
@@ -401,6 +411,7 @@ export function getPeople(
 	options?: SearchOptions,
 ): Promise<SearchResponse<PersonWithRelations>> {
 	const includeFields = [
+		defineJoin("work", `*,sort_by:year:asc,strategy:nest_array`, { alias: "works" }).clause,
 		defineJoin(
 			"expression",
 			`*,${defineJoin("work", "*").clause},sort_by:year:asc,strategy:nest_array`,
@@ -408,14 +419,19 @@ export function getPeople(
 				alias: "expressions",
 			},
 		).clause,
-		defineJoin("performance", nestArray, { alias: "performances" }).clause,
+		defineJoin("performance", `*,${defineJoin("work", "*").clause},strategy:nest_array`, {
+			alias: "performances",
+		}).clause,
 	].join(",");
 
 	return searchCollection<"person", PersonWithRelations>(
 		"person",
 		{
 			...params,
-			filter_by: withJoinFilter(params.filter_by, leftJoinFilter(["expression", "performance"])),
+			filter_by: withJoinFilter(
+				params.filter_by,
+				leftJoinFilter(["work", "expression", "performance"]),
+			),
 			include_fields: includeFields,
 		},
 		options,
@@ -427,6 +443,36 @@ export async function getPerson(
 	options?: SearchOptions,
 ): Promise<PersonWithRelations | null> {
 	const response = await getPeople({ filter_by: `id:=${filterString(id)}`, per_page: 1 }, options);
+
+	return response.hits?.[0]?.document ?? null;
+}
+
+export function getGroups(
+	params: GroupSearchParams,
+	options?: SearchOptions,
+): Promise<SearchResponse<GroupWithRelations>> {
+	const includeFields = defineJoin(
+		"performance",
+		`*,${defineJoin("work", "*").clause},strategy:nest_array`,
+		{ alias: "performances" },
+	).clause;
+
+	return searchCollection<"group", GroupWithRelations>(
+		"group",
+		{
+			...params,
+			filter_by: withJoinFilter(params.filter_by, leftJoinFilter(["performance"])),
+			include_fields: includeFields,
+		},
+		options,
+	);
+}
+
+export async function getGroup(
+	id: string,
+	options?: SearchOptions,
+): Promise<GroupWithRelations | null> {
+	const response = await getGroups({ filter_by: `id:=${filterString(id)}`, per_page: 1 }, options);
 
 	return response.hits?.[0]?.document ?? null;
 }

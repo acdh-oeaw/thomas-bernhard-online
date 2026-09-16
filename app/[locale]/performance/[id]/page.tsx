@@ -4,7 +4,9 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
-import { TBNavLink } from "@/components/tb-nav-link";
+import { GroupLink } from "@/components/entity-links/group-link";
+import { TBNavLink } from "@/components/entity-links/tb-nav-link";
+import { WorkLink } from "@/components/entity-links/work-link";
 import { MainContent } from "@/components/ui/main-content";
 import { getPerformance } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
@@ -98,9 +100,7 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 								{"Work"}
 							</h2>
 							<p>
-								<TBNavLink href={`/work/${performance.work.id}`}>
-									{performance.work.title}
-								</TBNavLink>
+								<WorkLink work={performance.work} />
 							</p>
 						</section>
 					) : null}
@@ -139,7 +139,14 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 					{performance.theaters && performance.theaters.length > 0 ? (
 						<p>
 							{"Theaters: "}
-							<Names values={performance.theaters} />
+							{performance.theaters.map((theater, index) => {
+								return (
+									<span key={theater.id}>
+										{index > 0 ? ", " : null}
+										<GroupLink group={theater} />
+									</span>
+								);
+							})}
 						</p>
 					) : null}
 				</div>
