@@ -285,7 +285,7 @@ export function getWorksWithRelations(
 		).clause,
 		defineJoin(
 			"performance",
-			`*,${defineJoin("person", nestArray, { alias: "actors" }).clause},${defineJoin("person", nestArray, { alias: "directors" }).clause},${defineJoin("group", nestArray, { alias: "theaters" }).clause},strategy:nest_array`,
+			`*,${defineJoin("group", nestArray, { alias: "theaters" }).clause},strategy:nest_array`,
 			{ alias: "performances" },
 		).clause,
 	].join(",");
