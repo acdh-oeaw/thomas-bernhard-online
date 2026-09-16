@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, useRef } from "react";
 import { Button, Cell, Row } from "react-aria-components";
 
+import { TBNavLink } from "@/components/tb-nav-link";
 import { type CollectionSearchState, Pagination } from "@/components/typesense";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import type { WorkCollectionName } from "@/lib/typesense/search";
@@ -15,6 +16,7 @@ import type { CatalogTableController } from "./use-catalog-table";
 export function catalogRows(
 	hits: CollectionSearchState<WorkCollectionName>["hits"],
 	columns: Array<string>,
+	collectionName: WorkCollectionName,
 ): ReactNode {
 	return hits.map((hit) => {
 		return (
@@ -26,13 +28,27 @@ export function catalogRows(
 				{columns.map((column) => {
 					return (
 						<Cell key={column} className="px-4 py-3 align-top text-text-weak">
-							{formatCell((hit.document as Record<string, unknown>)[column])}
+							{renderCatalogCell(collectionName, hit.document, column)}
 						</Cell>
 					);
 				})}
 			</Row>
 		);
 	});
+}
+
+function renderCatalogCell(
+	collectionName: string,
+	document: CollectionSearchState<WorkCollectionName>["hits"][number]["document"],
+	column: string,
+): ReactNode {
+	const value = (document as Record<string, unknown>)[column];
+
+	if (collectionName === "work" && column === "title") {
+		return <TBNavLink href={`/work/${document.id}`}>{formatCell(value)}</TBNavLink>;
+	}
+
+	return formatCell(value);
 }
 
 interface CatalogTableEmptyStateProps {

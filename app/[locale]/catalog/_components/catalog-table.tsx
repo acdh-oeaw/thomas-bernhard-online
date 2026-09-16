@@ -131,7 +131,7 @@ export function CatalogTable(props: Readonly<CatalogTableProps>): ReactNode {
 						);
 					}}
 				>
-					{catalogRows(search.hits, columns)}
+					{catalogRows(search.hits, columns, collectionName)}
 				</TableBody>
 			</Table>
 		</CatalogTableShell>

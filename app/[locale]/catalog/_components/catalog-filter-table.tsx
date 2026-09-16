@@ -151,7 +151,7 @@ export function CatalogFilterTable(props: Readonly<CatalogFilterTableProps>): Re
 						);
 					}}
 				>
-					{catalogRows(search.hits, columns)}
+					{catalogRows(search.hits, columns, collectionName)}
 				</TableBody>
 			</Table>
 		</CatalogTableShell>
