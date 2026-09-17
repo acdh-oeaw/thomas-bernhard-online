@@ -31,7 +31,9 @@ export type WorkCollectionName = "work";
 
 type CollectionSchema<K extends CollectionName> = (typeof collections)[K]["collection"];
 
-type DocumentForName<K extends CollectionName> = DocumentFromSchema<CollectionSchema<K>>;
+type DocumentForName<K extends CollectionName> = K extends CollectionName
+	? DocumentFromSchema<CollectionSchema<K>>
+	: never;
 
 type QueryableField<K extends CollectionName> = CollectionQueryableFieldName<CollectionSchema<K>>;
 type SortableField<K extends CollectionName> = CollectionSortableFieldName<CollectionSchema<K>>;
@@ -78,7 +80,7 @@ export type CollectionSearchParams<K extends CollectionName> = FieldConstrainedP
 
 function runSearch<
 	K extends CollectionName,
-	D extends DocumentForName<K> & DocumentSchema = DocumentForName<K>,
+	D extends DocumentSchema & { id: string } = DocumentForName<K>,
 >(
 	collectionName: K,
 	params: SearchParams<DocumentForName<K>>,
@@ -115,7 +117,7 @@ function runSearch<
  */
 export function searchCollection<
 	K extends CollectionName,
-	D extends DocumentForName<K> & DocumentSchema = DocumentForName<K>,
+	D extends DocumentSchema & { id: string } = DocumentForName<K>,
 >(
 	collectionName: K,
 	params: CollectionSearchParams<K>,
@@ -134,7 +136,7 @@ export function searchCollection<
  */
 export function searchCollectionUnchecked<
 	K extends CollectionName,
-	D extends DocumentForName<K> & DocumentSchema = DocumentForName<K>,
+	D extends DocumentSchema & { id: string } = DocumentForName<K>,
 >(
 	collectionName: K,
 	params: SearchParams<DocumentForName<K>>,
@@ -176,8 +178,33 @@ export function searchCollections<const C extends ReadonlyArray<CollectionName>>
 			collection: physicalCollectionName(search.collection),
 		};
 	}) as MultiSearchRequestsWithUnionSchema<UnionDoc<C>, string>["searches"];
-
 	return createTypesenseClient().multiSearch.perform<Array<UnionDoc<C>>>(
+		{ union: true, searches: searchRequests },
+		commonParams,
+		options,
+	);
+}
+
+/**
+ * Runtime-selected variant of `searchCollections`. Use this when a UI selection determines the
+ * number and order of union branches; statically declared searches should use `searchCollections`
+ * so each branch keeps its collection-specific field checks.
+ */
+export function searchCollectionsUnchecked(
+	searches: ReadonlyArray<
+		{ readonly collection: CollectionName } & SearchParams<DocumentForName<CollectionName>>
+	>,
+	commonParams?: MultiSearchUnionParameters<DocumentForName<CollectionName>, string>,
+	options?: SearchOptions,
+): Promise<UnionSearchResponse<DocumentForName<CollectionName>>> {
+	const searchRequests = searches.map((search) => {
+		return {
+			...defaultSearchParams,
+			...search,
+			collection: physicalCollectionName(search.collection),
+		};
+	}) as MultiSearchRequestsWithUnionSchema<DocumentForName<CollectionName>, string>["searches"];
+	return createTypesenseClient().multiSearch.perform<Array<DocumentForName<CollectionName>>>(
 		{ union: true, searches: searchRequests },
 		commonParams,
 		options,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DocumentSchema, SearchOptions, SearchResponse, SearchResponseHit } from "typesense";
+import type { DocumentSchema, SearchOptions, SearchResponseHit } from "typesense";
 
 import { abortableEffect } from "@/lib/abortable-effect";
 import type { collections } from "@/lib/typesense/collections";
@@ -13,7 +13,16 @@ import {
 } from "@/lib/typesense/search";
 
 /** A search hit for the named collection. */
-type CollectionHit<D extends DocumentSchema> = SearchResponseHit<D>;
+export type CollectionHit<D extends DocumentSchema> = D extends unknown
+	? SearchResponseHit<D>
+	: never;
+
+export interface CollectionSearchResult<D extends DocumentSchema> {
+	readonly hits?: ReadonlyArray<CollectionHit<D>>;
+	readonly found: number;
+	readonly page: number;
+	readonly request_params: { readonly per_page?: number };
+}
 
 type BaseDocument<K extends CollectionName> = DocumentFromSchema<
 	(typeof collections)[K]["collection"]
@@ -22,8 +31,11 @@ type BaseDocument<K extends CollectionName> = DocumentFromSchema<
 /** A collection-specific search function, including a data-layer function that adds joins. */
 type CollectionSearchFunction<
 	K extends CollectionName,
-	D extends BaseDocument<K> & DocumentSchema,
-> = (params: CollectionSearchParams<K>, options?: SearchOptions) => Promise<SearchResponse<D>>;
+	D extends DocumentSchema & { id: string },
+> = (
+	params: CollectionSearchParams<K>,
+	options?: SearchOptions,
+) => Promise<CollectionSearchResult<D>>;
 
 /**
  * Pagination + hits, carried by every state so stale results can stay visible (dimmed) while a
@@ -51,7 +63,7 @@ type CollectionSearchStatus<D extends DocumentSchema> = CollectionSearchPage<D> 
  */
 export type CollectionSearchState<
 	K extends CollectionName,
-	D extends BaseDocument<K> & DocumentSchema = BaseDocument<K>,
+	D extends DocumentSchema & { id: string } = BaseDocument<K>,
 > = CollectionSearchStatus<D> & {
 	readonly retry: () => void;
 };
@@ -66,11 +78,12 @@ const emptyPage = { hits: [], found: 0, page: 1, perPage: 0 } as const;
  */
 export function useCollectionSearch<
 	K extends CollectionName,
-	D extends BaseDocument<K> & DocumentSchema = BaseDocument<K>,
+	D extends DocumentSchema & { id: string } = BaseDocument<K>,
 >(
 	collectionName: K,
 	params: CollectionSearchParams<K>,
 	search?: CollectionSearchFunction<K, D>,
+	queryKey = "",
 ): CollectionSearchState<K, D> {
 	const [snapshot, setSnapshot] = useState<CollectionSearchStatus<D>>(() => {
 		return { status: "loading", error: null, ...emptyPage };
@@ -105,9 +118,12 @@ export function useCollectionSearch<
 			});
 
 			try {
-				const results: SearchResponse<D> = await (searchRef.current == null
-					? searchCollection<K, D>(collectionName, paramsRef.current, { abortSignal: signal })
-					: searchRef.current(paramsRef.current, { abortSignal: signal }));
+				const results: CollectionSearchResult<D> =
+					searchRef.current == null
+						? ((await searchCollection<K, D>(collectionName, paramsRef.current, {
+								abortSignal: signal,
+							})) as CollectionSearchResult<D>)
+						: await searchRef.current(paramsRef.current, { abortSignal: signal });
 
 				if (signal.aborted) return;
 
@@ -130,7 +146,7 @@ export function useCollectionSearch<
 				});
 			}
 		});
-	}, [collectionName, paramsKey, reloadKey]);
+	}, [collectionName, paramsKey, queryKey, reloadKey]);
 
 	const retry = useCallback(() => {
 		setReloadKey((key) => {

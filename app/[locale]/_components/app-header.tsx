@@ -18,10 +18,15 @@ export function AppHeader(): ReactNode {
 			href: createHref({ pathname: "/" }),
 			label: t("navigation.items.home"),
 		},
-		search: {
+		universalSearch: {
 			type: "link",
 			href: createHref({ pathname: "/search" }),
-			label: t("navigation.items.search"),
+			label: t("navigation.items.universal-search"),
+		},
+		search: {
+			type: "link",
+			href: createHref({ pathname: "/works" }),
+			label: t("navigation.items.work-search"),
 		},
 		catalog: {
 			type: "link",

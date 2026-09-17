@@ -20,6 +20,33 @@ a specific collection. Collection-specific `work > expression > manifestation` c
 - `work > performance`
 - `work > event`
 
+## Typesense collection design
+
+The current joined design keeps `work`, `expression`, `performance`, `person`, `group`, and `poster`
+as separate collections. Relations are resolved at query time with Typesense JOINs: works
+forward-join their authors through `author_ids`, while expressions and performances reverse-join
+their `work_id` back to a work. The data-layer functions in `lib/data.ts` own the JOIN clauses and
+aliases, so the returned shape can remain close to the former nested work document.
+
+Important JOIN constraints and design considerations are:
+
+- JOINs primarily shape the response and support relation-aware filtering/sorting; they do not
+  extend the parent collection's full-text index. For example, a joined `expressions.title` can be
+  returned through `include_fields`, but cannot be added to the work collection's `query_by` unless
+  that field is denormalized into the work schema. Joined filtering uses Typesense's
+  `$collection(...)` syntax.
+- Typesense constrains how often the same target collection can be joined within one query. An
+  earlier design attempted several joins to `person` for different roles, which was not reliable.
+  Those role-specific values have since been normalized into the `work` and `performance` documents
+  where appropriate, for example work authors and performance directors/actors.
+- It can be useful to retain a person both as denormalized data inside a `work` or `performance`
+  document and as a reference whose nested `id` points to `person.id`. The embedded name and other
+  display fields remain available directly, while the reference enables reverse or left joins when
+  needed. This is particularly useful when forward joins encounter Typesense's limitation on joining
+  the same collection more than once.
+- New JOIN paths should be checked against these server-side limitations before being added to the
+  generated schema or query wrappers.
+
 ## Typesense configuration
 
 The application uses Typesense for catalog, search, and joined work data. The Typesense variables

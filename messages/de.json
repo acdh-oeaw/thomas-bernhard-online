@@ -38,8 +38,8 @@
 				"example": "Beispiel",
 				"home": "Startseite",
 				"search": "Suche",
-				"universal-search": "Universelle Suche",
-				"work-search": "Werk-Suche"
+				"universal-search": "Suche",
+				"work-search": "Werke"
 			},
 			"label": "Primär"
 		}
