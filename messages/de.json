@@ -37,7 +37,9 @@
 				"documentation": "Dokumentation",
 				"example": "Beispiel",
 				"home": "Startseite",
-				"search": "Suche"
+				"search": "Suche",
+				"universal-search": "Universelle Suche",
+				"work-search": "Werk-Suche"
 			},
 			"label": "Primär"
 		}
@@ -123,10 +125,20 @@
 		"filter-ui-tags": "Tags",
 		"filter-ui-tags-intro": "Alle Faceting-Werte als auswählbare Tags in einem einzigen Popover. Ohne Suche/Filter der Faceting-Werte, daher nur geeignet für Faceting-Felder mit wenigen möglichen Werten.",
 		"filters": "Filter",
+		"universal-search-intro": "Suche über Werke und Übersetzungen.",
+		"universal-search-title": "Universelle Suche",
 		"intro": "Freitextsuche über ein oder mehrere Felder gleichzeitig. Die Ergebnisse werden in erster Linie danach sortiert, wie gut sie zur Suchanfrage passen; über Attributfilter lässt sich die Trefferliste zusätzlich eingrenzen.",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
 		"order-by": "Sortieren nach",
+		"result-types": "Ergebnistypen",
+		"result-type-work": "Werke",
+		"result-type-expression": "Übersetzungen",
+		"result-type-person": "Personen",
 		"search-placeholder": "Werke durchsuchen...",
+		"result-collection-work": "Werke",
+		"result-collection-expression": "Übersetzungen",
+		"result-collection-person": "Personen",
+		"result-subheader-person": "Person",
 		"title": "Suchergebnisse"
 	},
 	"Typesense": {
@@ -158,8 +170,8 @@
 		},
 		"ResultStatus": {
 			"loading": "Wird geladen...",
-			"no-documents": "Keine Dokumente gefunden.",
-			"results": "Zeige {startIndex}–{endIndex} von {totalCount} {count, plural, one {Dokument} other {Dokumenten}}"
+			"no-results": "Keine {resultLabel} gefunden.",
+			"results": "Zeige {startIndex}–{endIndex} von {totalCount} {resultLabel}"
 		}
 	},
 	"PopoverAutocomplete": {

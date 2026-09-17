@@ -37,7 +37,9 @@
 				"documentation": "Documentation",
 				"example": "Example",
 				"home": "Home",
-				"search": "Search"
+				"search": "Search",
+				"universal-search": "Universal search",
+				"work-search": "Work search"
 			},
 			"label": "Primary"
 		}
@@ -123,10 +125,20 @@
 		"filter-ui-tags": "Tags",
 		"filter-ui-tags-intro": "All facet values as selectable tags in a single popover. The facet values themselves can't be searched or filtered, so it only suits facet fields with a small number of possible values.",
 		"filters": "Filters",
+		"universal-search-intro": "Search across works and translations.",
+		"universal-search-title": "Universal search",
 		"intro": "Free-text search across one or more fields at once. Results are ranked primarily by how closely they match your query; attribute filters can still be applied to narrow them down.",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
 		"order-by": "Order by",
+		"result-types": "Result types",
+		"result-type-work": "Works",
+		"result-type-expression": "Translations",
+		"result-type-person": "Persons",
 		"search-placeholder": "Search works...",
+		"result-collection-work": "works",
+		"result-collection-expression": "translations",
+		"result-collection-person": "persons",
+		"result-subheader-person": "person",
 		"title": "Search Results"
 	},
 	"Typesense": {
@@ -158,8 +170,8 @@
 		},
 		"ResultStatus": {
 			"loading": "Loading...",
-			"no-documents": "No documents found.",
-			"results": "Showing {startIndex}–{endIndex} of {totalCount} {count, plural, one {document} other {documents}}"
+			"no-results": "No {resultLabel} found.",
+			"results": "Showing {startIndex}–{endIndex} of {totalCount} {resultLabel}"
 		}
 	},
 	"PopoverAutocomplete": {
