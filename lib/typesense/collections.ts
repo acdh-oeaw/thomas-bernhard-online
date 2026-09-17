@@ -4,6 +4,7 @@ export const collections = {
 	work: {
 		collection: defineCollection({
 			fields: [
+				{ name: "type", type: "string", const: "work" },
 				{ name: "title", type: "string", sort: true },
 				{ name: "category", type: "string", optional: true, facet: true },
 				{ name: "author_ids", type: "string[]", optional: true, reference: "person.id" },
@@ -115,7 +116,7 @@ export const collections = {
 				{ name: "work_id", type: "string", facet: true, reference: "work.id" },
 				{ name: "title", type: "string", sort: true },
 				{ name: "language", type: "string", facet: true },
-				{ name: "type", type: "string" },
+				{ name: "type", type: "string", const: "expression" },
 				{
 					name: "translator_ids",
 					type: "string[]",

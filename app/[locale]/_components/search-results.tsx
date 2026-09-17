@@ -18,6 +18,7 @@ import {
 } from "nuqs";
 import { type ReactNode, useCallback, useId, useMemo, useRef } from "react";
 import { Button, Input, Radio, RadioGroup } from "react-aria-components";
+import type { DocumentSchema, SearchOptions } from "typesense";
 
 import {
 	FacetDropdown,
@@ -30,16 +31,31 @@ import {
 	YEAR_FACET_QUERY,
 	yearFacetFilter,
 } from "@/components/typesense";
+import type {
+	CollectionHit,
+	CollectionSearchResult,
+} from "@/components/typesense/use-collection-search";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { SearchInput } from "@/components/ui/search-input";
-import { getWorksWithRelations } from "@/lib/data";
 import { collections } from "@/lib/typesense/collections";
-import type { WorkCollectionName } from "@/lib/typesense/search";
+import type { CollectionSearchParams, WorkCollectionName } from "@/lib/typesense/search";
 
-import { WorkResultCard } from "./work-result-card";
+export interface SearchFilters {
+	readonly categoryFilters: ReadonlySet<string>;
+	readonly yearFilters: ReadonlySet<string>;
+}
 
-interface SearchResultsProps {
+interface SearchResultsProps<D extends DocumentSchema & { id: string }> {
 	collectionName: WorkCollectionName;
+	queryBy: CollectionSearchParams<"work">["query_by"];
+	queryKey?: string;
+	resultLabel: string;
+	search: (
+		params: CollectionSearchParams<"work">,
+		options: SearchOptions | undefined,
+		filters: SearchFilters,
+	) => Promise<CollectionSearchResult<D>>;
+	renderHit: (hit: CollectionHit<D>) => ReactNode;
 }
 
 const filterUiOptions = ["dropdown", "tags", "list"] as const;
@@ -69,8 +85,10 @@ const filterUiRadioClassName =
 
 const workCollection = collections.work.collection;
 
-export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
-	const { collectionName } = props;
+export function SearchResults<D extends DocumentSchema & { id: string }>(
+	props: Readonly<SearchResultsProps<D>>,
+): ReactNode {
+	const { collectionName, queryBy, queryKey = "", renderHit, resultLabel, search } = props;
 	const t = useTranslations("SearchResults");
 	const tLoading = useTranslations("Loading");
 	const tSearch = useTranslations("Typesense.CollectionSearch");
@@ -125,20 +143,26 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 		return part != null;
 	});
 	const facetFilter = facetFilterParts.length > 0 ? facetFilterParts.join(" && ") : undefined;
-
+	const filterBy = facetFilter ?? "";
 	// `useCollectionSearch` runs the query, aborts superseded requests and exposes a loading / error /
 	// success state machine (see below). `pagination` reads found/page/perPage straight off it.
 	const { status, hits, error, retry, ...pagination } = useCollectionSearch(
 		collectionName,
 		{
 			q: searchQuery, // it works to pass an empty string here, even though it shouldn't
-			query_by: collections.work.queryableFieldNames,
+			query_by: queryBy,
 			highlight_full_fields: ["title"],
 			page: currentPage,
 			sort_by: ["_text_match:desc", sortBy],
-			...(facetFilter != null ? { filter_by: facetFilter } : {}),
+			...(filterBy !== "" ? { filter_by: filterBy } : {}),
 		},
-		getWorksWithRelations,
+		(params, options) => {
+			return search(params, options, {
+				categoryFilters: selectedCategories,
+				yearFilters: selectedYears,
+			});
+		},
+		queryKey,
 	);
 	const isLoading = status === "loading";
 
@@ -214,7 +238,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 					role="list"
 				>
 					{hits.map((hit) => {
-						return <WorkResultCard key={hit.document.id} hit={hit} />;
+						return renderHit(hit);
 					})}
 				</ul>
 				<div className="flex justify-center pt-8">
@@ -266,6 +290,7 @@ export function SearchResults(props: Readonly<SearchResultsProps>): ReactNode {
 			<ResultStatus
 				endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
 				isLoading={isLoading}
+				resultLabel={resultLabel}
 				startIndex={(pagination.page - 1) * pagination.perPage + 1}
 				totalCount={pagination.found}
 			/>

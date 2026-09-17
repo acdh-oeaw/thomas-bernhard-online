@@ -38,8 +38,8 @@
 				"example": "Example",
 				"home": "Home",
 				"search": "Search",
-				"universal-search": "Universal search",
-				"work-search": "Work search"
+				"universal-search": "Search",
+				"work-search": "Works"
 			},
 			"label": "Primary"
 		}

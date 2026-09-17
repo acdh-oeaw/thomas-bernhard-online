@@ -1,4 +1,9 @@
-import type { SearchOptions, SearchResponse } from "typesense";
+import type {
+	SearchOptions,
+	SearchResponse,
+	SearchResponseHit,
+	SearchResponseRequestParams,
+} from "typesense";
 
 import { physicalCollectionName } from "@/lib/typesense/collection-name";
 import type { collections } from "@/lib/typesense/collections";
@@ -7,7 +12,7 @@ import {
 	type CollectionName,
 	type CollectionSearchParams,
 	searchCollection,
-	searchCollections,
+	searchCollectionsUnchecked,
 } from "@/lib/typesense/search";
 
 /**
@@ -45,6 +50,19 @@ export type Poster = DocumentOf<"poster">;
 export type Group = DocumentOf<"group">;
 export type Expression = DocumentOf<"expression">;
 export type Performance = DocumentOf<"performance">;
+
+export type UniversalSearchDocument = WorkWithRelations | ExpressionWithRelations | Person;
+export type UniversalSearchHit =
+	| SearchResponseHit<Extract<UniversalSearchDocument, { type: "work" }>>
+	| SearchResponseHit<Extract<UniversalSearchDocument, { type: "expression" }>>
+	| SearchResponseHit<Extract<UniversalSearchDocument, { name: string }>>;
+
+export interface UniversalSearchResponse {
+	readonly hits: ReadonlyArray<UniversalSearchHit>;
+	readonly found: number;
+	readonly page: number;
+	readonly request_params: { readonly per_page?: number };
+}
 
 /**
  * Adds the exact join projection a data-access function requests to its base document.
@@ -221,15 +239,15 @@ export type ExpressionSearchParams = DataSearchParams<"expression">;
 export type PerformanceSearchParams = DataSearchParams<"performance">;
 export type GroupSearchParams = DataSearchParams<"group">;
 
-/** The search parameters shared by the expression and performance item collections. */
+/** The search parameters shared by the universal-search collections. */
 export interface ItemSearchParams {
-	q?: ExpressionSearchParams["q"];
-	query_by?:
-		| "title"
-		| "sameas"
-		| "type"
-		| "work_id"
-		| ReadonlyArray<"title" | "sameas" | "type" | "work_id">;
+	q?: string;
+	types?: ReadonlyArray<"work" | "expression" | "person">;
+	workFilterBy?: string;
+	expressionFilterBy?: string;
+	page?: number;
+	perPage?: number;
+	sortBy?: string | ReadonlyArray<string>;
 }
 
 /* -------------------------------------------------------------------------------------------------
@@ -249,16 +267,96 @@ export function getWorks(
 	return searchCollection("work", params, options);
 }
 
-/** Searches expressions and performances as one combined result set. */
-export function getItems(params: ItemSearchParams, options?: SearchOptions) {
-	return searchCollections(
-		[
-			{ collection: "performance", ...params },
-			{ collection: "expression", ...params },
-		],
-		undefined,
-		options,
+const expressionIncludeFields = [
+	defineJoin(
+		"work",
+		`*,${
+			defineJoin(
+				"performance",
+				`*,${defineJoin("poster", nestArray, { alias: "posters" }).clause},${defineJoin("group", nestArray, { alias: "theaters" }).clause},strategy:nest_array`,
+				{ alias: "performances" },
+			).clause
+		}`,
+		{ alias: "work" },
+	).clause,
+	defineJoin("person", nestArray, { alias: "authors" }).clause,
+].join(",");
+
+/** Searches works and expressions as one combined result set. */
+export async function getItems(
+	params: ItemSearchParams,
+	options?: SearchOptions,
+): Promise<UniversalSearchResponse> {
+	const selectedTypes = new Set(
+		params.types == null || params.types.length === 0 ? ["work", "expression"] : params.types,
 	);
+	const commonParams = {
+		...(params.page != null ? { page: params.page } : {}),
+		...(params.perPage != null ? { per_page: params.perPage } : {}),
+		...(params.sortBy != null
+			? { sort_by: typeof params.sortBy === "string" ? params.sortBy : [...params.sortBy] }
+			: {}),
+	};
+	const workSearch = {
+		collection: "work" as const,
+		q: params.q,
+		query_by: ["title", "sameas", "category"],
+		highlight_full_fields: ["title"],
+		...(params.workFilterBy != null ? { filter_by: params.workFilterBy } : {}),
+	};
+	const expressionSearch = {
+		collection: "expression" as const,
+		q: params.q,
+		query_by: ["title", "sameas", "language", "type"],
+		highlight_full_fields: ["title"],
+		include_fields: expressionIncludeFields,
+		...(params.expressionFilterBy != null ? { filter_by: params.expressionFilterBy } : {}),
+	};
+	const personSearch = {
+		collection: "person" as const,
+		q: params.q,
+		query_by: ["name", "sameas"],
+		highlight_full_fields: ["name"],
+	};
+
+	if (selectedTypes.size === 0) {
+		return {
+			hits: [],
+			found: 0,
+			page: params.page ?? 1,
+			request_params: params.perPage == null ? {} : { per_page: params.perPage },
+		};
+	}
+
+	const searchesIncludePerson = selectedTypes.has("person");
+	const searchParams = searchesIncludePerson
+		? { page: commonParams.page, per_page: commonParams.per_page }
+		: commonParams;
+	const searches = [
+		["work", workSearch],
+		["expression", expressionSearch],
+		["person", personSearch],
+	] as const;
+	const selectedSearches = searches
+		.filter(([type]) => {
+			return selectedTypes.has(type);
+		})
+		.map(([, search]) => {
+			return search;
+		});
+	const response = await searchCollectionsUnchecked(selectedSearches, searchParams, options);
+	const unionRequestParams = response.union_request_params as
+		| ReadonlyArray<SearchResponseRequestParams>
+		| undefined;
+
+	return {
+		hits: (response.hits ?? []) as unknown as ReadonlyArray<UniversalSearchHit>,
+		found: response.found,
+		page: response.page,
+		request_params: unionRequestParams?.[0] ?? {
+			...(params.perPage != null ? { per_page: params.perPage } : {}),
+		},
+	};
 }
 
 /** Returns one work without joins, or `null` when its Typesense document id does not exist. */
@@ -336,24 +434,9 @@ export function getExpressions(
 	params: ExpressionSearchParams,
 	options?: SearchOptions,
 ): Promise<SearchResponse<ExpressionWithRelations>> {
-	const includeFields = [
-		defineJoin(
-			"work",
-			`*,${
-				defineJoin(
-					"performance",
-					`*,${defineJoin("poster", nestArray, { alias: "posters" }).clause},${defineJoin("group", nestArray, { alias: "theaters" }).clause},strategy:nest_array`,
-					{ alias: "performances" },
-				).clause
-			}`,
-			{ alias: "work" },
-		).clause,
-		defineJoin("person", nestArray, { alias: "authors" }).clause,
-	].join(",");
-
 	return searchCollection<"expression", ExpressionWithRelations>(
 		"expression",
-		{ ...params, include_fields: includeFields },
+		{ ...params, include_fields: expressionIncludeFields },
 		options,
 	);
 }
