@@ -6,20 +6,20 @@ import type { SearchResponseHit } from "typesense";
 
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
-import type { WorkWithRelations } from "@/lib/data";
+import type { UniversalSearchDocument } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
 
-type WorkDocument = WorkWithRelations;
-type WorkSearchHit = SearchResponseHit<WorkDocument>;
-type WorkHighlight = WorkSearchHit["highlight"];
+type Work = Extract<UniversalSearchDocument, { type: "work" }>;
+type WorkHit = SearchResponseHit<Work>;
+type WorkHighlight = WorkHit["highlight"];
 
 const displayFields = [
 	"category",
 	"authors",
 	"performances",
 	"expressions",
-] as const satisfies ReadonlyArray<keyof WorkDocument>;
+] as const satisfies ReadonlyArray<keyof Work>;
 
 /**
  * Typesense's object-form `highlight` mirrors the document. Its types are loose (nested arrays), so
@@ -84,10 +84,7 @@ function renderHighlightedList(
 }
 
 /** Renders the expressions as a comma-separated list of highlighted titles with their language. */
-function renderExpressions(
-	highlight: WorkHighlight,
-	expressions: WorkDocument["expressions"],
-): ReactNode {
+function renderExpressions(highlight: WorkHighlight, expressions: Work["expressions"]): ReactNode {
 	if (expressions == null || expressions.length === 0) {
 		return null;
 	}
@@ -118,7 +115,7 @@ function renderExpressions(
 }
 
 interface WorkResultCardProps {
-	hit: WorkSearchHit;
+	hit: WorkHit;
 }
 
 export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode {
@@ -160,21 +157,18 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 
 	return (
 		<SearchResultCard
+			header={
+				titleMarkup != null ? (
+					<HighlightedSnippet snippet={titleMarkup} />
+				) : (
+					document.title || t("untitled")
+				)
+			}
 			href={href}
-			image={`https://picsum.photos/seed/${encodeURIComponent(document.category ?? "work")}/200/300`}
+			image="work"
+			subheader={document.year}
 		>
-			<div className="grid gap-y-2">
-				<h2 className="font-heading text-heading-4 font-strong text-text-strong">
-					{titleMarkup != null ? (
-						<HighlightedSnippet snippet={titleMarkup} />
-					) : (
-						document.title || t("untitled")
-					)}
-				</h2>
-				{document.year != null ? (
-					<p className="font-heading text-heading-4 text-text-weak">{document.year}</p>
-				) : null}
-
+			<div>
 				<dl className="grid gap-y-2">
 					{displayFields.map((field) => {
 						const value = fieldValues[field];
