@@ -205,7 +205,7 @@ export function searchCollectionsUnchecked(
 		};
 	}) as MultiSearchRequestsWithUnionSchema<DocumentForName<CollectionName>, string>["searches"];
 	return createTypesenseClient().multiSearch.perform<Array<DocumentForName<CollectionName>>>(
-		{ union: true, searches: searchRequests },
+		{ union: true, remove_duplicates: false, searches: searchRequests },
 		commonParams,
 		options,
 	);
