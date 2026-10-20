@@ -6,13 +6,14 @@ import type {
 } from "typesense";
 
 import { physicalCollectionName } from "@/lib/typesense/collection-name";
-import type { collections } from "@/lib/typesense/collections";
+import { collections } from "@/lib/typesense/collections";
 import type { DocumentFromSchema } from "@/lib/typesense/schema";
 import {
 	type CollectionName,
 	type CollectionSearchParams,
 	searchCollection,
 	searchCollectionsUnchecked,
+	searchCollectionUnchecked,
 } from "@/lib/typesense/search";
 
 /* -------------------------------------------------------------------------------------------------
@@ -359,23 +360,13 @@ const expressionIncludeFields = [
 	defineJoin("manifestation", nestArray, { alias: "manifestations" }).clause,
 ].join(",");
 
-/** Searches works, persons, groups, translations, publications, and performances as one combined result set. */
-export async function getItems(
-	params: ItemSearchParams,
-	options?: SearchOptions,
-): Promise<UniversalSearchResponse> {
+/** Builds the same collection queries for both results and facet counts. */
+function getItemSearches(params: ItemSearchParams) {
 	const selectedTypes = new Set(
 		params.types == null || params.types.length === 0
 			? ["work", "person", "group", "expression", "manifestation", "performance"]
 			: params.types,
 	);
-	const commonParams = {
-		...(params.page != null ? { page: params.page } : {}),
-		...(params.perPage != null ? { per_page: params.perPage } : {}),
-		...(params.sortBy != null
-			? { sort_by: typeof params.sortBy === "string" ? params.sortBy : [...params.sortBy] }
-			: {}),
-	};
 	const workSearch = {
 		collection: "work" as const,
 		q: params.q,
@@ -425,6 +416,42 @@ export async function getItems(
 		highlight_full_fields: ["name"],
 	};
 
+	const searches = [
+		["work", workSearch],
+		["expression", expressionSearch],
+		["person", personSearch],
+		["group", groupSearch],
+		["manifestation", manifestationSearch],
+		["performance", performanceSearch],
+	] as const;
+	return searches
+		.filter(([type]) => {
+			return selectedTypes.has(type);
+		})
+		.map(([, search]) => {
+			return search;
+		});
+}
+
+/** Searches works, persons, groups, translations, publications, and performances as one combined result set. */
+export async function getItems(
+	params: ItemSearchParams,
+	options?: SearchOptions,
+): Promise<UniversalSearchResponse> {
+	const selectedTypes = new Set(
+		params.types == null || params.types.length === 0
+			? ["work", "person", "group", "expression", "manifestation", "performance"]
+			: params.types,
+	);
+	const commonParams = {
+		...(params.page != null ? { page: params.page } : {}),
+		...(params.perPage != null ? { per_page: params.perPage } : {}),
+		...(params.sortBy != null
+			? { sort_by: typeof params.sortBy === "string" ? params.sortBy : [...params.sortBy] }
+			: {}),
+	};
+	const selectedSearches = getItemSearches(params);
+
 	if (selectedTypes.size === 0) {
 		return {
 			hits: [],
@@ -450,21 +477,6 @@ export async function getItems(
 			return !clause.startsWith("year:");
 		});
 	}
-	const searches = [
-		["work", workSearch],
-		["expression", expressionSearch],
-		["person", personSearch],
-		["group", groupSearch],
-		["manifestation", manifestationSearch],
-		["performance", performanceSearch],
-	] as const;
-	const selectedSearches = searches
-		.filter(([type]) => {
-			return selectedTypes.has(type);
-		})
-		.map(([, search]) => {
-			return search;
-		});
 	const response = await searchCollectionsUnchecked(selectedSearches, searchParams, options);
 	const unionRequestParams = response.union_request_params as
 		| ReadonlyArray<SearchResponseRequestParams>
@@ -488,6 +500,77 @@ export async function getItems(
 			...(params.perPage != null ? { per_page: params.perPage } : {}),
 		},
 	};
+}
+
+/** Counts only facets supported by the selected result collections, using their exact queries. */
+export async function getItemFacetCounts(
+	params: ItemSearchParams,
+	fields: ReadonlyArray<{ name: string; query: string }>,
+	options?: SearchOptions,
+): Promise<Record<string, Array<{ value: string; count: number }>>> {
+	const totals = new Map(
+		fields.map((field) => {
+			return [field.name, new Map<string, number>()];
+		}),
+	);
+	const responses = await Promise.all(
+		getItemSearches(params).map(async (search) => {
+			const supported = fields.filter((field) => {
+				return (
+					collections[search.collection].facetableFieldNames as ReadonlyArray<string>
+				).includes(field.name);
+			});
+			if (supported.length === 0) return null;
+			// Facet queries use the same q, query_by, and filter_by as the corresponding union branch.
+			const {
+				collection,
+				include_fields: _includeFields,
+				highlight_full_fields: _highlightFields,
+				...query
+			} = {
+				include_fields: undefined,
+				...search,
+			};
+			return searchCollectionUnchecked(
+				collection,
+				{
+					...query,
+					q: params.q === "" ? "*" : (params.q ?? "*"),
+					facet_by: supported.map((field) => {
+						return field.query;
+					}),
+					per_page: 0,
+				},
+				options,
+			);
+		}),
+	);
+	for (const response of responses) {
+		for (const facet of response?.facet_counts ?? []) {
+			const field = fields.find((field) => {
+				return field.name === facet.field_name || field.query === facet.field_name;
+			});
+			if (field == null) continue;
+			const counts = totals.get(field.name)!;
+			for (const count of facet.counts) {
+				counts.set(count.value, (counts.get(count.value) ?? 0) + count.count);
+			}
+		}
+	}
+	return Object.fromEntries(
+		[...totals].map(([field, counts]) => {
+			return [
+				field,
+				[...counts]
+					.map(([value, count]) => {
+						return { value, count };
+					})
+					.sort((a, b) => {
+						return b.count - a.count || a.value.localeCompare(b.value);
+					}),
+			];
+		}),
+	);
 }
 
 /** Returns one work without joins, or `null` when its Typesense document id does not exist. */

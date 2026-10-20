@@ -35,6 +35,11 @@ import type {
 	CollectionHit,
 	CollectionSearchResult,
 } from "@/components/typesense/use-collection-search";
+import {
+	FacetCountsContext,
+	type FacetCountsRequest,
+	type FacetCountsSearch,
+} from "@/components/typesense/use-facet-counts";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { SearchInput } from "@/components/ui/search-input";
 import { collections } from "@/lib/typesense/collections";
@@ -50,6 +55,12 @@ interface SearchResultsProps<D extends DocumentSchema & { id: string }> {
 	queryBy: CollectionSearchParams<"work">["query_by"];
 	queryKey?: string;
 	resultLabel: string;
+	facetNames?: ReadonlyArray<"category" | "year">;
+	facetSearch?: (
+		request: FacetCountsRequest,
+		options: SearchOptions | undefined,
+		filters: SearchFilters,
+	) => ReturnType<FacetCountsSearch>;
 	search: (
 		params: CollectionSearchParams<"work">,
 		options: SearchOptions | undefined,
@@ -83,12 +94,23 @@ const orderValues = orderOptions.map((option) => {
 const filterUiRadioClassName =
 	"interactive flex cursor-pointer items-center rounded-2 border border-stroke-weak px-3 py-1.5 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong";
 
+const defaultFacetNames = ["category", "year"] as const;
+
 const workCollection = collections.work.collection;
 
 export function SearchResults<D extends DocumentSchema & { id: string }>(
 	props: Readonly<SearchResultsProps<D>>,
 ): ReactNode {
-	const { collectionName, queryBy, queryKey = "", renderHit, resultLabel, search } = props;
+	const {
+		collectionName,
+		queryBy,
+		queryKey = "",
+		renderHit,
+		resultLabel,
+		search,
+		facetNames = defaultFacetNames,
+		facetSearch,
+	} = props;
 	const t = useTranslations("SearchResults");
 	const tLoading = useTranslations("Loading");
 	const tSearch = useTranslations("Typesense.CollectionSearch");
@@ -165,6 +187,19 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 		queryKey,
 	);
 	const isLoading = status === "loading";
+	const facetContext = useMemo(() => {
+		return facetSearch == null
+			? null
+			: {
+					queryKey: JSON.stringify([queryKey, categoryFilters, yearFilters]),
+					search: (request: FacetCountsRequest, options?: SearchOptions) => {
+						return facetSearch(request, options, {
+							categoryFilters: selectedCategories,
+							yearFilters: selectedYears,
+						});
+					},
+				};
+	}, [facetSearch, queryKey, categoryFilters, yearFilters, selectedCategories, selectedYears]);
 
 	const sectionRef = useRef<HTMLDivElement>(null);
 	const filterUiHeadingId = useId();
@@ -188,10 +223,12 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 
 	const facets = useMemo(() => {
 		return [
-			{ fieldName: "category", label: tField("category") },
-			{ fieldName: "year", label: tField("year"), facetBy: YEAR_FACET_QUERY },
-		] as const;
-	}, [tField]);
+			{ fieldName: "category" as const, label: tField("category") },
+			{ fieldName: "year" as const, label: tField("year"), facetBy: YEAR_FACET_QUERY },
+		].filter((facet) => {
+			return facetNames.includes(facet.fieldName);
+		});
+	}, [tField, facetNames]);
 
 	const orderByOptions = useMemo(() => {
 		return orderOptions.map((option) => {
@@ -257,127 +294,72 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 		);
 
 	return (
-		<div ref={sectionRef} className="grid gap-y-12">
-			<div className="grid gap-y-3">
-				<h2 className="text-small font-strong text-text-strong" id={filterUiHeadingId}>
-					{t("filter-ui")}
-				</h2>
-				<RadioGroup
-					aria-labelledby={filterUiHeadingId}
-					className="flex flex-wrap items-center gap-2"
-					onChange={(value) => {
-						void setFilterUi(value === "tags" ? "tags" : value === "list" ? "list" : "dropdown");
-					}}
-					orientation="horizontal"
-					value={filterUi}
-				>
-					<Radio className={filterUiRadioClassName} value="dropdown">
-						{t("filter-ui-dropdown")}
-					</Radio>
-					<Radio className={filterUiRadioClassName} value="tags">
-						{t("filter-ui-tags")}
-					</Radio>
-					<Radio className={filterUiRadioClassName} value="list">
-						{t("filter-ui-list")}
-					</Radio>
-				</RadioGroup>
+		<FacetCountsContext value={facetContext}>
+			<div ref={sectionRef} className="grid gap-y-12">
+				<div className="grid gap-y-3">
+					<h2 className="text-small font-strong text-text-strong" id={filterUiHeadingId}>
+						{t("filter-ui")}
+					</h2>
+					<RadioGroup
+						aria-labelledby={filterUiHeadingId}
+						className="flex flex-wrap items-center gap-2"
+						onChange={(value) => {
+							void setFilterUi(value === "tags" ? "tags" : value === "list" ? "list" : "dropdown");
+						}}
+						orientation="horizontal"
+						value={filterUi}
+					>
+						<Radio className={filterUiRadioClassName} value="dropdown">
+							{t("filter-ui-dropdown")}
+						</Radio>
+						<Radio className={filterUiRadioClassName} value="tags">
+							{t("filter-ui-tags")}
+						</Radio>
+						<Radio className={filterUiRadioClassName} value="list">
+							{t("filter-ui-list")}
+						</Radio>
+					</RadioGroup>
 
-				<p className="max-w-text text-small text-pretty text-text-weak">
-					{t(`filter-ui-${filterUi}-intro`)}
-				</p>
-			</div>
+					<p className="max-w-text text-small text-pretty text-text-weak">
+						{t(`filter-ui-${filterUi}-intro`)}
+					</p>
+				</div>
 
-			<ResultStatus
-				endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
-				isLoading={isLoading}
-				resultLabel={resultLabel}
-				startIndex={(pagination.page - 1) * pagination.perPage + 1}
-				totalCount={pagination.found}
-			/>
-			<div className="flex max-w-text flex-wrap items-center gap-4">
-				<SearchInput
-					aria-label={t("search-placeholder")}
-					className="w-96 max-w-full"
-					onChange={handleSearchChange}
-					value={searchQuery}
-				>
-					<div className="flex items-center gap-x-3 rounded-2 border border-stroke-strong bg-fill-inverse-strong px-4 text-small text-text-strong focus-within:focus-outline">
-						<SearchIcon
-							aria-hidden="true"
-							className="size-5 shrink-0 text-icon-neutral"
-							data-slot="icon"
-						/>
-						<Input
-							className="min-h-12 grow bg-transparent text-text-strong outline-transparent placeholder:text-text-weak"
-							placeholder={t("search-placeholder")}
-						/>
-						<Button
-							aria-label={t("clear-search")}
-							className="shrink-0 rounded-1 p-1 text-icon-neutral outline-transparent group-data-empty:hidden hover:bg-fill-hover focus-visible:focus-outline"
-						>
-							<XIcon aria-hidden={true} className="size-4" data-slot="icon" />
-						</Button>
-					</div>
-				</SearchInput>
-
-				{filterUi === "tags" ? (
-					<MultiFacetFilter
-						collection={workCollection}
-						collectionName={collectionName}
-						facets={facets}
-						isLoading={isLoading}
-						label={t("filters")}
-						onChange={handleFacetChange}
-						searchQuery={searchQuery}
-						selectedValues={facetSelection}
-					/>
-				) : filterUi === "dropdown" ? (
-					<>
-						<FacetDropdown
-							collection={workCollection}
-							collectionName={collectionName}
-							fieldName="category"
-							isLoading={isLoading}
-							label={tField("category")}
-							onChange={(values) => {
-								handleFacetChange("category", values);
-							}}
-							searchPlaceholder={t("filter-categories")}
-							searchQuery={searchQuery}
-							selectedValues={selectedCategories}
-						/>
-						<FacetDropdown
-							collection={workCollection}
-							collectionName={collectionName}
-							facetBy={YEAR_FACET_QUERY}
-							fieldName="year"
-							isLoading={isLoading}
-							label={tField("year")}
-							onChange={(values) => {
-								handleFacetChange("year", values);
-							}}
-							searchQuery={searchQuery}
-							selectedValues={selectedYears}
-						/>
-					</>
-				) : null}
-
-				<OrderBy
-					label={t("order-by")}
-					onChange={(value) => {
-						void setSortBy(value);
-						// A changed order means a new result sequence, so return to the first page.
-						void setCurrentPage(1);
-					}}
-					options={orderByOptions}
-					value={sortBy}
+				<ResultStatus
+					endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
+					isLoading={isLoading}
+					resultLabel={resultLabel}
+					startIndex={(pagination.page - 1) * pagination.perPage + 1}
+					totalCount={pagination.found}
 				/>
-			</div>
+				<div className="flex max-w-text flex-wrap items-center gap-4">
+					<SearchInput
+						aria-label={t("search-placeholder")}
+						className="w-96 max-w-full"
+						onChange={handleSearchChange}
+						value={searchQuery}
+					>
+						<div className="flex items-center gap-x-3 rounded-2 border border-stroke-strong bg-fill-inverse-strong px-4 text-small text-text-strong focus-within:focus-outline">
+							<SearchIcon
+								aria-hidden="true"
+								className="size-5 shrink-0 text-icon-neutral"
+								data-slot="icon"
+							/>
+							<Input
+								className="min-h-12 grow bg-transparent text-text-strong outline-transparent placeholder:text-text-weak"
+								placeholder={t("search-placeholder")}
+							/>
+							<Button
+								aria-label={t("clear-search")}
+								className="shrink-0 rounded-1 p-1 text-icon-neutral outline-transparent group-data-empty:hidden hover:bg-fill-hover focus-visible:focus-outline"
+							>
+								<XIcon aria-hidden={true} className="size-4" data-slot="icon" />
+							</Button>
+						</div>
+					</SearchInput>
 
-			{filterUi === "list" ? (
-				<div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-					<aside className="lg:w-64 lg:shrink-0">
-						<FacetList
+					{facets.length > 0 && filterUi === "tags" ? (
+						<MultiFacetFilter
 							collection={workCollection}
 							collectionName={collectionName}
 							facets={facets}
@@ -387,12 +369,61 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 							searchQuery={searchQuery}
 							selectedValues={facetSelection}
 						/>
-					</aside>
-					<div className="grid flex-1 gap-y-12">{resultsContent}</div>
+					) : facets.length > 0 && filterUi === "dropdown" ? (
+						<>
+							{facets.map((facet) => {
+								return (
+									<FacetDropdown
+										key={facet.fieldName}
+										collection={workCollection}
+										collectionName={collectionName}
+										facetBy={"facetBy" in facet ? facet.facetBy : undefined}
+										fieldName={facet.fieldName}
+										isLoading={isLoading}
+										label={facet.label}
+										onChange={(values) => {
+											handleFacetChange(facet.fieldName, values);
+										}}
+										searchQuery={searchQuery}
+										selectedValues={facetSelection[facet.fieldName]}
+									/>
+								);
+							})}
+						</>
+					) : null}
+
+					<OrderBy
+						label={t("order-by")}
+						onChange={(value) => {
+							void setSortBy(value);
+							// A changed order means a new result sequence, so return to the first page.
+							void setCurrentPage(1);
+						}}
+						options={orderByOptions}
+						value={sortBy}
+					/>
 				</div>
-			) : (
-				resultsContent
-			)}
-		</div>
+
+				{facets.length > 0 && filterUi === "list" ? (
+					<div className="flex flex-col gap-8 lg:flex-row lg:items-start">
+						<aside className="lg:w-64 lg:shrink-0">
+							<FacetList
+								collection={workCollection}
+								collectionName={collectionName}
+								facets={facets}
+								isLoading={isLoading}
+								label={t("filters")}
+								onChange={handleFacetChange}
+								searchQuery={searchQuery}
+								selectedValues={facetSelection}
+							/>
+						</aside>
+						<div className="grid flex-1 gap-y-12">{resultsContent}</div>
+					</div>
+				) : (
+					resultsContent
+				)}
+			</div>
+		</FacetCountsContext>
 	);
 }

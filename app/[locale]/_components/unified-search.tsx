@@ -1,17 +1,21 @@
 "use client";
 
+import { cn } from "@acdh-oeaw/style-variants";
 import { useTranslations } from "next-intl";
-import { parseAsArrayOf, parseAsStringLiteral, useQueryState } from "nuqs";
-import type { ReactNode } from "react";
+import { parseAsArrayOf, parseAsInteger, parseAsStringLiteral, useQueryState } from "nuqs";
+import { type ReactNode, useMemo } from "react";
 import { Label, type Selection, Tag, TagGroup, TagList } from "react-aria-components";
 import type { SearchOptions, SearchResponseHit } from "typesense";
 
 import { type SearchFilters, SearchResults } from "@/app/[locale]/_components/search-results";
 import { yearFacetFilter } from "@/components/typesense";
 import type { CollectionHit } from "@/components/typesense/use-collection-search";
+import type { FacetCountsRequest } from "@/components/typesense/use-facet-counts";
 import {
+	getItemFacetCounts,
 	getItems,
 	getSourceForEntityType,
+	type ItemSearchParams,
 	type UniversalSearchDocument,
 	type UniversalSearchHit,
 } from "@/lib/data";
@@ -79,14 +83,58 @@ function isPersonHit(
 	return hit.document.type === "person" || "name" in hit.document;
 }
 
+/** Shared filter mapping for union hits and facet-only queries. */
+function itemFilterParams(
+	q: string | undefined,
+	filters: SearchFilters,
+	types: ReadonlySet<ResultType>,
+): ItemSearchParams {
+	const yearFilter =
+		filters.yearFilters.size > 0
+			? `(${Array.from(filters.yearFilters)
+					.map((year) => {
+						return yearFacetFilter(year);
+					})
+					.join(" || ")})`
+			: undefined;
+	const categoryFilter =
+		filters.categoryFilters.size > 0
+			? `(${Array.from(filters.categoryFilters)
+					.map((category) => {
+						const escaped = category.replaceAll("\\", "\\\\").replaceAll("`", "\\`");
+						return `category:=\`${escaped}\``;
+					})
+					.join(" || ")})`
+			: undefined;
+	const workFilter = [categoryFilter, yearFilter].filter(Boolean).join(" && ");
+	return {
+		q: q === "" ? "*" : (q ?? "*"),
+		types: Array.from(types),
+		workFilterBy: workFilter === "" ? undefined : workFilter,
+		expressionFilterBy: yearFilter,
+	};
+}
+
 export function UnifiedSearch(): ReactNode {
 	const t = useTranslations("SearchResults");
 	const [selectedTypeValues, setSelectedTypeValues] = useQueryState(
 		"types",
 		parseAsArrayOf(parseAsStringLiteral(resultTypes)).withDefault([]),
 	);
-	const selectedTypes = new Set<ResultType>(selectedTypeValues);
-	const includedTypes = selectedTypes.size === 0 ? new Set(resultTypes) : selectedTypes;
+	const [, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
+	const selectedTypes = useMemo(() => {
+		return new Set<ResultType>(selectedTypeValues);
+	}, [selectedTypeValues]);
+	const includedTypes = useMemo(() => {
+		return selectedTypes.size === 0 ? new Set(resultTypes) : selectedTypes;
+	}, [selectedTypes]);
+	const facetNames = useMemo(() => {
+		return (["category", "year"] as const).filter((field) => {
+			return Array.from(includedTypes).some((type) => {
+				return (collections[type].facetableFieldNames as ReadonlyArray<string>).includes(field);
+			});
+		});
+	}, [includedTypes]);
 	const queryKey = resultTypes
 		.filter((type) => {
 			return includedTypes.has(type);
@@ -105,21 +153,9 @@ export function UnifiedSearch(): ReactNode {
 		options: SearchOptions | undefined,
 		filters: SearchFilters,
 	) => {
-		const yearFilter =
-			filters.yearFilters.size > 0
-				? `(${Array.from(filters.yearFilters)
-						.map((year) => {
-							return yearFacetFilter(year);
-						})
-						.join(" || ")})`
-				: undefined;
-
 		return getItems(
 			{
-				q: params.q,
-				types: Array.from(includedTypes),
-				workFilterBy: params.filter_by,
-				expressionFilterBy: yearFilter,
+				...itemFilterParams(params.q, filters, includedTypes),
 				page: params.page,
 				perPage: params.per_page,
 				sortBy: params.sort_by,
@@ -135,6 +171,7 @@ export function UnifiedSearch(): ReactNode {
 				className="grid gap-y-2"
 				onSelectionChange={(selection) => {
 					void setSelectedTypeValues(Array.from(selectionToSet(selection)));
+					void setPage(1);
 				}}
 				selectedKeys={selectedTypes}
 				selectionMode="multiple"
@@ -149,7 +186,10 @@ export function UnifiedSearch(): ReactNode {
 						return (
 							<Tag
 								key={type}
-								className="interactive flex cursor-pointer rounded-full border-2 border-stroke-weak px-3 py-1 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong"
+								className={cn(
+									"interactive flex cursor-pointer rounded-full border-2 border-stroke-weak px-3 py-1 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong",
+									source == null && "selected:text-text-inverse-strong",
+								)}
 								id={type}
 								style={({ isSelected }) => {
 									return source == null
@@ -171,6 +211,18 @@ export function UnifiedSearch(): ReactNode {
 			</TagGroup>
 			<SearchResults
 				collectionName="work"
+				facetNames={facetNames}
+				facetSearch={(
+					request: FacetCountsRequest,
+					options: SearchOptions | undefined,
+					filters: SearchFilters,
+				) => {
+					return getItemFacetCounts(
+						itemFilterParams(request.searchQuery, filters, includedTypes),
+						request.facetFields,
+						options,
+					);
+				}}
 				queryBy={collections.work.queryableFieldNames}
 				queryKey={queryKey}
 				renderHit={(hit: CollectionHit<UniversalSearchDocument>) => {
