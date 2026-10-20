@@ -19,6 +19,7 @@ export const collections = {
 	person: {
 		collection: defineCollection({
 			fields: [
+				{ name: "type", type: "string", const: "person" },
 				{ name: "name", type: "string", sort: true },
 				{ name: "sameas", type: "string[]" },
 			] as const,
@@ -32,7 +33,7 @@ export const collections = {
 			fields: [
 				{ name: "work_id", type: "string", facet: true, reference: "work.id" },
 				{ name: "title", type: "string", sort: true },
-				{ name: "type", type: "string" },
+				{ name: "type", type: "string", const: "performance" },
 				{ name: "directors", type: "object[]", optional: true, facet: true },
 				{ name: "actors", type: "object[]", optional: true, facet: true },
 				{
@@ -89,6 +90,7 @@ export const collections = {
 	poster: {
 		collection: defineCollection({
 			fields: [
+				{ name: "type", type: "string", const: "poster" },
 				{ name: "name", type: "string", sort: true },
 				{ name: "year", type: "int32", optional: true, facet: true, sort: true },
 				{ name: "country", type: "string", optional: true, facet: true, sort: true },
@@ -102,6 +104,7 @@ export const collections = {
 	group: {
 		collection: defineCollection({
 			fields: [
+				{ name: "type", type: "string", const: "group" },
 				{ name: "name", type: "string", sort: true },
 				{ name: "sameas", type: "string[]" },
 			] as const,
@@ -124,12 +127,83 @@ export const collections = {
 					facet: true,
 					reference: "person.id",
 				},
+				{
+					name: "manifestation_ids",
+					type: "string[]",
+					optional: true,
+					facet: true,
+					reference: "manifestation.id",
+				},
 				{ name: "year", type: "int32", optional: true, facet: true, sort: true },
 				{ name: "sameas", type: "string[]" },
 			] as const,
 		}),
-		queryableFieldNames: ["title", "work_id", "language", "type", "sameas", "translator_ids"],
+		queryableFieldNames: [
+			"title",
+			"work_id",
+			"language",
+			"type",
+			"sameas",
+			"translator_ids",
+			"manifestation_ids",
+		],
 		sortableFieldNames: ["title", "year"],
-		facetableFieldNames: ["work_id", "language", "translator_ids", "year"],
+		facetableFieldNames: ["work_id", "language", "translator_ids", "manifestation_ids", "year"],
+	},
+	manifestation: {
+		collection: defineCollection({
+			fields: [
+				{ name: "type", type: "string", const: "manifestation" },
+				{ name: "title", type: "string", sort: true },
+				{ name: "subtitle", type: "string", optional: true, sort: true },
+				{ name: "other_title_information", type: "string", optional: true, sort: true },
+				{ name: "isbn", type: "int32", optional: true, sort: true },
+				{ name: "relevant_pages", type: "string", optional: true, sort: true },
+				{ name: "tbit_shelfmark", type: "string", optional: true, sort: true },
+				{ name: "language", type: "string", facet: true },
+				{ name: "publication_date_sort", type: "int64", sort: true },
+				{ name: "publication_date_from", type: "int64" },
+				{ name: "publication_date_to", type: "int64" },
+				{
+					name: "publisher_ids",
+					type: "string[]",
+					optional: true,
+					facet: true,
+					reference: "group.id",
+				},
+				{ name: "publisher", type: "object[]", optional: true, facet: true },
+				{ name: "sameas", type: "string[]" },
+				{ name: "publisher.name", type: "string[]", optional: true, facet: true },
+				{ name: "publisher.id", type: "string[]", optional: true, facet: true },
+			] as const,
+		}),
+		queryableFieldNames: [
+			"title",
+			"subtitle",
+			"other_title_information",
+			"relevant_pages",
+			"tbit_shelfmark",
+			"language",
+			"sameas",
+			"publisher_ids",
+			"publisher.name",
+			"publisher.id",
+		],
+		sortableFieldNames: [
+			"title",
+			"subtitle",
+			"other_title_information",
+			"isbn",
+			"relevant_pages",
+			"tbit_shelfmark",
+			"publication_date_sort",
+		],
+		facetableFieldNames: [
+			"language",
+			"publisher_ids",
+			"publisher",
+			"publisher.name",
+			"publisher.id",
+		],
 	},
 } as const;
