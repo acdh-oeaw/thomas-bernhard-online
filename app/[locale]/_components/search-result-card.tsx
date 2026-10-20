@@ -2,7 +2,6 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { NavLink } from "@/components/nav-link";
-import { getSourceForEntityType } from "@/lib/data";
 import type { CollectionName } from "@/lib/typesense/search";
 
 interface SearchResultCardProps {
@@ -18,29 +17,12 @@ export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactN
 	const { children, header, href, image, subheader, entityType } = props;
 	const imageUrl = `https://picsum.photos/seed/${encodeURIComponent(image)}/180/280`;
 	const t = useTranslations("ResultCard");
-	const source =
-		entityType === "work" || entityType === "person" || entityType === "group"
-			? undefined
-			: getSourceForEntityType(entityType);
 
 	return (
 		<li>
 			<NavLink href={href}>
-				<article
-					className="interactive grid h-96 grid-cols-2 grid-rows-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 overflow-hidden rounded-4 border border-stroke-weak bg-background-raised p-8 shadow-raised outline-transparent hover:hover-overlay focus-visible:focus-outline"
-					style={
-						source == null
-							? undefined
-							: {
-									borderColor: `color-mix(in srgb, ${source.color} 40%, var(--color-stroke-weak))`,
-									backgroundColor: `color-mix(in srgb, ${source.color} 4%, var(--color-background-raised))`,
-								}
-					}
-				>
-					<p
-						className="col-span-2 justify-self-end text-right text-tiny font-strong tracking-wide text-text-weak uppercase"
-						style={source == null ? undefined : { color: source.color }}
-					>
+				<article className="interactive grid h-96 grid-cols-2 grid-rows-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 overflow-hidden rounded-4 border border-stroke-weak bg-background-raised p-8 shadow-raised outline-transparent hover:hover-overlay focus-visible:focus-outline">
+					<p className="col-span-2 justify-self-end text-right text-tiny font-strong tracking-wide text-text-weak uppercase">
 						{t(entityType)}
 					</p>
 					<div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-y-4">

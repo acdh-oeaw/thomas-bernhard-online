@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@acdh-oeaw/style-variants";
 import { useTranslations } from "next-intl";
 import { parseAsArrayOf, parseAsInteger, parseAsStringLiteral, useQueryState } from "nuqs";
 import { type ReactNode, useMemo } from "react";
@@ -14,7 +13,6 @@ import type { FacetCountsRequest } from "@/components/typesense/use-facet-counts
 import {
 	getItemFacetCounts,
 	getItems,
-	getSourceForEntityType,
 	type ItemSearchParams,
 	type UniversalSearchDocument,
 	type UniversalSearchHit,
@@ -179,28 +177,11 @@ export function UnifiedSearch(): ReactNode {
 				<Label className="text-small font-strong text-text-strong">{t("result-types")}</Label>
 				<TagList className="flex flex-wrap gap-2">
 					{resultTypes.map((type) => {
-						const source =
-							type === "work" || type === "person" || type === "group"
-								? undefined
-								: getSourceForEntityType(type);
 						return (
 							<Tag
 								key={type}
-								className={cn(
-									"interactive flex cursor-pointer rounded-full border-2 border-stroke-weak px-3 py-1 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong",
-									source == null && "selected:text-text-inverse-strong",
-								)}
+								className="interactive flex cursor-pointer rounded-full border-2 border-stroke-weak px-3 py-1 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong"
 								id={type}
-								style={({ isSelected }) => {
-									return source == null
-										? undefined
-										: {
-												borderColor: source.color,
-												backgroundColor: isSelected
-													? `color-mix(in srgb, ${source.color} 18%, var(--color-background-raised))`
-													: undefined,
-											};
-								}}
 								textValue={type}
 							>
 								{t(`result-type-${type}`)}

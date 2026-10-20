@@ -3,11 +3,10 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { EntityBreadcrumbs } from "@/components/entity-breadcrumbs";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
-import { getManifestation, getSourceForEntityType } from "@/lib/data";
+import { getManifestation } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
 import { publicationDateRange } from "@/lib/publication-date";
 
@@ -39,10 +38,6 @@ export default async function PublicationPage(props: Readonly<PageProps>): Promi
 	return (
 		<MainContent className="layout-grid content-start">
 			<article className="relative layout-subgrid gap-y-8 py-16 xs:py-24">
-				<EntityBreadcrumbs
-					items={[{ label: publication.title }]}
-					source={getSourceForEntityType("manifestation")}
-				/>
 				<header className="grid max-w-text gap-y-4">
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{publication.title}
