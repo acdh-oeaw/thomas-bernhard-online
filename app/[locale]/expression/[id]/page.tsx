@@ -7,7 +7,7 @@ import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
-import { getExpression } from "@/lib/data";
+import { getExpression, getSourceForEntityType } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
 import { publicationDateRange } from "@/lib/publication-date";
 
@@ -75,9 +75,11 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 	return (
 		<MainContent className="layout-grid content-start">
 			<article className="relative layout-subgrid gap-y-8 py-16 xs:py-24">
-				{expression.work ? (
-					<WorkBreadcrumb items={[{ label: expressionBreadcrumbLabel }]} work={expression.work} />
-				) : null}
+				<WorkBreadcrumb
+					items={[{ label: expressionBreadcrumbLabel }]}
+					source={getSourceForEntityType("expression")}
+					work={expression.work}
+				/>
 				<header className="grid max-w-text gap-y-4">
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{expression.title}

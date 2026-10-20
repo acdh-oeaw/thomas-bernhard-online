@@ -60,6 +60,17 @@ export const sources = {
 
 export type SourceHandle = keyof typeof sources;
 
+/** Resolves membership from the handwritten registry for detail-page presentation. */
+export function getSourceForEntityType(entityType: SourceEntityType): SourceDefinition {
+	const source = Object.values(sources).find((source: SourceDefinition) => {
+		return source.entityTypes.includes(entityType);
+	});
+	if (source == null) {
+		throw new Error(`No source defined for entity type "${entityType}".`);
+	}
+	return source;
+}
+
 /**
  * The app's data access layer: one function per *shape of data a view needs*. Each one is
  * `searchCollection` plus the `include_fields` / `filter_by` join clauses that shape requires — the
@@ -101,12 +112,16 @@ export type UniversalSearchDocument =
 	| WorkWithRelations
 	| ExpressionWithRelations
 	| Person
-	| Manifestation;
+	| Manifestation
+	| Performance
+	| Group;
 export type UniversalSearchHit =
 	| SearchResponseHit<WorkWithRelations>
 	| SearchResponseHit<Extract<UniversalSearchDocument, { type: "expression" }>>
 	| SearchResponseHit<Person>
-	| SearchResponseHit<Manifestation>;
+	| SearchResponseHit<Manifestation>
+	| SearchResponseHit<Performance>
+	| SearchResponseHit<Group>;
 
 export interface UniversalSearchResponse {
 	readonly hits: ReadonlyArray<UniversalSearchHit>;
@@ -301,7 +316,9 @@ export type GroupSearchParams = DataSearchParams<"group">;
 /** The search parameters shared by the universal-search collections. */
 export interface ItemSearchParams {
 	q?: string;
-	types?: ReadonlyArray<"work" | "expression" | "person" | "manifestation">;
+	types?: ReadonlyArray<
+		"work" | "person" | "group" | "expression" | "manifestation" | "performance"
+	>;
 	workFilterBy?: string;
 	expressionFilterBy?: string;
 	page?: number;
@@ -342,14 +359,14 @@ const expressionIncludeFields = [
 	defineJoin("manifestation", nestArray, { alias: "manifestations" }).clause,
 ].join(",");
 
-/** Searches works, translations, persons, and publications as one combined result set. */
+/** Searches works, persons, groups, translations, publications, and performances as one combined result set. */
 export async function getItems(
 	params: ItemSearchParams,
 	options?: SearchOptions,
 ): Promise<UniversalSearchResponse> {
 	const selectedTypes = new Set(
 		params.types == null || params.types.length === 0
-			? ["work", "expression", "person", "manifestation"]
+			? ["work", "person", "group", "expression", "manifestation", "performance"]
 			: params.types,
 	);
 	const commonParams = {
@@ -388,8 +405,21 @@ export async function getItems(
 		],
 		highlight_full_fields: ["title"],
 	};
+	const performanceSearch = {
+		collection: "performance" as const,
+		q: params.q,
+		query_by: ["title", "sameas", "type", "date_range", "directors.name", "actors.name"],
+		highlight_full_fields: ["title"],
+	};
 	const personSearch = {
 		collection: "person" as const,
+		q: params.q,
+		query_by: ["name", "sameas"],
+		highlight_full_fields: ["name"],
+	};
+
+	const groupSearch = {
+		collection: "group" as const,
 		q: params.q,
 		query_by: ["name", "sameas"],
 		highlight_full_fields: ["name"],
@@ -404,13 +434,16 @@ export async function getItems(
 		};
 	}
 
-	const searchesIncludePerson = selectedTypes.has("person");
-	const searchParams = searchesIncludePerson
+	const searchesIncludeNames = selectedTypes.has("person") || selectedTypes.has("group");
+	const searchParams = searchesIncludeNames
 		? { page: commonParams.page, per_page: commonParams.per_page }
 		: commonParams;
-	// Publications have timestamp dates instead of a year field. Avoid sending an invalid
-	// shared year sort to a union containing publications.
-	if (selectedTypes.has("manifestation") && "sort_by" in searchParams) {
+	// Publications and performances have timestamp dates instead of a year field.
+	// Avoid sending an unsupported shared year sort to these collections.
+	if (
+		(selectedTypes.has("manifestation") || selectedTypes.has("performance")) &&
+		"sort_by" in searchParams
+	) {
 		const sort = searchParams.sort_by;
 		const clauses = typeof sort === "string" ? sort.split(",") : sort;
 		searchParams.sort_by = clauses?.filter((clause) => {
@@ -421,7 +454,9 @@ export async function getItems(
 		["work", workSearch],
 		["expression", expressionSearch],
 		["person", personSearch],
+		["group", groupSearch],
 		["manifestation", manifestationSearch],
+		["performance", performanceSearch],
 	] as const;
 	const selectedSearches = searches
 		.filter(([type]) => {
@@ -436,7 +471,17 @@ export async function getItems(
 		| undefined;
 
 	return {
-		hits: (response.hits ?? []) as unknown as ReadonlyArray<UniversalSearchHit>,
+		// Union metadata identifies records even when their indexed document has no type.
+		hits: (response.hits ?? []).map((hit) => {
+			const metadata = hit as typeof hit & { collection?: string; search_index?: number };
+			const origin =
+				selectedSearches.find((search) => {
+					return physicalCollectionName(search.collection) === metadata.collection;
+				}) ?? (metadata.search_index == null ? undefined : selectedSearches[metadata.search_index]);
+			return origin == null
+				? hit
+				: { ...hit, document: { ...hit.document, type: origin.collection } };
+		}) as unknown as ReadonlyArray<UniversalSearchHit>,
 		found: response.found,
 		page: response.page,
 		request_params: unionRequestParams?.[0] ?? {

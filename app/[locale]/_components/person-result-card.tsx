@@ -1,4 +1,3 @@
-import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
@@ -7,7 +6,7 @@ import type { UniversalSearchDocument } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
 
-type Person = Extract<UniversalSearchDocument, { name: string }>;
+type Person = Extract<UniversalSearchDocument, { type: "person" }>;
 type PersonHit = SearchResponseHit<Person>;
 
 function highlightMarkup(hit: PersonHit): string | undefined {
@@ -24,16 +23,15 @@ export function PersonResultCard(props: Readonly<{ hit: PersonHit }>): ReactNode
 	const { hit } = props;
 	const { document } = hit;
 	const nameHighlight = highlightMarkup(hit);
-	const t = useTranslations("SearchResults");
 
 	return (
 		<SearchResultCard
+			entityType="person"
 			header={
 				nameHighlight != null ? <HighlightedSnippet snippet={nameHighlight} /> : document.name
 			}
 			href={`/person/${document.id}`}
 			image="person"
-			subheader={t("result-subheader-person")}
 		/>
 	);
 }

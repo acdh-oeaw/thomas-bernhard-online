@@ -8,7 +8,7 @@ import { GroupLink } from "@/components/entity-links/group-link";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { WorkLink } from "@/components/entity-links/work-link";
 import { MainContent } from "@/components/ui/main-content";
-import { getPerformance } from "@/lib/data";
+import { getPerformance, getSourceForEntityType } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
 
 interface PageProps {
@@ -83,9 +83,11 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 	return (
 		<MainContent className="layout-grid content-start">
 			<article className="relative layout-subgrid gap-y-8 py-16 xs:py-24">
-				{performance.work ? (
-					<WorkBreadcrumb items={[{ label: performance.title }]} work={performance.work} />
-				) : null}
+				<WorkBreadcrumb
+					items={[{ label: performance.title }]}
+					source={getSourceForEntityType("performance")}
+					work={performance.work}
+				/>
 				<header className="grid max-w-text gap-y-4">
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{performance.title}

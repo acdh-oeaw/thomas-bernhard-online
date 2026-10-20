@@ -9,16 +9,30 @@ import type { SearchOptions, SearchResponseHit } from "typesense";
 import { type SearchFilters, SearchResults } from "@/app/[locale]/_components/search-results";
 import { yearFacetFilter } from "@/components/typesense";
 import type { CollectionHit } from "@/components/typesense/use-collection-search";
-import { getItems, type UniversalSearchDocument, type UniversalSearchHit } from "@/lib/data";
+import {
+	getItems,
+	getSourceForEntityType,
+	type UniversalSearchDocument,
+	type UniversalSearchHit,
+} from "@/lib/data";
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionSearchParams } from "@/lib/typesense/search";
 
 import { ExpressionResultCard } from "./expression-result-card";
+import { GroupResultCard } from "./group-result-card";
+import { PerformanceResultCard } from "./performance-result-card";
 import { PersonResultCard } from "./person-result-card";
 import { PublicationResultCard } from "./publication-result-card";
 import { WorkResultCard } from "./work-result-card";
 
-const resultTypes = ["work", "expression", "person", "manifestation"] as const;
+const resultTypes = [
+	"work",
+	"person",
+	"group",
+	"expression",
+	"manifestation",
+	"performance",
+] as const;
 type ResultType = (typeof resultTypes)[number];
 
 function selectionToSet(selection: Selection): Set<ResultType> {
@@ -45,6 +59,18 @@ function isManifestationHit(
 ): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "manifestation" }>> {
 	// The generated `const` only describes the type; older indexed documents may omit it.
 	return hit.document.type === "manifestation" || "publication_date_sort" in hit.document;
+}
+
+function isPerformanceHit(
+	hit: UniversalSearchHit,
+): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "performance" }>> {
+	return hit.document.type === "performance" || "date_range_sort" in hit.document;
+}
+
+function isGroupHit(
+	hit: UniversalSearchHit,
+): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "group" }>> {
+	return hit.document.type === "group";
 }
 
 function isPersonHit(
@@ -116,11 +142,25 @@ export function UnifiedSearch(): ReactNode {
 				<Label className="text-small font-strong text-text-strong">{t("result-types")}</Label>
 				<TagList className="flex flex-wrap gap-2">
 					{resultTypes.map((type) => {
+						const source =
+							type === "work" || type === "person" || type === "group"
+								? undefined
+								: getSourceForEntityType(type);
 						return (
 							<Tag
 								key={type}
-								className="interactive flex cursor-pointer rounded-full border border-stroke-weak px-3 py-1 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong"
+								className="interactive flex cursor-pointer rounded-full border-2 border-stroke-weak px-3 py-1 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong"
 								id={type}
+								style={({ isSelected }) => {
+									return source == null
+										? undefined
+										: {
+												borderColor: source.color,
+												backgroundColor: isSelected
+													? `color-mix(in srgb, ${source.color} 18%, var(--color-background-raised))`
+													: undefined,
+											};
+								}}
 								textValue={type}
 							>
 								{t(`result-type-${type}`)}
@@ -134,12 +174,16 @@ export function UnifiedSearch(): ReactNode {
 				queryBy={collections.work.queryableFieldNames}
 				queryKey={queryKey}
 				renderHit={(hit: CollectionHit<UniversalSearchDocument>) => {
-					return isManifestationHit(hit) ? (
+					return isPerformanceHit(hit) ? (
+						<PerformanceResultCard key={`performance-${hit.document.id}`} hit={hit} />
+					) : isManifestationHit(hit) ? (
 						<PublicationResultCard key={`manifestation-${hit.document.id}`} hit={hit} />
 					) : isExpressionHit(hit) ? (
 						<ExpressionResultCard key={hit.document.id} hit={hit} />
+					) : isGroupHit(hit) ? (
+						<GroupResultCard key={`group-${hit.document.id}`} hit={hit} />
 					) : isPersonHit(hit) ? (
-						<PersonResultCard key={hit.document.id} hit={hit} />
+						<PersonResultCard key={`person-${hit.document.id}`} hit={hit} />
 					) : (
 						<WorkResultCard key={hit.document.id} hit={hit} />
 					);

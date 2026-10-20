@@ -157,6 +157,7 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 
 	return (
 		<SearchResultCard
+			entityType="work"
 			header={
 				titleMarkup != null ? (
 					<HighlightedSnippet snippet={titleMarkup} />

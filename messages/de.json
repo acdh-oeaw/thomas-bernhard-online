@@ -125,7 +125,7 @@
 		"filter-ui-tags": "Tags",
 		"filter-ui-tags-intro": "Alle Faceting-Werte als auswählbare Tags in einem einzigen Popover. Ohne Suche/Filter der Faceting-Werte, daher nur geeignet für Faceting-Felder mit wenigen möglichen Werten.",
 		"filters": "Filter",
-		"universal-search-intro": "Suche über Werke, Übersetzungen, Personen und Publikationen.",
+		"universal-search-intro": "Suche über Werke, Personen, Gruppen, Übersetzungen, Publikationen und Aufführungen.",
 		"universal-search-title": "Universelle Suche",
 		"intro": "Freitextsuche über ein oder mehrere Felder gleichzeitig. Die Ergebnisse werden in erster Linie danach sortiert, wie gut sie zur Suchanfrage passen; über Attributfilter lässt sich die Trefferliste zusätzlich eingrenzen.",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
@@ -141,7 +141,12 @@
 		"result-subheader-person": "Person",
 		"title": "Suchergebnisse",
 		"result-type-manifestation": "Publikationen",
-		"result-collection-manifestation": "Publikationen"
+		"result-collection-manifestation": "Publikationen",
+		"result-type-performance": "Aufführungen",
+		"result-collection-performance": "Aufführungen",
+		"result-type-group": "Gruppen",
+		"result-collection-group": "Gruppen",
+		"result-subheader-group": "Gruppe"
 	},
 	"Typesense": {
 		"CollectionSearch": {
@@ -199,5 +204,18 @@
 		"shelfmark": "TBiT-Signatur",
 		"publishers": "Verlage",
 		"identifiers": "Identifikatoren"
+	},
+	"PerformanceResultCard": {
+		"directors": "Regie",
+		"actors": "Besetzung"
+	},
+	"ResultCard": {
+		"work": "Werk",
+		"person": "Person",
+		"group": "Gruppe",
+		"expression": "Übersetzung",
+		"manifestation": "Publikation",
+		"performance": "Aufführung",
+		"poster": "Plakat"
 	}
 }

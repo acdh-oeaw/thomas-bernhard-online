@@ -18,6 +18,7 @@ export function PublicationResultCard(
 
 	return (
 		<SearchResultCard
+			entityType="manifestation"
 			header={snippet != null ? <HighlightedSnippet snippet={snippet} /> : document.title}
 			href={`/publication/${document.id}`}
 			image="publication"

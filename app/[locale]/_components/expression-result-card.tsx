@@ -27,6 +27,7 @@ export function ExpressionResultCard(props: Readonly<{ hit: ExpressionHit }>): R
 
 	return (
 		<SearchResultCard
+			entityType="expression"
 			header={
 				titleHighlight != null ? <HighlightedSnippet snippet={titleHighlight} /> : document.title
 			}
