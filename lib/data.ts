@@ -15,6 +15,51 @@ import {
 	searchCollectionsUnchecked,
 } from "@/lib/typesense/search";
 
+/* -------------------------------------------------------------------------------------------------
+ * sources
+ * ---------------------------------------------------------------------------------------------- */
+
+/** Global entities are shared across sources and do not belong to any single source. */
+export const globalEntityTypes = [
+	"person",
+	"work",
+	"group",
+] as const satisfies ReadonlyArray<CollectionName>;
+
+export type GlobalEntityType = (typeof globalEntityTypes)[number];
+export type SourceEntityType = Exclude<CollectionName, GlobalEntityType>;
+
+export interface SourceDefinition {
+	readonly name: string;
+	/** CSS color value, preferably a semantic theme variable. */
+	readonly color: string;
+	readonly entityTypes: readonly [SourceEntityType, ...Array<SourceEntityType>];
+}
+
+/**
+ * Handwritten source metadata, keyed by stable short handles. Membership is an editorial
+ * decision and cannot be inferred from the generated Typesense schemas.
+ */
+export const sources = {
+	translations: {
+		name: "Übersetzungsdatenbank",
+		color: "var(--color-text-information)",
+		entityTypes: ["expression", "manifestation"],
+	},
+	performances: {
+		name: "Performancedatenbank",
+		color: "var(--color-text-success)",
+		entityTypes: ["performance"],
+	},
+	posters: {
+		name: "Postersammlung",
+		color: "var(--color-text-warning)",
+		entityTypes: ["poster"],
+	},
+} as const satisfies Record<string, SourceDefinition>;
+
+export type SourceHandle = keyof typeof sources;
+
 /**
  * The app's data access layer: one function per *shape of data a view needs*. Each one is
  * `searchCollection` plus the `include_fields` / `filter_by` join clauses that shape requires — the
