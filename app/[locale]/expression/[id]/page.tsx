@@ -5,11 +5,11 @@ import type { ReactNode } from "react";
 
 import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { WorkLink } from "@/components/entity-links/work-link";
 import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
 import { getExpression } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
+import { publicationDateRange } from "@/lib/publication-date";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
@@ -94,16 +94,6 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 				</header>
 
 				<div className="grid max-w-text gap-y-6 text-small text-text-weak">
-					{expression.work ? (
-						<section>
-							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
-								{"Work"}
-							</h2>
-							<p>
-								<WorkLink work={expression.work} />
-							</p>
-						</section>
-					) : null}
 					{expression.authors && expression.authors.length > 0 ? (
 						<section>
 							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
@@ -119,6 +109,26 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 									);
 								})}
 							</p>
+						</section>
+					) : null}
+					{expression.manifestations?.length ? (
+						<section>
+							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
+								{"Published in"}
+							</h2>
+							<ul className="list-disc space-y-2 pl-5">
+								{expression.manifestations.map((publication) => {
+									const date = publicationDateRange(publication);
+									return (
+										<li key={publication.id}>
+											<TBNavLink href={`/publication/${publication.id}`}>
+												{publication.title}
+											</TBNavLink>
+											{date ? ` (${date})` : null}
+										</li>
+									);
+								})}
+							</ul>
 						</section>
 					) : null}
 					{expression.work?.performances && expression.work.performances.length > 0 ? (

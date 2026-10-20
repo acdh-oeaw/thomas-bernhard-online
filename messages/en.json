@@ -125,7 +125,7 @@
 		"filter-ui-tags": "Tags",
 		"filter-ui-tags-intro": "All facet values as selectable tags in a single popover. The facet values themselves can't be searched or filtered, so it only suits facet fields with a small number of possible values.",
 		"filters": "Filters",
-		"universal-search-intro": "Search across works and translations.",
+		"universal-search-intro": "Search across works, translations, persons, and publications.",
 		"universal-search-title": "Universal search",
 		"intro": "Free-text search across one or more fields at once. Results are ranked primarily by how closely they match your query; attribute filters can still be applied to narrow them down.",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
@@ -139,7 +139,9 @@
 		"result-collection-expression": "translations",
 		"result-collection-person": "persons",
 		"result-subheader-person": "person",
-		"title": "Search Results"
+		"title": "Search Results",
+		"result-type-manifestation": "Publications",
+		"result-collection-manifestation": "Publications"
 	},
 	"Typesense": {
 		"CollectionSearch": {
@@ -187,5 +189,15 @@
 		"raw-data": "Raw data",
 		"unknown": "Unknown",
 		"untitled": "Untitled"
+	},
+	"PublicationPage": {
+		"translations": "Translations",
+		"publication": "Publication",
+		"other-title-information": "Other title information",
+		"isbn": "ISBN",
+		"relevant-pages": "Relevant pages",
+		"shelfmark": "TBiT shelfmark",
+		"publishers": "Publishers",
+		"identifiers": "Identifiers"
 	}
 }

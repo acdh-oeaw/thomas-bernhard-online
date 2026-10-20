@@ -15,9 +15,10 @@ import type { CollectionSearchParams } from "@/lib/typesense/search";
 
 import { ExpressionResultCard } from "./expression-result-card";
 import { PersonResultCard } from "./person-result-card";
+import { PublicationResultCard } from "./publication-result-card";
 import { WorkResultCard } from "./work-result-card";
 
-const resultTypes = ["work", "expression", "person"] as const;
+const resultTypes = ["work", "expression", "person", "manifestation"] as const;
 type ResultType = (typeof resultTypes)[number];
 
 function selectionToSet(selection: Selection): Set<ResultType> {
@@ -36,13 +37,20 @@ function selectionToSet(selection: Selection): Set<ResultType> {
 function isExpressionHit(
 	hit: UniversalSearchHit,
 ): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "expression" }>> {
-	return "type" in hit.document && hit.document.type === "expression";
+	return hit.document.type === "expression";
+}
+
+function isManifestationHit(
+	hit: UniversalSearchHit,
+): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "manifestation" }>> {
+	// The generated `const` only describes the type; older indexed documents may omit it.
+	return hit.document.type === "manifestation" || "publication_date_sort" in hit.document;
 }
 
 function isPersonHit(
 	hit: UniversalSearchHit,
-): hit is SearchResponseHit<Extract<UniversalSearchDocument, { name: string }>> {
-	return "name" in hit.document;
+): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "person" }>> {
+	return hit.document.type === "person" || "name" in hit.document;
 }
 
 export function UnifiedSearch(): ReactNode {
@@ -126,7 +134,9 @@ export function UnifiedSearch(): ReactNode {
 				queryBy={collections.work.queryableFieldNames}
 				queryKey={queryKey}
 				renderHit={(hit: CollectionHit<UniversalSearchDocument>) => {
-					return isExpressionHit(hit) ? (
+					return isManifestationHit(hit) ? (
+						<PublicationResultCard key={`manifestation-${hit.document.id}`} hit={hit} />
+					) : isExpressionHit(hit) ? (
 						<ExpressionResultCard key={hit.document.id} hit={hit} />
 					) : isPersonHit(hit) ? (
 						<PersonResultCard key={hit.document.id} hit={hit} />

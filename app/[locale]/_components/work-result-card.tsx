@@ -6,11 +6,11 @@ import type { SearchResponseHit } from "typesense";
 
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
-import type { UniversalSearchDocument } from "@/lib/data";
+import type { WorkWithRelations } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
 
-type Work = Extract<UniversalSearchDocument, { type: "work" }>;
+type Work = WorkWithRelations;
 type WorkHit = SearchResponseHit<Work>;
 type WorkHighlight = WorkHit["highlight"];
 

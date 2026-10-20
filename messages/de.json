@@ -125,7 +125,7 @@
 		"filter-ui-tags": "Tags",
 		"filter-ui-tags-intro": "Alle Faceting-Werte als auswählbare Tags in einem einzigen Popover. Ohne Suche/Filter der Faceting-Werte, daher nur geeignet für Faceting-Felder mit wenigen möglichen Werten.",
 		"filters": "Filter",
-		"universal-search-intro": "Suche über Werke und Übersetzungen.",
+		"universal-search-intro": "Suche über Werke, Übersetzungen, Personen und Publikationen.",
 		"universal-search-title": "Universelle Suche",
 		"intro": "Freitextsuche über ein oder mehrere Felder gleichzeitig. Die Ergebnisse werden in erster Linie danach sortiert, wie gut sie zur Suchanfrage passen; über Attributfilter lässt sich die Trefferliste zusätzlich eingrenzen.",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
@@ -139,7 +139,9 @@
 		"result-collection-expression": "Übersetzungen",
 		"result-collection-person": "Personen",
 		"result-subheader-person": "Person",
-		"title": "Suchergebnisse"
+		"title": "Suchergebnisse",
+		"result-type-manifestation": "Publikationen",
+		"result-collection-manifestation": "Publikationen"
 	},
 	"Typesense": {
 		"CollectionSearch": {
@@ -187,5 +189,15 @@
 		"raw-data": "Rohdaten",
 		"unknown": "Unbekannt",
 		"untitled": "Ohne Titel"
+	},
+	"PublicationPage": {
+		"translations": "Übersetzungen",
+		"publication": "Publikation",
+		"other-title-information": "Weitere Titelangaben",
+		"isbn": "ISBN",
+		"relevant-pages": "Relevante Seiten",
+		"shelfmark": "TBiT-Signatur",
+		"publishers": "Verlage",
+		"identifiers": "Identifikatoren"
 	}
 }

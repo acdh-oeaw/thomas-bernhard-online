@@ -95,12 +95,18 @@ export type Poster = DocumentOf<"poster">;
 export type Group = DocumentOf<"group">;
 export type Expression = DocumentOf<"expression">;
 export type Performance = DocumentOf<"performance">;
+export type Manifestation = DocumentOf<"manifestation">;
 
-export type UniversalSearchDocument = WorkWithRelations | ExpressionWithRelations | Person;
+export type UniversalSearchDocument =
+	| WorkWithRelations
+	| ExpressionWithRelations
+	| Person
+	| Manifestation;
 export type UniversalSearchHit =
-	| SearchResponseHit<Extract<UniversalSearchDocument, { type: "work" }>>
+	| SearchResponseHit<WorkWithRelations>
 	| SearchResponseHit<Extract<UniversalSearchDocument, { type: "expression" }>>
-	| SearchResponseHit<Extract<UniversalSearchDocument, { name: string }>>;
+	| SearchResponseHit<Person>
+	| SearchResponseHit<Manifestation>;
 
 export interface UniversalSearchResponse {
 	readonly hits: ReadonlyArray<UniversalSearchHit>;
@@ -159,7 +165,15 @@ export type ExpressionWithRelations = DocumentWithJoins<
 	{
 		work: DocumentWithJoins<Work, { performances: Array<PerformanceWithRelations> }>;
 		authors: Array<Person>;
+		manifestations: Array<Manifestation>;
 	}
+>;
+
+/** Publications with the translations that reference them through `manifestation_ids`. */
+export type ManifestationWithRelations = DocumentWithJoins<
+	Manifestation,
+	object,
+	{ expressions: Array<Expression> }
 >;
 
 /** The explicitly requested relation projection returned by `getperformance`. */
@@ -287,7 +301,7 @@ export type GroupSearchParams = DataSearchParams<"group">;
 /** The search parameters shared by the universal-search collections. */
 export interface ItemSearchParams {
 	q?: string;
-	types?: ReadonlyArray<"work" | "expression" | "person">;
+	types?: ReadonlyArray<"work" | "expression" | "person" | "manifestation">;
 	workFilterBy?: string;
 	expressionFilterBy?: string;
 	page?: number;
@@ -325,15 +339,18 @@ const expressionIncludeFields = [
 		{ alias: "work" },
 	).clause,
 	defineJoin("person", nestArray, { alias: "authors" }).clause,
+	defineJoin("manifestation", nestArray, { alias: "manifestations" }).clause,
 ].join(",");
 
-/** Searches works and expressions as one combined result set. */
+/** Searches works, translations, persons, and publications as one combined result set. */
 export async function getItems(
 	params: ItemSearchParams,
 	options?: SearchOptions,
 ): Promise<UniversalSearchResponse> {
 	const selectedTypes = new Set(
-		params.types == null || params.types.length === 0 ? ["work", "expression"] : params.types,
+		params.types == null || params.types.length === 0
+			? ["work", "expression", "person", "manifestation"]
+			: params.types,
 	);
 	const commonParams = {
 		...(params.page != null ? { page: params.page } : {}),
@@ -357,6 +374,20 @@ export async function getItems(
 		include_fields: expressionIncludeFields,
 		...(params.expressionFilterBy != null ? { filter_by: params.expressionFilterBy } : {}),
 	};
+	const manifestationSearch = {
+		collection: "manifestation" as const,
+		q: params.q,
+		query_by: [
+			"title",
+			"subtitle",
+			"other_title_information",
+			"language",
+			"sameas",
+			"publisher.name",
+			"tbit_shelfmark",
+		],
+		highlight_full_fields: ["title"],
+	};
 	const personSearch = {
 		collection: "person" as const,
 		q: params.q,
@@ -377,10 +408,20 @@ export async function getItems(
 	const searchParams = searchesIncludePerson
 		? { page: commonParams.page, per_page: commonParams.per_page }
 		: commonParams;
+	// Publications have timestamp dates instead of a year field. Avoid sending an invalid
+	// shared year sort to a union containing publications.
+	if (selectedTypes.has("manifestation") && "sort_by" in searchParams) {
+		const sort = searchParams.sort_by;
+		const clauses = typeof sort === "string" ? sort.split(",") : sort;
+		searchParams.sort_by = clauses?.filter((clause) => {
+			return !clause.startsWith("year:");
+		});
+	}
 	const searches = [
 		["work", workSearch],
 		["expression", expressionSearch],
 		["person", personSearch],
+		["manifestation", manifestationSearch],
 	] as const;
 	const selectedSearches = searches
 		.filter(([type]) => {
@@ -468,8 +509,8 @@ export async function getWorkWithRelations(
 }
 
 /**
- * expression with their work and their translators resolved. Both are forward joins, so neither
- * needs a `filter_by` clause: naming the collections in `include_fields` is enough.
+ * Expressions with their work, translators, and publications resolved. These are forward joins,
+ * so naming the collections in `include_fields` is enough.
  *
  * The translators arrive under the key `authors`, a joined key being named after the target
  * collection and `translator_ids` pointing at `authors`. They are the expression's own translators —
@@ -602,5 +643,22 @@ export async function getGroup(
 ): Promise<GroupWithRelations | null> {
 	const response = await getGroups({ filter_by: `id:=${filterString(id)}`, per_page: 1 }, options);
 
+	return response.hits?.[0]?.document ?? null;
+}
+
+/** Returns a publication with its translations, including publications with no translations. */
+export async function getManifestation(
+	id: string,
+	options?: SearchOptions,
+): Promise<ManifestationWithRelations | null> {
+	const response = await searchCollection<"manifestation", ManifestationWithRelations>(
+		"manifestation",
+		{
+			filter_by: withJoinFilter(`id:=${filterString(id)}`, leftJoinFilter(["expression"])),
+			include_fields: `*,${defineJoin("expression", nestArray, { alias: "expressions" }).clause}`,
+			per_page: 1,
+		},
+		options,
+	);
 	return response.hits?.[0]?.document ?? null;
 }
