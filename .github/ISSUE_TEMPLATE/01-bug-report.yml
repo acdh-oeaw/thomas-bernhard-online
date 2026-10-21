@@ -1,7 +1,5 @@
 name: Bug report
 description: Report a technical issue
-assignees:
-  - stefanprobst
 labels:
   - needs-review
   - bug
