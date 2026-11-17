@@ -144,32 +144,15 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 													{performance.title}
 												</TBNavLink>
 												{" · "}
-												{performance.type}
+												{performance.type_of_event}
 											</p>
-											{performance.directors?.length ? (
+											{performance.participant_ids?.length ? (
 												<p>
-													{"Directors: "}
-													<Names values={performance.directors} />
+													{"Participants: "}
+													<Names values={performance.participant_ids} />
 												</p>
 											) : null}
-											{performance.actors?.length ? (
-												<p>
-													{"Actors: "}
-													<Names values={performance.actors} />
-												</p>
-											) : null}
-											{performance.theaters?.length ? (
-												<p>
-													{"Theaters: "}
-													<Names values={performance.theaters} />
-												</p>
-											) : null}
-											{performance.posters?.length ? (
-												<p>
-													{"Posters: "}
-													<Names values={performance.posters} />
-												</p>
-											) : null}
+											{performance.location ? <p>{performance.location.name}</p> : null}
 										</li>
 									);
 								})}

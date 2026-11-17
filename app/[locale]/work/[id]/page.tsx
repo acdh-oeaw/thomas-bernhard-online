@@ -30,8 +30,8 @@ function MetadataSection(props: Readonly<{ title: string; children: ReactNode }>
 function RelatedEntities(
 	props: Readonly<{
 		values: ReadonlyArray<{
-			id: string;
-			name: string;
+			id?: string | null;
+			name?: string | null;
 		}>;
 		path?: string;
 	}>,
@@ -43,14 +43,15 @@ function RelatedEntities(
 	}
 
 	return values.map((value, index) => {
-		const name = path ? (
-			<TBNavLink href={`${path}/${value.id}`}>{value.name}</TBNavLink>
-		) : (
-			value.name
-		);
+		const name =
+			path && value.id ? (
+				<TBNavLink href={`${path}/${value.id}`}>{value.name}</TBNavLink>
+			) : (
+				value.name
+			);
 
 		return (
-			<span key={value.id}>
+			<span key={value.id ?? index}>
 				{index > 0 ? ", " : null}
 				{name}
 			</span>
@@ -97,7 +98,7 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 	}
 	if (document == null) notFound();
 
-	const { title, category, authors, performances, expressions, sameas, year } = document;
+	const { title, category, performances, expressions, sameas, year } = document;
 
 	return (
 		<MainContent className="layout-grid content-start">
@@ -115,24 +116,11 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 				</header>
 
 				<div className="grid max-w-text gap-y-8">
-					{authors && authors.length > 0 ? (
-						<MetadataSection title={tField("authors")}>
-							{authors.map((author) => {
-								return (
-									<li key={author.id} className="text-small text-text-weak">
-										<TBNavLink href={`/person/${author.id}`}>{author.name}</TBNavLink>
-									</li>
-								);
-							})}
-						</MetadataSection>
-					) : null}
-
 					{performances && performances.length > 0 ? (
 						<MetadataSection title={tField("performances")}>
 							{performances.map((performance) => {
-								const theaters = performance.theaters ?? [];
-								const actors = performance.actors ?? [];
-								const directors = performance.directors ?? [];
+								const theaters = performance.location ? [performance.location] : [];
+								const participants = performance.participant_ids ?? [];
 
 								return (
 									<li key={performance.id} className="text-small text-text-weak">
@@ -151,17 +139,10 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 												<RelatedEntities path="/group" values={theaters} />
 											</>
 										) : null}
-										{actors.length > 0 ? (
+										{participants.length > 0 ? (
 											<>
-												{" (actors: "}
-												<RelatedEntities path="/person" values={actors} />
-												{")"}
-											</>
-										) : null}
-										{directors.length > 0 ? (
-											<>
-												{" (directors: "}
-												<RelatedEntities path="/person" values={directors} />
+												{" (participants: "}
+												<RelatedEntities path="/person" values={participants} />
 												{")"}
 											</>
 										) : null}

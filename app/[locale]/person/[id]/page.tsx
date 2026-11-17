@@ -4,7 +4,6 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { WorkLink } from "@/components/entity-links/work-link";
 import { ExpressionOfWork } from "@/components/expression-of-work";
 import { MainContent } from "@/components/ui/main-content";
 import { getPerson } from "@/lib/data";
@@ -12,15 +11,6 @@ import type { IntlLocale } from "@/lib/i18n/locales";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
-}
-
-function performanceYear(dateRange: string | null | undefined, dateRangeFrom: number): string {
-	if (dateRange != null && dateRange !== "") {
-		return dateRange;
-	}
-
-	const timestamp = dateRangeFrom < 10_000_000_000 ? dateRangeFrom * 1000 : dateRangeFrom;
-	return String(new Date(timestamp).getUTCFullYear());
 }
 
 export async function generateMetadata(
@@ -57,22 +47,6 @@ export default async function PersonPage(props: Readonly<PageProps>): Promise<Re
 				</header>
 
 				<div className="grid max-w-text gap-y-8 text-small text-text-weak">
-					{person.works && person.works.length > 0 ? (
-						<section>
-							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{"Works"}
-							</h2>
-							<ul className="list-disc space-y-2 pl-5">
-								{person.works.map((work) => {
-									return (
-										<li key={work.id}>
-											<WorkLink work={work} />
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					) : null}
 					{person.expressions && person.expressions.length > 0 ? (
 						<section>
 							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
@@ -95,33 +69,6 @@ export default async function PersonPage(props: Readonly<PageProps>): Promise<Re
 													{expression.title} {"·"} {expression.language}
 												</TBNavLink>
 											)}
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					) : null}
-					{person.performances && person.performances.length > 0 ? (
-						<section>
-							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{"Performances"}
-							</h2>
-							<ul className="list-disc space-y-2 pl-5">
-								{person.performances.map((performance) => {
-									return (
-										<li key={performance.id}>
-											<span className="mr-2 text-tiny">
-												{performanceYear(performance.date_range, performance.date_range_from)}
-											</span>
-											<TBNavLink href={`/performance/${performance.id}`}>
-												{performance.title}
-											</TBNavLink>
-											{performance.work ? (
-												<>
-													{" · "}
-													<WorkLink work={performance.work} />
-												</>
-											) : null}
 										</li>
 									);
 								})}

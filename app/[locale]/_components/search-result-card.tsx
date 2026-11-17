@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { NavLink } from "@/components/nav-link";
-import type { CollectionName } from "@/lib/typesense/search";
+import type { ItemType } from "@/lib/data";
 
 interface SearchResultCardProps {
 	href: string;
@@ -10,7 +10,7 @@ interface SearchResultCardProps {
 	subheader?: ReactNode;
 	children?: ReactNode;
 	image: string;
-	entityType: CollectionName;
+	entityType: ItemType;
 }
 
 export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactNode {

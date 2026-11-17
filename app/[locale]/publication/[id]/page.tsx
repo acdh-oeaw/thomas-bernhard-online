@@ -83,15 +83,15 @@ export default async function PublicationPage(props: Readonly<PageProps>): Promi
 							) : null;
 						})}
 					</dl>
-					{publication.publisher?.length ? (
+					{publication.publisher != null ? (
 						<section>
 							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
 								{t("publishers")}
 							</h2>
 							<ul className="list-disc space-y-2 pl-5">
-								{publication.publisher.map((publisher, index) => {
+								{[publication.publisher].map((publisher) => {
 									return (
-										<li key={publisher.id ?? index}>
+										<li key={publisher.id ?? publisher.name}>
 											{publisher.id ? (
 												<TBNavLink href={`/group/${publisher.id}`}>
 													{publisher.name ?? publisher.id}

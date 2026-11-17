@@ -206,6 +206,7 @@
 		"identifiers": "Identifikatoren"
 	},
 	"PerformanceResultCard": {
+		"participants": "Beteiligte",
 		"directors": "Regie",
 		"actors": "Besetzung"
 	},

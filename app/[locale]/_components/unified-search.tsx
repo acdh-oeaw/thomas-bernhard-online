@@ -13,6 +13,7 @@ import type { FacetCountsRequest } from "@/components/typesense/use-facet-counts
 import {
 	getItemFacetCounts,
 	getItems,
+	itemCollections,
 	type ItemSearchParams,
 	type UniversalSearchDocument,
 	type UniversalSearchHit,
@@ -59,14 +60,13 @@ function isExpressionHit(
 function isManifestationHit(
 	hit: UniversalSearchHit,
 ): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "manifestation" }>> {
-	// The generated `const` only describes the type; older indexed documents may omit it.
-	return hit.document.type === "manifestation" || "publication_date_sort" in hit.document;
+	return hit.document.type === "manifestation";
 }
 
 function isPerformanceHit(
 	hit: UniversalSearchHit,
 ): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "performance" }>> {
-	return hit.document.type === "performance" || "date_range_sort" in hit.document;
+	return hit.document.type === "performance";
 }
 
 function isGroupHit(
@@ -78,7 +78,7 @@ function isGroupHit(
 function isPersonHit(
 	hit: UniversalSearchHit,
 ): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "person" }>> {
-	return hit.document.type === "person" || "name" in hit.document;
+	return hit.document.type === "person";
 }
 
 /** Shared filter mapping for union hits and facet-only queries. */
@@ -129,7 +129,9 @@ export function UnifiedSearch(): ReactNode {
 	const facetNames = useMemo(() => {
 		return (["category", "year"] as const).filter((field) => {
 			return Array.from(includedTypes).some((type) => {
-				return (collections[type].facetableFieldNames as ReadonlyArray<string>).includes(field);
+				return (
+					collections[itemCollections[type]].facetableFieldNames as ReadonlyArray<string>
+				).includes(field);
 			});
 		});
 	}, [includedTypes]);
@@ -190,7 +192,7 @@ export function UnifiedSearch(): ReactNode {
 					})}
 				</TagList>
 			</TagGroup>
-			<SearchResults
+			<SearchResults<UniversalSearchDocument>
 				collectionName="work"
 				facetNames={facetNames}
 				facetSearch={(

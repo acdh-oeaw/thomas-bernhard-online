@@ -11,15 +11,12 @@ import type { WorkWithRelations } from "@/lib/data";
 import { SearchResultCard } from "./search-result-card";
 
 type Work = WorkWithRelations;
-type WorkHit = SearchResponseHit<Work>;
+type WorkHit = SearchResponseHit<Work & { type?: "work" }>;
 type WorkHighlight = WorkHit["highlight"];
 
-const displayFields = [
-	"category",
-	"authors",
-	"performances",
-	"expressions",
-] as const satisfies ReadonlyArray<keyof Work>;
+const displayFields = ["category", "performances", "expressions"] as const satisfies ReadonlyArray<
+	keyof Work
+>;
 
 /**
  * Typesense's object-form `highlight` mirrors the document. Its types are loose (nested arrays), so
@@ -136,14 +133,6 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 			) : (
 				(document.category ?? "")
 			),
-		authors: renderHighlightedList(
-			highlight,
-			"authors",
-			"name",
-			(document.authors ?? []).map((author) => {
-				return author.name;
-			}),
-		),
 		performances: renderHighlightedList(
 			highlight,
 			"performances",

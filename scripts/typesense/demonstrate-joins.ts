@@ -1,7 +1,10 @@
 import type { DocumentSchema, SearchOptions, SearchParams, SearchResponse } from "typesense";
 
 import { defaultSearchParams } from "@/config/typesense.config";
-import type { ExpressionWithRelations, WorkWithRelations } from "@/lib/data";
+import type {
+	ExpressionWithRelations,
+	WorkWithRelations as AppWorkWithRelations,
+} from "@/lib/data";
 import { physicalCollectionName } from "@/lib/typesense/collection-name";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import {
@@ -11,6 +14,11 @@ import {
 	performancesCollectionName,
 	workCollectionName,
 } from "@/scripts/typesense/create-joined-schema";
+
+/** The demo schema retains an author reference that the production API no longer has. */
+type WorkWithRelations = AppWorkWithRelations & {
+	authors?: Array<{ id: string; name: string }>;
+};
 
 /**
  * Shows what a Typesense JOIN does to a search response, by running the same searches with and

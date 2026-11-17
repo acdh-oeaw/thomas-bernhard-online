@@ -17,10 +17,7 @@ export function PerformanceResultCard(
 	const t = useTranslations("PerformanceResultCard");
 	const title = highlight.title;
 	const snippet = title != null && "value" in title ? (title.value ?? title.snippet) : undefined;
-	const people = [
-		{ label: t("directors"), names: document.directors },
-		{ label: t("actors"), names: document.actors },
-	];
+	const people = [{ label: t("participants"), names: document.participant_ids }];
 
 	return (
 		<SearchResultCard

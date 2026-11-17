@@ -206,6 +206,7 @@
 		"identifiers": "Identifiers"
 	},
 	"PerformanceResultCard": {
+		"participants": "Participants",
 		"directors": "Directors",
 		"actors": "Cast"
 	},

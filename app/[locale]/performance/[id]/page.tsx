@@ -15,20 +15,6 @@ interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
 }
 
-function Names(props: Readonly<{ values: ReadonlyArray<{ name: string }> }>): ReactNode {
-	const { values } = props;
-
-	if (values.length === 0) {
-		return null;
-	}
-
-	return values
-		.map((value) => {
-			return value.name;
-		})
-		.join(", ");
-}
-
 function People(
 	props: Readonly<{ values: ReadonlyArray<{ id?: string | null; name?: string | null }> }>,
 ): ReactNode {
@@ -88,7 +74,7 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{performance.title}
 					</h1>
-					<p className="font-heading text-heading-4 text-text-weak">{performance.type}</p>
+					<p className="font-heading text-heading-4 text-text-weak">{performance.type_of_event}</p>
 				</header>
 
 				<div className="grid max-w-text gap-y-6 text-small text-text-weak">
@@ -103,48 +89,16 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 						</section>
 					) : null}
 					{performance.date_range ? <p>{performance.date_range}</p> : null}
-					{performance.directors && performance.directors.length > 0 ? (
-						<p>
-							{"Directors: "}
-							<People values={performance.directors} />
-						</p>
-					) : null}
-					{performance.actors && performance.actors.length > 0 ? (
-						<p>
-							{"Actors: "}
-							<People values={performance.actors} />
-						</p>
-					) : null}
-					{performance.people && performance.people.length > 0 ? (
+					{performance.participant_ids?.length ? (
 						<p>
 							{"Participants: "}
-							{performance.people.map((person, index) => {
-								return (
-									<span key={person.id}>
-										{index > 0 ? ", " : null}
-										<TBNavLink href={`/person/${person.id}`}>{person.name}</TBNavLink>
-									</span>
-								);
-							})}
+							<People values={performance.participant_ids} />
 						</p>
 					) : null}
-					{performance.posters && performance.posters.length > 0 ? (
+					{performance.location ? (
 						<p>
-							{"Posters: "}
-							<Names values={performance.posters} />
-						</p>
-					) : null}
-					{performance.theaters && performance.theaters.length > 0 ? (
-						<p>
-							{"Theaters: "}
-							{performance.theaters.map((theater, index) => {
-								return (
-									<span key={theater.id}>
-										{index > 0 ? ", " : null}
-										<GroupLink group={theater} />
-									</span>
-								);
-							})}
+							{"Location: "}
+							<GroupLink group={performance.location} />
 						</p>
 					) : null}
 				</div>

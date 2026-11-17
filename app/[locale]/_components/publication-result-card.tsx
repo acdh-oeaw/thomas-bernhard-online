@@ -9,7 +9,7 @@ import { publicationDateRange } from "@/lib/publication-date";
 import { SearchResultCard } from "./search-result-card";
 
 export function PublicationResultCard(
-	props: Readonly<{ hit: SearchResponseHit<Manifestation> }>,
+	props: Readonly<{ hit: SearchResponseHit<Manifestation & { type?: "manifestation" }> }>,
 ): ReactNode {
 	const { hit } = props;
 	const { document, highlight } = hit;
@@ -29,15 +29,7 @@ export function PublicationResultCard(
 				<p>
 					<LanguageLabel code={document.language} />
 				</p>
-				{document.publisher?.length ? (
-					<p>
-						{document.publisher
-							.map((publisher) => {
-								return publisher.name;
-							})
-							.join(", ")}
-					</p>
-				) : null}
+				{document.publisher?.name ? <p>{document.publisher.name}</p> : null}
 			</div>
 		</SearchResultCard>
 	);
