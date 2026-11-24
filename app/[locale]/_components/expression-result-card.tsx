@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
@@ -6,49 +7,66 @@ import { HighlightedSnippet } from "@/components/typesense";
 import type { SearchDisplayMode } from "@/config/ui";
 import type { UniversalSearchDocument } from "@/lib/data";
 
-import { SearchResultCard } from "./search-result-card";
+import { ResultCardSummary } from "./result-card-summary";
+import { type ResultCardField, SearchResultCard } from "./search-result-card";
 
 type Expression = Extract<UniversalSearchDocument, { type: "expression" }>;
-type ExpressionHit = SearchResponseHit<Expression>;
-
-function highlightMarkup(hit: ExpressionHit): string | undefined {
-	const titleHighlight = hit.highlight.title;
-
-	if (titleHighlight != null && "value" in titleHighlight) {
-		return titleHighlight.value ?? titleHighlight.snippet;
-	}
-
-	return undefined;
-}
 
 export function ExpressionResultCard(
-	props: Readonly<{ hit: ExpressionHit; displayMode: SearchDisplayMode }>,
+	props: Readonly<{ hit: SearchResponseHit<Expression>; displayMode: SearchDisplayMode }>,
 ): ReactNode {
 	const { hit, displayMode } = props;
-	const { document } = hit;
-	const titleHighlight = highlightMarkup(hit);
+	const { document, highlight } = hit;
+	const t = useTranslations("ResultCard");
+	const title = highlight.title;
+	const markup = title != null && "value" in title ? (title.value ?? title.snippet) : undefined;
+	const work = document.work;
+	const original = work
+		? `${work.title}${work.year == null ? "" : ` (${String(work.year)})`}`
+		: undefined;
+	const translators = (document.authors ?? []).map((person) => {
+		return { id: person.id, content: person.name };
+	});
+	const publications = (document.manifestations ?? []).map((publication) => {
+		return { id: publication.id, content: publication.title };
+	});
+	const attributes: Array<ResultCardField> = [
+		{
+			label: t("language"),
+			value: document.language ? <LanguageLabel code={document.language} expand={true} /> : null,
+			isTag: true,
+		},
+	];
+	const cardMetadata: Array<ResultCardField> = [
+		...attributes,
+		{ label: t("original-work"), value: original },
+		{
+			label: t("translators"),
+			value: translators.length ? <ResultCardSummary limit={2} values={translators} /> : null,
+		},
+	];
+	const listMetadata: Array<ResultCardField> = [
+		...attributes,
+		{ label: t("original-work"), value: original },
+		{
+			label: t("translators"),
+			value: translators.length ? <ResultCardSummary limit={4} values={translators} /> : null,
+		},
+		{
+			label: t("publications"),
+			value: publications.length ? <ResultCardSummary limit={3} values={publications} /> : null,
+		},
+	];
 
 	return (
 		<SearchResultCard
 			displayMode={displayMode}
 			entityType="expression"
-			header={
-				titleHighlight != null ? <HighlightedSnippet snippet={titleHighlight} /> : document.title
-			}
+			header={markup ? <HighlightedSnippet snippet={markup} /> : document.title}
 			href={`/expression/${document.id}`}
 			image="expression"
+			metadata={displayMode === "card" ? cardMetadata : listMetadata}
 			subheader={document.year}
-		>
-			<div>
-				<p className="font-heading text-heading-4 text-text-weak">
-					<LanguageLabel code={document.language} />
-				</p>
-				{document.work?.title != null ? (
-					<p className="text-small text-text-weak">
-						{"translation of "} {document.work.title} ({document.work.year})
-					</p>
-				) : null}
-			</div>
-		</SearchResultCard>
+		/>
 	);
 }

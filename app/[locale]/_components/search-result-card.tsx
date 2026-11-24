@@ -6,75 +6,140 @@ import { NavLink } from "@/components/nav-link";
 import { entityBrandStyle, type SearchDisplayMode } from "@/config/ui";
 import { itemCollections, type ItemType } from "@/lib/data";
 
+export interface ResultCardField {
+	label: string;
+	value: ReactNode;
+	/** Only short, discrete attributes become tags in card mode. */
+	isTag?: boolean;
+}
+
 interface SearchResultCardProps {
 	href: string;
 	header: ReactNode;
 	subheader?: ReactNode;
-	children?: ReactNode;
+	summary?: ReactNode;
+	metadata: ReadonlyArray<ResultCardField>;
 	image: string;
 	entityType: ItemType;
 	displayMode: SearchDisplayMode;
 }
 
 export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactNode {
-	const { children, header, href, image, subheader, entityType, displayMode } = props;
+	const { metadata, header, href, image, subheader, summary, entityType, displayMode } = props;
 	const isList = displayMode === "list";
+	const fields = metadata.filter(({ value }) => {
+		return value != null && value !== "" && value !== false;
+	});
+	const tags = fields
+		.filter((field) => {
+			return field.isTag;
+		})
+		.slice(0, 3);
+	const descriptions = fields.filter((field) => {
+		return !field.isTag;
+	});
 	const imageUrl = `https://picsum.photos/seed/${encodeURIComponent(image)}/180/280`;
 	const t = useTranslations("ResultCard");
 
 	return (
-		<li>
-			<NavLink href={href}>
+		<li className="min-w-0">
+			<NavLink
+				className="block h-full rounded-4 outline-transparent focus-visible:focus-outline"
+				href={href}
+			>
 				<article
 					className={cn(
-						"interactive grid overflow-hidden rounded-4 border border-t-4 border-(--entity-brand-border) border-t-(--entity-brand-color) bg-(--entity-brand-tint) shadow-raised outline-transparent hover:hover-overlay focus-visible:focus-outline",
+						"interactive grid h-full gap-4 overflow-hidden rounded-4 border border-t-4 border-(--entity-brand-border) border-t-(--entity-brand-color) bg-(--entity-brand-tint) shadow-raised hover:hover-overlay",
 						isList
-							? "grid-cols-[minmax(0,1fr)_5rem] gap-x-4 gap-y-2 p-4"
-							: "h-96 grid-cols-2 grid-rows-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 p-8",
+							? "grid-cols-[minmax(0,1fr)_4rem] content-start p-4 sm:grid-cols-[minmax(0,1fr)_5rem]"
+							: "min-h-72 grid-cols-[minmax(0,1fr)_minmax(0,0.65fr)] p-6",
 					)}
 					data-display-mode={displayMode}
 					style={entityBrandStyle(itemCollections[entityType])}
 				>
-					<p
-						className={cn(
-							"text-tiny font-strong tracking-wide text-(--entity-brand-color) uppercase",
-							isList ? "col-start-1 row-start-1" : "col-span-2 justify-self-end text-right",
-						)}
-					>
-						{t(entityType)}
-					</p>
-					<div
-						className={cn(
-							"grid min-h-0 min-w-0",
-							isList ? "col-start-1 row-start-2 gap-y-2" : "grid-rows-[auto_minmax(0,1fr)] gap-y-4",
-						)}
-					>
-						<header className="grid min-w-0 gap-y-1">
+					<div className="grid min-w-0 content-start gap-y-4">
+						<header className="grid min-w-0 content-start gap-y-2">
+							<p className="text-tiny font-strong tracking-wide text-(--entity-brand-color) uppercase">
+								{t(entityType)}
+							</p>
 							<h2 className="line-clamp-2 min-w-0 font-heading text-heading-4 font-strong text-text-strong">
 								{header}
 							</h2>
-							{subheader != null ? (
-								<p className="line-clamp-2 min-w-0 font-heading text-heading-4 text-text-weak">
-									{subheader}
-								</p>
+							{subheader != null && subheader !== "" ? (
+								<p className="text-small text-text-weak">{subheader}</p>
 							) : null}
+							{summary ? <p className="line-clamp-2 text-small text-text-weak">{summary}</p> : null}
 						</header>
-						<div
-							className={cn("min-h-0 overflow-hidden", isList ? "line-clamp-3" : "line-clamp-8")}
-						>
-							{children}
-						</div>
+						{fields.length > 0 ? (
+							<div
+								className={cn(
+									"min-w-0 text-small text-text-weak",
+									!isList && "grid content-start gap-y-3",
+								)}
+							>
+								{isList ? (
+									<dl className="flex flex-wrap gap-x-4 gap-y-1">
+										{fields.map(({ label, value }) => {
+											return (
+												<div key={label} className="min-w-0 wrap-break-word">
+													<dt className="inline font-strong">
+														{label}
+														{": "}
+													</dt>
+													<dd className="inline">{value}</dd>
+												</div>
+											);
+										})}
+									</dl>
+								) : (
+									<>
+										{tags.length > 0 ? (
+											<ul aria-label={t("attributes")} className="flex flex-wrap gap-2" role="list">
+												{tags.map(({ label, value }) => {
+													return (
+														<li
+															key={label}
+															className="rounded-full border border-(--entity-brand-border) bg-(--entity-brand-tint) px-2 py-0.5 text-tiny"
+														>
+															<span className="sr-only">
+																{label}
+																{": "}
+															</span>
+															{value}
+														</li>
+													);
+												})}
+											</ul>
+										) : null}
+										{descriptions.map(({ label, value }) => {
+											return (
+												<p key={label} className="min-w-0 wrap-break-word">
+													<span className="font-strong">
+														{label}
+														{": "}
+													</span>
+													{value}
+												</p>
+											);
+										})}
+									</>
+								)}
+							</div>
+						) : null}
 					</div>
 					<div
 						className={cn(
-							"flex min-h-0 min-w-0 items-center justify-center",
-							isList && "col-start-2 row-span-2 row-start-1",
+							"col-start-2 row-start-1",
+							isList ? "flex items-start justify-end" : "relative min-h-0",
 						)}
 					>
 						{/* eslint-disable-next-line @next/next/no-img-element */}
 						<img
 							alt=""
-							className={cn("max-w-full object-contain", isList ? "max-h-28" : "max-h-full")}
+							className={cn(
+								"w-full object-contain",
+								isList ? "max-h-24" : "absolute inset-0 h-full",
+							)}
 							src={imageUrl}
 						/>
 					</div>

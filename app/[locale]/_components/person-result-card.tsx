@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
@@ -5,7 +6,8 @@ import { HighlightedSnippet } from "@/components/typesense";
 import type { SearchDisplayMode } from "@/config/ui";
 import type { UniversalSearchDocument } from "@/lib/data";
 
-import { SearchResultCard } from "./search-result-card";
+import { ResultCardSummary } from "./result-card-summary";
+import { type ResultCardField, SearchResultCard } from "./search-result-card";
 
 type Person = Extract<UniversalSearchDocument, { type: "person" }>;
 type PersonHit = SearchResponseHit<Person>;
@@ -25,6 +27,22 @@ export function PersonResultCard(
 ): ReactNode {
 	const { hit, displayMode } = props;
 	const { document } = hit;
+	const t = useTranslations("ResultCard");
+	const identifiers = document.sameas.map((identifier) => {
+		return { id: identifier, content: identifier };
+	});
+	const cardMetadata: Array<ResultCardField> = [
+		{
+			label: t("identifiers"),
+			value: document.sameas.length ? <ResultCardSummary limit={1} values={identifiers} /> : null,
+		},
+	];
+	const listMetadata: Array<ResultCardField> = [
+		{
+			label: t("identifiers"),
+			value: document.sameas.length ? <ResultCardSummary limit={3} values={identifiers} /> : null,
+		},
+	];
 	const nameHighlight = highlightMarkup(hit);
 
 	return (
@@ -36,6 +54,7 @@ export function PersonResultCard(
 			}
 			href={`/person/${document.id}`}
 			image="person"
+			metadata={displayMode === "card" ? cardMetadata : listMetadata}
 		/>
 	);
 }

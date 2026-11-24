@@ -9,7 +9,8 @@ import type { PublicationSearchDocument } from "@/lib/data";
 import { publicationDateRange } from "@/lib/publication-date";
 import { translationLabel } from "@/lib/translation-label";
 
-import { SearchResultCard } from "./search-result-card";
+import { ResultCardSummary } from "./result-card-summary";
+import { type ResultCardField, SearchResultCard } from "./search-result-card";
 
 export function PublicationResultCard(
 	props: Readonly<{
@@ -19,40 +20,40 @@ export function PublicationResultCard(
 ): ReactNode {
 	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
-	const t = useTranslations("PublicationResultCard");
-	const translations = document.expressions ?? [];
-	const translationTitles = translations
-		.slice(0, 4)
-		.map((translation) => {
-			return translationLabel(translation);
-		})
-		.join(", ");
-	const remainingCount = translations.length - 4;
+	const t = useTranslations("ResultCard");
+	const translations = (document.expressions ?? []).map((translation) => {
+		return { id: translation.id, content: translationLabel(translation) };
+	});
 	const title = highlight.title;
-	const snippet = title != null && "value" in title ? (title.value ?? title.snippet) : undefined;
+	const markup = title != null && "value" in title ? (title.value ?? title.snippet) : undefined;
+	const cardMetadata: Array<ResultCardField> = [
+		{
+			label: t("language"),
+			value: document.language ? <LanguageLabel code={document.language} expand={true} /> : null,
+			isTag: true,
+		},
+		{ label: t("publisher"), value: document.publisher?.name },
+		{
+			label: t("contains"),
+			value: translations.length ? <ResultCardSummary limit={4} values={translations} /> : null,
+		},
+	];
+	const listMetadata: Array<ResultCardField> = [
+		...cardMetadata,
+		{ label: t("isbn"), value: document.isbn },
+		{ label: t("source"), value: document.source },
+	];
 
 	return (
 		<SearchResultCard
 			displayMode={displayMode}
 			entityType="manifestation"
-			header={snippet != null ? <HighlightedSnippet snippet={snippet} /> : document.title}
+			header={markup ? <HighlightedSnippet snippet={markup} /> : document.title}
 			href={`/publication/${document.id}`}
 			image="publication"
+			metadata={displayMode === "card" ? cardMetadata : listMetadata}
 			subheader={publicationDateRange(document)}
-		>
-			<div className="grid gap-y-2 text-small text-text-weak">
-				{document.subtitle ? <p>{document.subtitle}</p> : null}
-				<p>
-					<LanguageLabel code={document.language} />
-				</p>
-				{document.publisher?.name ? <p>{document.publisher.name}</p> : null}
-				{translations.length > 0 ? (
-					<p>
-						{t("contains", { titles: translationTitles })}
-						{remainingCount > 0 ? ` ${t("more", { count: String(remainingCount) })}` : null}
-					</p>
-				) : null}
-			</div>
-		</SearchResultCard>
+			summary={document.subtitle}
+		/>
 	);
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Fragment, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
 import { LanguageLabel } from "@/components/language-label";
@@ -9,176 +9,113 @@ import { HighlightedSnippet } from "@/components/typesense";
 import type { SearchDisplayMode } from "@/config/ui";
 import type { WorkWithRelations } from "@/lib/data";
 
-import { SearchResultCard } from "./search-result-card";
+import { ResultCardSummary } from "./result-card-summary";
+import { type ResultCardField, SearchResultCard } from "./search-result-card";
 
-type Work = WorkWithRelations;
-type WorkHit = SearchResponseHit<Work & { type?: "work" }>;
-type WorkHighlight = WorkHit["highlight"];
-
-const displayFields = ["category", "performances", "expressions"] as const satisfies ReadonlyArray<
-	keyof Work
->;
-
-/**
- * Typesense's object-form `highlight` mirrors the document. Its types are loose (nested arrays), so
- * we read the highlighted markup through small typed accessors. The full `value` (the whole field
- * with `<mark>` tags) is preferred; the truncated `snippet` is only a fallback.
- */
+type WorkHit = SearchResponseHit<WorkWithRelations & { type?: "work" }>;
 type FieldHighlight = { snippet?: string; value?: string } | undefined;
-type ObjectListHighlight = ReadonlyArray<Record<string, FieldHighlight>> | undefined;
 
-function highlightMarkup(highlight: FieldHighlight): string | undefined {
-	return highlight?.value ?? highlight?.snippet;
+function fieldMarkup(highlight: WorkHit["highlight"], field: string): string | undefined {
+	const value = (highlight as Record<string, FieldHighlight>)[field];
+	return value?.value ?? value?.snippet;
 }
 
-/** The highlighted markup for a top-level string field, e.g. `highlight.title`. */
-function fieldHighlight(highlight: WorkHighlight, field: string): string | undefined {
-	return highlightMarkup((highlight as Record<string, FieldHighlight>)[field]);
-}
-
-/**
- * The highlighted markup for a sub-field of the `index`-th entry of an `object[]` field, e.g.
- * `highlight.authors[index].name`. Typesense aligns the highlight array with the document array by
- * index.
- */
-function itemHighlight(
-	highlight: WorkHighlight,
+function relationTitle(
+	highlight: WorkHit["highlight"],
 	field: string,
 	index: number,
-	subField: string,
-): string | undefined {
-	return highlightMarkup(
-		(highlight as Record<string, ObjectListHighlight>)[field]?.[index]?.[subField],
-	);
-}
-
-/** Renders the values of an `object[]` field as a comma-separated list, highlighting matched items. */
-function renderHighlightedList(
-	highlight: WorkHighlight,
-	field: string,
-	subField: string,
-	values: ReadonlyArray<string | null | undefined>,
+	fallback: string,
 ): ReactNode {
-	const entries = values
-		.map((value, index) => {
-			return { value, index, markup: itemHighlight(highlight, field, index, subField) };
-		})
-		.filter((entry) => {
-			return entry.markup != null || (entry.value != null && entry.value !== "");
-		});
-
-	if (entries.length === 0) {
-		return null;
-	}
-
-	return entries.map((entry, position) => {
-		return (
-			<Fragment key={entry.index}>
-				{position > 0 ? ", " : null}
-				{entry.markup != null ? <HighlightedSnippet snippet={entry.markup} /> : entry.value}
-			</Fragment>
-		);
-	});
+	const values = highlight as Record<
+		string,
+		ReadonlyArray<Record<string, FieldHighlight>> | undefined
+	>;
+	const title = values[field]?.[index]?.title;
+	const markup = title?.value ?? title?.snippet;
+	return markup ? <HighlightedSnippet snippet={markup} /> : fallback;
 }
 
-/** Renders the expressions as a comma-separated list of highlighted titles with their language. */
-function renderExpressions(highlight: WorkHighlight, expressions: Work["expressions"]): ReactNode {
-	if (expressions == null || expressions.length === 0) {
-		return null;
-	}
-
-	const entries = expressions.map((expression, index) => {
-		return { expression, index, markup: itemHighlight(highlight, "expressions", index, "title") };
+export function WorkResultCard(
+	props: Readonly<{ hit: WorkHit; displayMode: SearchDisplayMode }>,
+): ReactNode {
+	const { hit, displayMode } = props;
+	const { document, highlight } = hit;
+	const t = useTranslations("ResultCard");
+	const identifiers = document.sameas.map((identifier) => {
+		return { id: identifier, content: identifier };
 	});
-
-	if (entries.length === 0) {
-		return null;
-	}
-
-	return entries.map((entry, position) => {
-		const { expression, markup } = entry;
-
-		return (
-			<Fragment key={expression.id}>
-				{position > 0 ? ", " : null}
-				{markup != null ? <HighlightedSnippet snippet={markup} /> : expression.title}
+	const tWork = useTranslations("WorkPage");
+	const title = fieldMarkup(highlight, "title");
+	const category = fieldMarkup(highlight, "category");
+	const translations = (document.expressions ?? []).map((expression, index) => {
+		return {
+			id: expression.id,
+			content: (
 				<>
+					{relationTitle(highlight, "expressions", index, expression.title)}
 					{" ("}
 					<LanguageLabel code={expression.language} />
 					{")"}
 				</>
-			</Fragment>
-		);
-	});
-}
-
-interface WorkResultCardProps {
-	hit: WorkHit;
-	displayMode: SearchDisplayMode;
-}
-
-export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode {
-	const { hit, displayMode } = props;
-	const { document, highlight } = hit;
-	const t = useTranslations("WorkPage");
-	const tField = useTranslations("Collection.field");
-	const href = `/work/${document.id}`;
-
-	const titleMarkup = fieldHighlight(highlight, "title");
-	const categoryMarkup = fieldHighlight(highlight, "category");
-
-	/** Rendered (highlight-aware) content for each displayed field. */
-	const fieldValues = {
-		category:
-			categoryMarkup != null ? (
-				<HighlightedSnippet snippet={categoryMarkup} />
-			) : (
-				(document.category ?? "")
 			),
-		performances: renderHighlightedList(
-			highlight,
-			"performances",
-			"label",
-			(document.performances ?? []).map((performance) => {
-				return performance.title;
-			}),
-		),
-		expressions: renderExpressions(highlight, document.expressions),
-	} satisfies Record<(typeof displayFields)[number], ReactNode>;
+		};
+	});
+	const performances = (document.performances ?? []).map((performance, index) => {
+		return {
+			id: performance.id,
+			content: relationTitle(highlight, "performances", index, performance.title),
+		};
+	});
+	const attributes: Array<ResultCardField> = [
+		{
+			label: t("category"),
+			value:
+				document.category || category ? (
+					category ? (
+						<HighlightedSnippet snippet={category} />
+					) : (
+						document.category
+					)
+				) : null,
+			isTag: true,
+		},
+	];
+	const cardMetadata: Array<ResultCardField> = [
+		...attributes,
+		{
+			label: t("translations"),
+			value: translations.length ? <ResultCardSummary limit={2} values={translations} /> : null,
+		},
+		{
+			label: t("performances"),
+			value: performances.length ? <ResultCardSummary limit={2} values={performances} /> : null,
+		},
+	];
+	const listMetadata: Array<ResultCardField> = [
+		...attributes,
+		{
+			label: t("translations"),
+			value: translations.length ? <ResultCardSummary limit={4} values={translations} /> : null,
+		},
+		{
+			label: t("performances"),
+			value: performances.length ? <ResultCardSummary limit={4} values={performances} /> : null,
+		},
+		{
+			label: t("identifiers"),
+			value: document.sameas.length ? <ResultCardSummary limit={2} values={identifiers} /> : null,
+		},
+	];
 
 	return (
 		<SearchResultCard
 			displayMode={displayMode}
 			entityType="work"
-			header={
-				titleMarkup != null ? (
-					<HighlightedSnippet snippet={titleMarkup} />
-				) : (
-					document.title || t("untitled")
-				)
-			}
-			href={href}
+			header={title ? <HighlightedSnippet snippet={title} /> : document.title || tWork("untitled")}
+			href={`/work/${document.id}`}
 			image="work"
+			metadata={displayMode === "card" ? cardMetadata : listMetadata}
 			subheader={document.year}
-		>
-			<div>
-				<dl className="grid gap-y-2">
-					{displayFields.map((field) => {
-						const value = fieldValues[field];
-
-						if (value == null || value === "") {
-							return null;
-						}
-
-						return (
-							<div key={field}>
-								<dt className="text-tiny font-strong text-text-weak">{tField(field)}</dt>
-								<dd className="text-small text-text-weak">{value}</dd>
-							</div>
-						);
-					})}
-				</dl>
-			</div>
-		</SearchResultCard>
+		/>
 	);
 }
