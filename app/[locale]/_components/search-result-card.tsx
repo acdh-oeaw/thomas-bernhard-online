@@ -2,7 +2,8 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { NavLink } from "@/components/nav-link";
-import type { ItemType } from "@/lib/data";
+import { entityBrandStyle } from "@/config/entity-colors";
+import { itemCollections, type ItemType } from "@/lib/data";
 
 interface SearchResultCardProps {
 	href: string;
@@ -21,8 +22,11 @@ export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactN
 	return (
 		<li>
 			<NavLink href={href}>
-				<article className="interactive grid h-96 grid-cols-2 grid-rows-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 overflow-hidden rounded-4 border border-stroke-weak bg-background-raised p-8 shadow-raised outline-transparent hover:hover-overlay focus-visible:focus-outline">
-					<p className="col-span-2 justify-self-end text-right text-tiny font-strong tracking-wide text-text-weak uppercase">
+				<article
+					className="interactive grid h-96 grid-cols-2 grid-rows-[auto_minmax(0,1fr)] gap-x-8 gap-y-3 overflow-hidden rounded-4 border border-t-4 border-(--entity-brand-border) border-t-(--entity-brand-color) bg-(--entity-brand-tint) p-8 shadow-raised outline-transparent hover:hover-overlay focus-visible:focus-outline"
+					style={entityBrandStyle(itemCollections[entityType])}
+				>
+					<p className="col-span-2 justify-self-end text-right text-tiny font-strong tracking-wide text-(--entity-brand-color) uppercase">
 						{t(entityType)}
 					</p>
 					<div className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] gap-y-4">

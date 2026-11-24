@@ -10,6 +10,7 @@ import { type SearchFilters, SearchResults } from "@/app/[locale]/_components/se
 import { yearFacetFilter } from "@/components/typesense";
 import type { CollectionHit } from "@/components/typesense/use-collection-search";
 import type { FacetCountsRequest } from "@/components/typesense/use-facet-counts";
+import { entityBrandStyle } from "@/config/entity-colors";
 import {
 	getItemFacetCounts,
 	getItems,
@@ -157,8 +158,9 @@ export function UnifiedSearch(): ReactNode {
 					return (
 						<Tab
 							key={type}
-							className="interactive cursor-pointer border-b-2 border-transparent px-4 py-3 text-small font-strong text-text-weak outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:text-text-strong"
+							className="interactive mx-1 cursor-pointer rounded-t-lg border border-b-2 border-(--entity-brand-outline) border-b-transparent bg-(--entity-brand-tint) px-4 py-2 text-small font-strong text-(--entity-brand-color) outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-b-(--entity-brand-color) selected:shadow-[inset_0_-2px_0_var(--entity-brand-color)]"
 							id={type}
+							style={entityBrandStyle(type === "all" ? "all" : itemCollections[type])}
 						>
 							{t(`result-type-${type}`)}
 						</Tab>
