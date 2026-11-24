@@ -5,7 +5,10 @@ import {
 	ArrowDownZAIcon,
 	CalendarArrowDownIcon,
 	CalendarArrowUpIcon,
+	ListFilterIcon,
+	ListIcon,
 	SearchIcon,
+	TagsIcon,
 	XIcon,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -16,8 +19,8 @@ import {
 	parseAsStringLiteral,
 	useQueryState,
 } from "nuqs";
-import { type ReactNode, useCallback, useId, useMemo, useRef } from "react";
-import { Button, Input, Radio, RadioGroup } from "react-aria-components";
+import { type ReactNode, useCallback, useMemo, useRef } from "react";
+import { Button, Input, Tooltip, TooltipTrigger } from "react-aria-components";
 import type { DocumentSchema, SearchOptions } from "typesense";
 
 import {
@@ -70,6 +73,11 @@ interface SearchResultsProps<D extends DocumentSchema & { id: string }> {
 }
 
 const filterUiOptions = ["dropdown", "tags", "list"] as const;
+const filterUiIcons = {
+	dropdown: ListFilterIcon,
+	tags: TagsIcon,
+	list: ListIcon,
+};
 
 /** A typesense `field:direction` sort value mapped to its `Collection.sort` message key. */
 type SortLabelKey<V extends string> = V extends `${infer Field}:${infer Direction}`
@@ -90,9 +98,6 @@ const orderOptions = [
 const orderValues = orderOptions.map((option) => {
 	return option.value;
 });
-
-const filterUiRadioClassName =
-	"interactive flex cursor-pointer items-center rounded-2 border border-stroke-weak px-3 py-1.5 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong";
 
 const defaultFacetNames = ["category", "year"] as const;
 
@@ -202,7 +207,6 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 	}, [facetSearch, queryKey, categoryFilters, yearFilters, selectedCategories, selectedYears]);
 
 	const sectionRef = useRef<HTMLDivElement>(null);
-	const filterUiHeadingId = useId();
 
 	const handlePageChange = useCallback(
 		(page: number) => {
@@ -296,42 +300,41 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 	return (
 		<FacetCountsContext value={facetContext}>
 			<div ref={sectionRef} className="grid gap-y-12">
-				<div className="grid gap-y-3">
-					<h2 className="text-small font-strong text-text-strong" id={filterUiHeadingId}>
-						{t("filter-ui")}
-					</h2>
-					<RadioGroup
-						aria-labelledby={filterUiHeadingId}
-						className="flex flex-wrap items-center gap-2"
-						onChange={(value) => {
-							void setFilterUi(value === "tags" ? "tags" : value === "list" ? "list" : "dropdown");
-						}}
-						orientation="horizontal"
-						value={filterUi}
-					>
-						<Radio className={filterUiRadioClassName} value="dropdown">
-							{t("filter-ui-dropdown")}
-						</Radio>
-						<Radio className={filterUiRadioClassName} value="tags">
-							{t("filter-ui-tags")}
-						</Radio>
-						<Radio className={filterUiRadioClassName} value="list">
-							{t("filter-ui-list")}
-						</Radio>
-					</RadioGroup>
-
-					<p className="max-w-text text-small text-pretty text-text-weak">
-						{t(`filter-ui-${filterUi}-intro`)}
-					</p>
+				<div className="flex flex-wrap items-center justify-between gap-4">
+					<ResultStatus
+						endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
+						isLoading={isLoading}
+						resultLabel={resultLabel}
+						startIndex={(pagination.page - 1) * pagination.perPage + 1}
+						totalCount={pagination.found}
+					/>
+					<div aria-label={t("filter-ui")} className="ml-auto flex gap-2" role="group">
+						{filterUiOptions.map((mode) => {
+							const Icon = filterUiIcons[mode];
+							return (
+								<TooltipTrigger key={mode} delay={300}>
+									<Button
+										aria-label={t(`filter-ui-${mode}`)}
+										aria-pressed={filterUi === mode}
+										className="interactive flex size-9 cursor-pointer items-center justify-center rounded-2 border border-stroke-weak text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline aria-pressed:border-stroke-brand-strong aria-pressed:bg-fill-brand-strong aria-pressed:text-text-inverse-strong"
+										onPress={() => {
+											void setFilterUi(mode);
+										}}
+									>
+										<Icon aria-hidden={true} className="size-4" />
+									</Button>
+									<Tooltip
+										className="z-50 grid max-w-72 gap-1 rounded-2 border border-stroke-weak bg-background-raised p-3 text-small text-text-strong shadow-raised"
+										placement="bottom end"
+									>
+										<strong className="font-strong">{t(`filter-ui-${mode}`)}</strong>
+										<span className="text-text-weak">{t(`filter-ui-${mode}-intro`)}</span>
+									</Tooltip>
+								</TooltipTrigger>
+							);
+						})}
+					</div>
 				</div>
-
-				<ResultStatus
-					endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
-					isLoading={isLoading}
-					resultLabel={resultLabel}
-					startIndex={(pagination.page - 1) * pagination.perPage + 1}
-					totalCount={pagination.found}
-				/>
 				<div className="flex max-w-text flex-wrap items-center gap-4">
 					<SearchInput
 						aria-label={t("search-placeholder")}
