@@ -24,11 +24,11 @@ export function ExpressionResultCard(
 	const original = work
 		? `${work.title}${work.year == null ? "" : ` (${String(work.year)})`}`
 		: undefined;
-	const translators = (document.authors ?? []).map((person) => {
-		return { id: person.id, content: person.name };
+	const translators = (document.authors ?? []).map((person, index) => {
+		return { id: `${person.name}:${String(index)}`, content: person.name };
 	});
-	const publications = (document.manifestations ?? []).map((publication) => {
-		return { id: publication.id, content: publication.title };
+	const publications = (document.manifestations ?? []).map((publication, index) => {
+		return { id: `${publication.title}:${String(index)}`, content: publication.title };
 	});
 	const attributes: Array<ResultCardField> = [
 		{

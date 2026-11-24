@@ -221,6 +221,7 @@
 		"actors": "Cast"
 	},
 	"ResultCard": {
+		"location": "Location",
 		"original-work": "Original work",
 		"attributes": "Attributes",
 		"more": "+ {count} more",

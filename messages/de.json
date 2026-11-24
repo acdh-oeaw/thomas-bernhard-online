@@ -221,6 +221,7 @@
 		"actors": "Besetzung"
 	},
 	"ResultCard": {
+		"location": "Ort",
 		"original-work": "Originalwerk",
 		"attributes": "Merkmale",
 		"more": "+ {count} weitere",

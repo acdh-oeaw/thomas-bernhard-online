@@ -5,6 +5,7 @@ import type { SearchResponseHit } from "typesense";
 import { HighlightedSnippet } from "@/components/typesense";
 import type { SearchDisplayMode } from "@/config/ui";
 import type { UniversalSearchDocument } from "@/lib/data";
+import { translationLabel } from "@/lib/translation-label";
 
 import { ResultCardSummary } from "./result-card-summary";
 import { type ResultCardField, SearchResultCard } from "./search-result-card";
@@ -31,13 +32,25 @@ export function PersonResultCard(
 	const identifiers = document.sameas.map((identifier) => {
 		return { id: identifier, content: identifier };
 	});
+	const translations = (document.expressions ?? []).map((translation, index) => {
+		const label = translationLabel(translation);
+		return { id: `${label}:${String(index)}`, content: label };
+	});
 	const cardMetadata: Array<ResultCardField> = [
+		{
+			label: t("translations"),
+			value: translations.length ? <ResultCardSummary limit={2} values={translations} /> : null,
+		},
 		{
 			label: t("identifiers"),
 			value: document.sameas.length ? <ResultCardSummary limit={1} values={identifiers} /> : null,
 		},
 	];
 	const listMetadata: Array<ResultCardField> = [
+		{
+			label: t("translations"),
+			value: translations.length ? <ResultCardSummary limit={4} values={translations} /> : null,
+		},
 		{
 			label: t("identifiers"),
 			value: document.sameas.length ? <ResultCardSummary limit={3} values={identifiers} /> : null,

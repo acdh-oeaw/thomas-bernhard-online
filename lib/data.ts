@@ -64,12 +64,12 @@ export const itemCollections = {
 export type ItemType = keyof typeof itemCollections;
 
 interface ItemDocuments {
-	work: WorkWithRelations;
-	expression: ExpressionWithRelations;
-	person: Person;
+	work: WorkSearchDocument;
+	expression: ExpressionSearchDocument;
+	person: PersonSearchDocument;
 	manifestation: PublicationSearchDocument;
-	performance: Performance;
-	group: Group;
+	performance: PerformanceSearchDocument;
+	group: GroupSearchDocument;
 }
 
 /** The union query adds its own discriminator from Typesense's collection metadata. */
@@ -149,17 +149,49 @@ export type ManifestationWithRelations = DocumentWithJoins<
 	}
 >;
 
+/** Union-search projections contain display labels, never related document IDs. */
+type WorkLabel = Pick<Work, "title" | "year">;
+type TranslationLabel = DocumentWithJoins<Pick<Expression, "title">, { work: WorkLabel }>;
+
+export type WorkSearchDocument = DocumentWithJoins<
+	Work,
+	object,
+	{
+		expressions: Array<Pick<Expression, "title" | "language">>;
+		performances: Array<Pick<Performance, "title">>;
+	}
+>;
+
+export type ExpressionSearchDocument = DocumentWithJoins<
+	Expression,
+	{ work: WorkLabel; authors: Array<Pick<Person, "name">> },
+	{ manifestations: Array<Pick<Manifestation, "title">> }
+>;
+
+export type PersonSearchDocument = DocumentWithJoins<
+	Person,
+	object,
+	{ expressions: Array<TranslationLabel> }
+>;
+
+export type GroupSearchDocument = DocumentWithJoins<
+	Group,
+	object,
+	{
+		performances: Array<Pick<Performance, "title" | "date_range">>;
+		publications: Array<Pick<Manifestation, "title">>;
+	}
+>;
+
+export type PerformanceSearchDocument = DocumentWithJoins<
+	Performance,
+	{ work: WorkLabel; location: Pick<Group, "name"> }
+>;
+
 /** Publication cards need translation titles and their original work's title and year. */
 export type PublicationSearchDocument = DocumentWithJoins<
 	Manifestation,
-	{
-		expressions: Array<
-			DocumentWithJoins<
-				Pick<Expression, "id" | "title">,
-				{ work: Pick<Work, "id" | "title" | "year"> }
-			>
-		>;
-	}
+	{ expressions: Array<TranslationLabel> }
 >;
 
 /** The explicitly requested relation projection returned by `getperformance`. */
@@ -329,10 +361,47 @@ const expressionIncludeFields = [
 const expressionJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["event"]))} || id:*)`;
 
 const publicationWorkJoin = defineJoin("work", ["id", "title", "year"]).clause;
-const publicationTranslationTitles = defineJoin("translation", `id,title,${publicationWorkJoin}`, {
+
+const searchWorkLabelJoin = defineJoin("work", ["title", "year"]).clause;
+const searchTranslationLabels = defineJoin("translation", `title,${searchWorkLabelJoin}`, {
 	alias: "expressions",
 	strategy: "nest_array",
 }).clause;
+const searchWorkIncludeFields = [
+	defineJoin("translation", ["title", "language"], {
+		alias: "expressions",
+		strategy: "nest_array",
+	}).clause,
+	defineJoin("event", ["title"], {
+		alias: "performances",
+		strategy: "nest_array",
+	}).clause,
+].join(",");
+const searchExpressionIncludeFields = [
+	searchWorkLabelJoin,
+	defineJoin("person", ["name"], {
+		alias: "authors",
+		strategy: "nest_array",
+	}).clause,
+	defineJoin("publication", ["title"], {
+		alias: "manifestations",
+		strategy: "nest_array",
+	}).clause,
+].join(",");
+const searchGroupIncludeFields = [
+	defineJoin("event", ["title", "date_range"], {
+		alias: "performances",
+		strategy: "nest_array",
+	}).clause,
+	defineJoin("publication", ["title"], {
+		alias: "publications",
+		strategy: "nest_array",
+	}).clause,
+].join(",");
+const searchPerformanceIncludeFields = [
+	searchWorkLabelJoin,
+	defineJoin("group", ["name"], { alias: "location" }).clause,
+].join(",");
 
 /** Builds the same collection queries for both results and facet counts. */
 function getItemSearches(params: ItemSearchParams) {
@@ -346,20 +415,22 @@ function getItemSearches(params: ItemSearchParams) {
 		q: params.q,
 		query_by: ["title", "sameas", "category"],
 		highlight_full_fields: ["title"],
-		...(params.workFilterBy != null ? { filter_by: params.workFilterBy } : {}),
+		include_fields: searchWorkIncludeFields,
+		filter_by: withJoinFilter(params.workFilterBy, leftJoinFilter(["translation", "event"])),
 	};
 	const expressionSearch = {
 		collection: "translation" as const,
 		q: params.q,
 		query_by: ["title", "sameas", "language", "type"],
 		highlight_full_fields: ["title"],
-		include_fields: expressionIncludeFields,
-		filter_by: withJoinFilter(params.expressionFilterBy, expressionJoinFilter),
+		include_fields: searchExpressionIncludeFields,
+		// Keep the work left join explicit alongside reverse publications for stable pagination.
+		filter_by: withJoinFilter(params.expressionFilterBy, leftJoinFilter(["publication", "work"])),
 	};
 	const manifestationSearch = {
 		collection: "publication" as const,
 		q: params.q,
-		include_fields: publicationTranslationTitles,
+		include_fields: searchTranslationLabels,
 		query_by: [
 			"title",
 			"subtitle",
@@ -376,12 +447,15 @@ function getItemSearches(params: ItemSearchParams) {
 		q: params.q,
 		query_by: ["title", "sameas", "type", "date_range", "participant_ids.name"],
 		highlight_full_fields: ["title"],
+		include_fields: searchPerformanceIncludeFields,
 	};
 	const personSearch = {
 		collection: "person" as const,
 		q: params.q,
 		query_by: ["name", "sameas"],
 		highlight_full_fields: ["name"],
+		include_fields: searchTranslationLabels,
+		filter_by: leftJoinFilter(["translation"]),
 	};
 
 	const groupSearch = {
@@ -389,6 +463,8 @@ function getItemSearches(params: ItemSearchParams) {
 		q: params.q,
 		query_by: ["name", "sameas"],
 		highlight_full_fields: ["name"],
+		include_fields: searchGroupIncludeFields,
+		filter_by: leftJoinFilter(["event", "publication"]),
 	};
 
 	const searches = [
@@ -498,10 +574,7 @@ export async function getItemFacetCounts(
 				include_fields: _includeFields,
 				highlight_full_fields: _highlightFields,
 				...query
-			} = {
-				include_fields: undefined,
-				...search,
-			};
+			} = search;
 			return searchCollectionUnchecked(
 				collection,
 				{

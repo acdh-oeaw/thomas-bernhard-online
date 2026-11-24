@@ -7,12 +7,12 @@ import type { SearchResponseHit } from "typesense";
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
 import type { SearchDisplayMode } from "@/config/ui";
-import type { WorkWithRelations } from "@/lib/data";
+import type { WorkSearchDocument } from "@/lib/data";
 
 import { ResultCardSummary } from "./result-card-summary";
 import { type ResultCardField, SearchResultCard } from "./search-result-card";
 
-type WorkHit = SearchResponseHit<WorkWithRelations & { type?: "work" }>;
+type WorkHit = SearchResponseHit<WorkSearchDocument & { type?: "work" }>;
 type FieldHighlight = { snippet?: string; value?: string } | undefined;
 
 function fieldMarkup(highlight: WorkHit["highlight"], field: string): string | undefined {
@@ -49,7 +49,7 @@ export function WorkResultCard(
 	const category = fieldMarkup(highlight, "category");
 	const translations = (document.expressions ?? []).map((expression, index) => {
 		return {
-			id: expression.id,
+			id: `${expression.title}:${expression.language}:${String(index)}`,
 			content: (
 				<>
 					{relationTitle(highlight, "expressions", index, expression.title)}
@@ -62,7 +62,7 @@ export function WorkResultCard(
 	});
 	const performances = (document.performances ?? []).map((performance, index) => {
 		return {
-			id: performance.id,
+			id: `${performance.title}:${String(index)}`,
 			content: relationTitle(highlight, "performances", index, performance.title),
 		};
 	});

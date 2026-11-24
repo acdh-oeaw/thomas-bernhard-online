@@ -31,13 +31,38 @@ export function GroupResultCard(
 	const identifiers = document.sameas.map((identifier) => {
 		return { id: identifier, content: identifier };
 	});
+	const performances = (document.performances ?? []).map((performance, index) => {
+		return {
+			id: `${performance.title}:${String(index)}`,
+			content: `${performance.title}${performance.date_range ? ` (${performance.date_range})` : ""}`,
+		};
+	});
+	const publications = (document.publications ?? []).map((publication, index) => {
+		return { id: `${publication.title}:${String(index)}`, content: publication.title };
+	});
 	const cardMetadata: Array<ResultCardField> = [
+		{
+			label: t("performances"),
+			value: performances.length ? <ResultCardSummary limit={2} values={performances} /> : null,
+		},
+		{
+			label: t("publications"),
+			value: publications.length ? <ResultCardSummary limit={2} values={publications} /> : null,
+		},
 		{
 			label: t("identifiers"),
 			value: document.sameas.length ? <ResultCardSummary limit={1} values={identifiers} /> : null,
 		},
 	];
 	const listMetadata: Array<ResultCardField> = [
+		{
+			label: t("performances"),
+			value: performances.length ? <ResultCardSummary limit={4} values={performances} /> : null,
+		},
+		{
+			label: t("publications"),
+			value: publications.length ? <ResultCardSummary limit={4} values={publications} /> : null,
+		},
 		{
 			label: t("identifiers"),
 			value: document.sameas.length ? <ResultCardSummary limit={3} values={identifiers} /> : null,

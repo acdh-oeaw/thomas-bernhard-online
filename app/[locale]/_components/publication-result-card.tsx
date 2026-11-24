@@ -21,8 +21,9 @@ export function PublicationResultCard(
 	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
 	const t = useTranslations("ResultCard");
-	const translations = (document.expressions ?? []).map((translation) => {
-		return { id: translation.id, content: translationLabel(translation) };
+	const translations = (document.expressions ?? []).map((translation, index) => {
+		const label = translationLabel(translation);
+		return { id: `${label}:${String(index)}`, content: label };
 	});
 	const title = highlight.title;
 	const markup = title != null && "value" in title ? (title.value ?? title.snippet) : undefined;
