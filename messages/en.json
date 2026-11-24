@@ -130,6 +130,8 @@
 		"intro": "Free-text search across one or more fields at once. Results are ranked primarily by how closely they match your query; attribute filters can still be applied to narrow them down.",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
 		"order-by": "Order by",
+		"result-collection-all": "results",
+		"result-type-all": "All",
 		"result-types": "Result types",
 		"result-type-work": "Works",
 		"result-type-expression": "Translations",

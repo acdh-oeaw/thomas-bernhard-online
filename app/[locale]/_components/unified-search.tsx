@@ -1,9 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { parseAsArrayOf, parseAsInteger, parseAsStringLiteral, useQueryState } from "nuqs";
+import { parseAsInteger, parseAsStringLiteral, useQueryState } from "nuqs";
 import { type ReactNode, useMemo } from "react";
-import { Label, type Selection, Tag, TagGroup, TagList } from "react-aria-components";
+import { Tab, TabList, TabPanel, Tabs } from "react-aria-components";
 import type { SearchOptions, SearchResponseHit } from "typesense";
 
 import { type SearchFilters, SearchResults } from "@/app/[locale]/_components/search-results";
@@ -37,19 +37,8 @@ const resultTypes = [
 	"performance",
 ] as const;
 type ResultType = (typeof resultTypes)[number];
-
-function selectionToSet(selection: Selection): Set<ResultType> {
-	if (selection === "all") {
-		return new Set(resultTypes);
-	}
-
-	const selectedKeys = new Set(Array.from(selection, String));
-	return new Set(
-		resultTypes.filter((type) => {
-			return selectedKeys.has(type);
-		}),
-	);
-}
+const resultTabs = ["all", ...resultTypes] as const;
+const resultTypeParser = parseAsStringLiteral(resultTabs).withDefault("all");
 
 function isExpressionHit(
 	hit: UniversalSearchHit,
@@ -115,17 +104,11 @@ function itemFilterParams(
 
 export function UnifiedSearch(): ReactNode {
 	const t = useTranslations("SearchResults");
-	const [selectedTypeValues, setSelectedTypeValues] = useQueryState(
-		"types",
-		parseAsArrayOf(parseAsStringLiteral(resultTypes)).withDefault([]),
-	);
+	const [selectedType, setSelectedType] = useQueryState("types", resultTypeParser);
 	const [, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-	const selectedTypes = useMemo(() => {
-		return new Set<ResultType>(selectedTypeValues);
-	}, [selectedTypeValues]);
 	const includedTypes = useMemo(() => {
-		return selectedTypes.size === 0 ? new Set(resultTypes) : selectedTypes;
-	}, [selectedTypes]);
+		return new Set<ResultType>(selectedType === "all" ? resultTypes : [selectedType]);
+	}, [selectedType]);
 	const facetNames = useMemo(() => {
 		return (["category", "year"] as const).filter((field) => {
 			return Array.from(includedTypes).some((type) => {
@@ -140,14 +123,7 @@ export function UnifiedSearch(): ReactNode {
 			return includedTypes.has(type);
 		})
 		.join(",");
-	const resultLabel = resultTypes
-		.filter((type) => {
-			return includedTypes.has(type);
-		})
-		.map((type) => {
-			return t(`result-collection-${type}`);
-		})
-		.join(" & ");
+	const resultLabel = t(`result-collection-${selectedType}`);
 	const search = async (
 		params: CollectionSearchParams<"work">,
 		options: SearchOptions | undefined,
@@ -165,67 +141,66 @@ export function UnifiedSearch(): ReactNode {
 	};
 
 	return (
-		<div className="grid gap-y-8">
-			<TagGroup
+		<Tabs
+			className="grid gap-y-8"
+			onSelectionChange={(key) => {
+				void setSelectedType(resultTypeParser.parse(String(key)) ?? "all");
+				void setPage(1);
+			}}
+			selectedKey={selectedType}
+		>
+			<TabList
 				aria-label={t("result-types")}
-				className="grid gap-y-2"
-				onSelectionChange={(selection) => {
-					void setSelectedTypeValues(Array.from(selectionToSet(selection)));
-					void setPage(1);
-				}}
-				selectedKeys={selectedTypes}
-				selectionMode="multiple"
+				className="flex flex-wrap border-b border-stroke-weak"
 			>
-				<Label className="text-small font-strong text-text-strong">{t("result-types")}</Label>
-				<TagList className="flex flex-wrap gap-2">
-					{resultTypes.map((type) => {
-						return (
-							<Tag
-								key={type}
-								className="interactive flex cursor-pointer rounded-full border-2 border-stroke-weak px-3 py-1 text-small text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:bg-fill-brand-strong selected:text-text-inverse-strong"
-								id={type}
-								textValue={type}
-							>
-								{t(`result-type-${type}`)}
-							</Tag>
+				{resultTabs.map((type) => {
+					return (
+						<Tab
+							key={type}
+							className="interactive cursor-pointer border-b-2 border-transparent px-4 py-3 text-small font-strong text-text-weak outline-transparent hover:hover-overlay focus-visible:focus-outline selected:border-stroke-brand-strong selected:text-text-strong"
+							id={type}
+						>
+							{t(`result-type-${type}`)}
+						</Tab>
+					);
+				})}
+			</TabList>
+			<TabPanel className="outline-transparent focus-visible:focus-outline" id={selectedType}>
+				<SearchResults<UniversalSearchDocument>
+					collectionName="work"
+					facetNames={facetNames}
+					facetSearch={(
+						request: FacetCountsRequest,
+						options: SearchOptions | undefined,
+						filters: SearchFilters,
+					) => {
+						return getItemFacetCounts(
+							itemFilterParams(request.searchQuery, filters, includedTypes),
+							request.facetFields,
+							options,
 						);
-					})}
-				</TagList>
-			</TagGroup>
-			<SearchResults<UniversalSearchDocument>
-				collectionName="work"
-				facetNames={facetNames}
-				facetSearch={(
-					request: FacetCountsRequest,
-					options: SearchOptions | undefined,
-					filters: SearchFilters,
-				) => {
-					return getItemFacetCounts(
-						itemFilterParams(request.searchQuery, filters, includedTypes),
-						request.facetFields,
-						options,
-					);
-				}}
-				queryBy={collections.work.queryableFieldNames}
-				queryKey={queryKey}
-				renderHit={(hit: CollectionHit<UniversalSearchDocument>) => {
-					return isPerformanceHit(hit) ? (
-						<PerformanceResultCard key={`performance-${hit.document.id}`} hit={hit} />
-					) : isManifestationHit(hit) ? (
-						<PublicationResultCard key={`manifestation-${hit.document.id}`} hit={hit} />
-					) : isExpressionHit(hit) ? (
-						<ExpressionResultCard key={hit.document.id} hit={hit} />
-					) : isGroupHit(hit) ? (
-						<GroupResultCard key={`group-${hit.document.id}`} hit={hit} />
-					) : isPersonHit(hit) ? (
-						<PersonResultCard key={`person-${hit.document.id}`} hit={hit} />
-					) : (
-						<WorkResultCard key={hit.document.id} hit={hit} />
-					);
-				}}
-				resultLabel={resultLabel}
-				search={search}
-			/>
-		</div>
+					}}
+					queryBy={collections.work.queryableFieldNames}
+					queryKey={queryKey}
+					renderHit={(hit: CollectionHit<UniversalSearchDocument>) => {
+						return isPerformanceHit(hit) ? (
+							<PerformanceResultCard key={`performance-${hit.document.id}`} hit={hit} />
+						) : isManifestationHit(hit) ? (
+							<PublicationResultCard key={`manifestation-${hit.document.id}`} hit={hit} />
+						) : isExpressionHit(hit) ? (
+							<ExpressionResultCard key={hit.document.id} hit={hit} />
+						) : isGroupHit(hit) ? (
+							<GroupResultCard key={`group-${hit.document.id}`} hit={hit} />
+						) : isPersonHit(hit) ? (
+							<PersonResultCard key={`person-${hit.document.id}`} hit={hit} />
+						) : (
+							<WorkResultCard key={hit.document.id} hit={hit} />
+						);
+					}}
+					resultLabel={resultLabel}
+					search={search}
+				/>
+			</TabPanel>
+		</Tabs>
 	);
 }
