@@ -8,6 +8,7 @@ import {
 	ListFilterIcon,
 	ListIcon,
 	SearchIcon,
+	SparklesIcon,
 	TagsIcon,
 	XIcon,
 } from "lucide-react";
@@ -89,6 +90,7 @@ function sortLabelKey<V extends string>(value: V): SortLabelKey<V> {
 }
 
 const orderOptions = [
+	{ value: "_text_match:desc", icon: SparklesIcon },
 	{ value: "title:asc", icon: ArrowDownAZIcon },
 	{ value: "title:desc", icon: ArrowDownZAIcon },
 	{ value: "year:asc", icon: CalendarArrowDownIcon },
@@ -141,7 +143,7 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 	);
 	const [sortBy, setSortBy] = useQueryState(
 		"sort",
-		parseAsStringLiteral(orderValues).withDefault("title:asc"),
+		parseAsStringLiteral(orderValues).withDefault("_text_match:desc"),
 	);
 
 	const selectedCategories = useMemo(() => {
@@ -180,7 +182,7 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 			query_by: queryBy,
 			highlight_full_fields: ["title"],
 			page: currentPage,
-			sort_by: ["_text_match:desc", sortBy],
+			sort_by: sortBy === "_text_match:desc" ? [sortBy] : ["_text_match:desc", sortBy],
 			...(filterBy !== "" ? { filter_by: filterBy } : {}),
 		},
 		(params, options) => {
@@ -236,9 +238,16 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 
 	const orderByOptions = useMemo(() => {
 		return orderOptions.map((option) => {
-			return { value: option.value, label: tSort(sortLabelKey(option.value)), icon: option.icon };
+			return {
+				value: option.value,
+				label:
+					option.value === "_text_match:desc"
+						? t("sort-relevance")
+						: tSort(sortLabelKey(option.value)),
+				icon: option.icon,
+			};
 		});
-	}, [tSort]);
+	}, [t, tSort]);
 
 	const facetSelection = useMemo(() => {
 		return { category: selectedCategories, year: selectedYears };

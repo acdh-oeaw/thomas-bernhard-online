@@ -436,23 +436,11 @@ export async function getItems(
 		};
 	}
 
-	const searchesIncludeNames = selectedTypes.has("person") || selectedTypes.has("group");
-	const searchParams = searchesIncludeNames
-		? { page: commonParams.page, per_page: commonParams.per_page }
-		: commonParams;
-	// Publications and performances have timestamp dates instead of a year field.
-	// Avoid sending an unsupported shared year sort to these collections.
-	if (
-		(selectedTypes.has("manifestation") || selectedTypes.has("performance")) &&
-		"sort_by" in searchParams
-	) {
-		const sort = searchParams.sort_by;
-		const clauses = typeof sort === "string" ? sort.split(",") : sort;
-		searchParams.sort_by = clauses?.filter((clause) => {
-			return !clause.startsWith("year:");
-		});
+	const response = await searchCollectionsUnchecked(selectedSearches, commonParams, options);
+	// Typesense can return an error body with HTTP 200 for a rejected union search.
+	if ("error" in response && typeof response.error === "string") {
+		throw new Error(response.error);
 	}
-	const response = await searchCollectionsUnchecked(selectedSearches, searchParams, options);
 	const unionRequestParams = response.union_request_params as
 		| ReadonlyArray<SearchResponseRequestParams>
 		| undefined;
