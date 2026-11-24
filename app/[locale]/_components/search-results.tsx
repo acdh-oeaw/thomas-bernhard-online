@@ -306,18 +306,102 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 			</div>
 		);
 
+	const resultsWithToolbar = (
+		<div className="grid gap-y-6">
+			<div className="flex items-center justify-between gap-4">
+				<ResultStatus
+					endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
+					isLoading={isLoading}
+					resultLabel={resultLabel}
+					startIndex={(pagination.page - 1) * pagination.perPage + 1}
+					totalCount={pagination.found}
+				/>
+				<div className="ml-auto shrink-0">
+					<OrderBy
+						label={t("order-by")}
+						onChange={(value) => {
+							void setSortBy(value);
+							// A changed order means a new result sequence, so return to the first page.
+							void setCurrentPage(1);
+						}}
+						options={orderByOptions}
+						value={sortBy}
+					/>
+				</div>
+			</div>
+			{resultsContent}
+		</div>
+	);
+
 	return (
 		<FacetCountsContext value={facetContext}>
 			<div ref={sectionRef} className="grid gap-y-12">
-				<div className="flex flex-wrap items-center justify-between gap-4">
-					<ResultStatus
-						endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
-						isLoading={isLoading}
-						resultLabel={resultLabel}
-						startIndex={(pagination.page - 1) * pagination.perPage + 1}
-						totalCount={pagination.found}
-					/>
-					<div aria-label={t("filter-ui")} className="ml-auto flex gap-2" role="group">
+				<div className="flex items-start gap-4">
+					<div className="flex min-w-0 flex-1 flex-wrap items-center gap-4">
+						<SearchInput
+							aria-label={t("search-placeholder")}
+							className="w-96 max-w-full"
+							onChange={handleSearchChange}
+							value={searchQuery}
+						>
+							<div className="flex items-center gap-x-3 rounded-2 border border-stroke-strong bg-fill-inverse-strong px-4 text-small text-text-strong focus-within:focus-outline">
+								<SearchIcon
+									aria-hidden="true"
+									className="size-5 shrink-0 text-icon-neutral"
+									data-slot="icon"
+								/>
+								<Input
+									className="min-h-12 grow bg-transparent text-text-strong outline-transparent placeholder:text-text-weak"
+									placeholder={t("search-placeholder")}
+								/>
+								<Button
+									aria-label={t("clear-search")}
+									className="shrink-0 rounded-1 p-1 text-icon-neutral outline-transparent group-data-empty:hidden hover:bg-fill-hover focus-visible:focus-outline"
+								>
+									<XIcon aria-hidden={true} className="size-4" data-slot="icon" />
+								</Button>
+							</div>
+						</SearchInput>
+
+						{facets.length > 0 && filterUi === "tags" ? (
+							<MultiFacetFilter
+								collection={workCollection}
+								collectionName={collectionName}
+								facets={facets}
+								isLoading={isLoading}
+								label={t("filters")}
+								onChange={handleFacetChange}
+								searchQuery={searchQuery}
+								selectedValues={facetSelection}
+							/>
+						) : facets.length > 0 && filterUi === "dropdown" ? (
+							<>
+								{facets.map((facet) => {
+									return (
+										<FacetDropdown
+											key={facet.fieldName}
+											collection={workCollection}
+											collectionName={collectionName}
+											facetBy={"facetBy" in facet ? facet.facetBy : undefined}
+											fieldName={facet.fieldName}
+											isLoading={isLoading}
+											label={facet.label}
+											onChange={(values) => {
+												handleFacetChange(facet.fieldName, values);
+											}}
+											searchQuery={searchQuery}
+											selectedValues={facetSelection[facet.fieldName]}
+										/>
+									);
+								})}
+							</>
+						) : null}
+					</div>
+					<div
+						aria-label={t("filter-ui")}
+						className="ml-auto flex min-h-12 shrink-0 items-center gap-2"
+						role="group"
+					>
 						{filterUiOptions.map((mode) => {
 							const Icon = filterUiIcons[mode];
 							return (
@@ -344,77 +428,6 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 						})}
 					</div>
 				</div>
-				<div className="flex max-w-text flex-wrap items-center gap-4">
-					<SearchInput
-						aria-label={t("search-placeholder")}
-						className="w-96 max-w-full"
-						onChange={handleSearchChange}
-						value={searchQuery}
-					>
-						<div className="flex items-center gap-x-3 rounded-2 border border-stroke-strong bg-fill-inverse-strong px-4 text-small text-text-strong focus-within:focus-outline">
-							<SearchIcon
-								aria-hidden="true"
-								className="size-5 shrink-0 text-icon-neutral"
-								data-slot="icon"
-							/>
-							<Input
-								className="min-h-12 grow bg-transparent text-text-strong outline-transparent placeholder:text-text-weak"
-								placeholder={t("search-placeholder")}
-							/>
-							<Button
-								aria-label={t("clear-search")}
-								className="shrink-0 rounded-1 p-1 text-icon-neutral outline-transparent group-data-empty:hidden hover:bg-fill-hover focus-visible:focus-outline"
-							>
-								<XIcon aria-hidden={true} className="size-4" data-slot="icon" />
-							</Button>
-						</div>
-					</SearchInput>
-
-					{facets.length > 0 && filterUi === "tags" ? (
-						<MultiFacetFilter
-							collection={workCollection}
-							collectionName={collectionName}
-							facets={facets}
-							isLoading={isLoading}
-							label={t("filters")}
-							onChange={handleFacetChange}
-							searchQuery={searchQuery}
-							selectedValues={facetSelection}
-						/>
-					) : facets.length > 0 && filterUi === "dropdown" ? (
-						<>
-							{facets.map((facet) => {
-								return (
-									<FacetDropdown
-										key={facet.fieldName}
-										collection={workCollection}
-										collectionName={collectionName}
-										facetBy={"facetBy" in facet ? facet.facetBy : undefined}
-										fieldName={facet.fieldName}
-										isLoading={isLoading}
-										label={facet.label}
-										onChange={(values) => {
-											handleFacetChange(facet.fieldName, values);
-										}}
-										searchQuery={searchQuery}
-										selectedValues={facetSelection[facet.fieldName]}
-									/>
-								);
-							})}
-						</>
-					) : null}
-
-					<OrderBy
-						label={t("order-by")}
-						onChange={(value) => {
-							void setSortBy(value);
-							// A changed order means a new result sequence, so return to the first page.
-							void setCurrentPage(1);
-						}}
-						options={orderByOptions}
-						value={sortBy}
-					/>
-				</div>
 
 				{facets.length > 0 && filterUi === "list" ? (
 					<div className="flex flex-col gap-8 lg:flex-row lg:items-start">
@@ -430,10 +443,10 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 								selectedValues={facetSelection}
 							/>
 						</aside>
-						<div className="grid flex-1 gap-y-12">{resultsContent}</div>
+						<div className="min-w-0 flex-1">{resultsWithToolbar}</div>
 					</div>
 				) : (
-					resultsContent
+					resultsWithToolbar
 				)}
 			</div>
 		</FacetCountsContext>
