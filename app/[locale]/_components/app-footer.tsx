@@ -75,7 +75,7 @@ export function AppFooter(): ReactNode {
 	return (
 		<footer className="layout-grid grid gap-y-6 border-t border-stroke-weak py-12">
 			<div className="grid gap-y-8 xs:flex xs:items-center xs:justify-between">
-				<Logo className="h-8 w-auto shrink-0" />
+				<Logo className="h-14 w-auto shrink-0" type="text" />
 
 				<nav aria-label={t("navigation-social-media.label")}>
 					<ul className="flex flex-wrap items-center gap-x-6 gap-y-3" role="list">
