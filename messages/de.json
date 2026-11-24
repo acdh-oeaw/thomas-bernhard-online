@@ -117,6 +117,9 @@
 	"SearchResults": {
 		"clear-search": "Suche zurücksetzen",
 		"filter-categories": "Kategorien filtern",
+		"display-mode": "Ergebnisansicht",
+		"display-mode-list": "Listenansicht",
+		"display-mode-card": "Kartenansicht",
 		"filter-ui": "Filter-Ansicht",
 		"filter-ui-dropdown": "Dropdown",
 		"filter-ui-dropdown-intro": "Ein durchsuchbares Dropdown der möglichen Faceting-Werte für jedes Faceting-Feld, mit expliziter Auflistung der aktuellen Filter-Einstellungen.",

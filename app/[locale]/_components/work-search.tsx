@@ -33,8 +33,8 @@ export function WorkSearch(): ReactNode {
 		<SearchResults
 			collectionName="work"
 			queryBy={collections.work.queryableFieldNames}
-			renderHit={(hit) => {
-				return <WorkResultCard key={hit.document.id} hit={hit} />;
+			renderHit={(hit, displayMode) => {
+				return <WorkResultCard key={hit.document.id} displayMode={displayMode} hit={hit} />;
 			}}
 			resultLabel={t("result-collection-work")}
 			search={search}

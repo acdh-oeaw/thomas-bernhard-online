@@ -3,6 +3,7 @@ import type { SearchResponseHit } from "typesense";
 
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
+import type { SearchDisplayMode } from "@/config/ui";
 import type { UniversalSearchDocument } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
@@ -20,13 +21,16 @@ function highlightMarkup(hit: ExpressionHit): string | undefined {
 	return undefined;
 }
 
-export function ExpressionResultCard(props: Readonly<{ hit: ExpressionHit }>): ReactNode {
-	const { hit } = props;
+export function ExpressionResultCard(
+	props: Readonly<{ hit: ExpressionHit; displayMode: SearchDisplayMode }>,
+): ReactNode {
+	const { hit, displayMode } = props;
 	const { document } = hit;
 	const titleHighlight = highlightMarkup(hit);
 
 	return (
 		<SearchResultCard
+			displayMode={displayMode}
 			entityType="expression"
 			header={
 				titleHighlight != null ? <HighlightedSnippet snippet={titleHighlight} /> : document.title

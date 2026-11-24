@@ -5,14 +5,15 @@ import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
 import { HighlightedSnippet } from "@/components/typesense";
+import type { SearchDisplayMode } from "@/config/ui";
 import type { Performance } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
 
 export function PerformanceResultCard(
-	props: Readonly<{ hit: SearchResponseHit<Performance> }>,
+	props: Readonly<{ hit: SearchResponseHit<Performance>; displayMode: SearchDisplayMode }>,
 ): ReactNode {
-	const { hit } = props;
+	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
 	const t = useTranslations("PerformanceResultCard");
 	const title = highlight.title;
@@ -21,6 +22,7 @@ export function PerformanceResultCard(
 
 	return (
 		<SearchResultCard
+			displayMode={displayMode}
 			entityType="performance"
 			header={snippet != null ? <HighlightedSnippet snippet={snippet} /> : document.title}
 			href={`/performance/${document.id}`}

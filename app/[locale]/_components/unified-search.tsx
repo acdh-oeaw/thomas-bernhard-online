@@ -184,19 +184,35 @@ export function UnifiedSearch(): ReactNode {
 					}}
 					queryBy={collections.work.queryableFieldNames}
 					queryKey={queryKey}
-					renderHit={(hit: CollectionHit<UniversalSearchDocument>) => {
+					renderHit={(hit: CollectionHit<UniversalSearchDocument>, displayMode) => {
 						return isPerformanceHit(hit) ? (
-							<PerformanceResultCard key={`performance-${hit.document.id}`} hit={hit} />
+							<PerformanceResultCard
+								key={`performance-${hit.document.id}`}
+								displayMode={displayMode}
+								hit={hit}
+							/>
 						) : isManifestationHit(hit) ? (
-							<PublicationResultCard key={`manifestation-${hit.document.id}`} hit={hit} />
+							<PublicationResultCard
+								key={`manifestation-${hit.document.id}`}
+								displayMode={displayMode}
+								hit={hit}
+							/>
 						) : isExpressionHit(hit) ? (
-							<ExpressionResultCard key={hit.document.id} hit={hit} />
+							<ExpressionResultCard key={hit.document.id} displayMode={displayMode} hit={hit} />
 						) : isGroupHit(hit) ? (
-							<GroupResultCard key={`group-${hit.document.id}`} hit={hit} />
+							<GroupResultCard
+								key={`group-${hit.document.id}`}
+								displayMode={displayMode}
+								hit={hit}
+							/>
 						) : isPersonHit(hit) ? (
-							<PersonResultCard key={`person-${hit.document.id}`} hit={hit} />
+							<PersonResultCard
+								key={`person-${hit.document.id}`}
+								displayMode={displayMode}
+								hit={hit}
+							/>
 						) : (
-							<WorkResultCard key={hit.document.id} hit={hit} />
+							<WorkResultCard key={hit.document.id} displayMode={displayMode} hit={hit} />
 						);
 					}}
 					resultLabel={resultLabel}

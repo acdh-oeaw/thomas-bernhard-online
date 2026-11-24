@@ -117,6 +117,9 @@
 	"SearchResults": {
 		"clear-search": "Clear search",
 		"filter-categories": "filter categories",
+		"display-mode": "Result display",
+		"display-mode-list": "List view",
+		"display-mode-card": "Card view",
 		"filter-ui": "Filter UI",
 		"filter-ui-dropdown": "Dropdown",
 		"filter-ui-dropdown-intro": "A searchable dropdown of the possible facet values for each facet field, with the current filter settings listed explicitly.",

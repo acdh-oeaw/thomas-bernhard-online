@@ -4,6 +4,7 @@ import type { SearchResponseHit } from "typesense";
 
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
+import type { SearchDisplayMode } from "@/config/ui";
 import type { PublicationSearchDocument } from "@/lib/data";
 import { publicationDateRange } from "@/lib/publication-date";
 import { translationLabel } from "@/lib/translation-label";
@@ -13,9 +14,10 @@ import { SearchResultCard } from "./search-result-card";
 export function PublicationResultCard(
 	props: Readonly<{
 		hit: SearchResponseHit<PublicationSearchDocument & { type?: "manifestation" }>;
+		displayMode: SearchDisplayMode;
 	}>,
 ): ReactNode {
-	const { hit } = props;
+	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
 	const t = useTranslations("PublicationResultCard");
 	const translations = document.expressions ?? [];
@@ -31,6 +33,7 @@ export function PublicationResultCard(
 
 	return (
 		<SearchResultCard
+			displayMode={displayMode}
 			entityType="manifestation"
 			header={snippet != null ? <HighlightedSnippet snippet={snippet} /> : document.title}
 			href={`/publication/${document.id}`}

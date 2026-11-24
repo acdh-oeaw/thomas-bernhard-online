@@ -5,6 +5,7 @@ import {
 	ArrowDownZAIcon,
 	CalendarArrowDownIcon,
 	CalendarArrowUpIcon,
+	LayoutGridIcon,
 	ListFilterIcon,
 	ListIcon,
 	SearchIcon,
@@ -46,6 +47,7 @@ import {
 } from "@/components/typesense/use-facet-counts";
 import { LoadingIndicator } from "@/components/ui/loading-indicator";
 import { SearchInput } from "@/components/ui/search-input";
+import { type SearchDisplayMode, searchDisplayModes } from "@/config/ui";
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionSearchParams, WorkCollectionName } from "@/lib/typesense/search";
 
@@ -70,7 +72,7 @@ interface SearchResultsProps<D extends DocumentSchema & { id: string }> {
 		options: SearchOptions | undefined,
 		filters: SearchFilters,
 	) => Promise<CollectionSearchResult<D>>;
-	renderHit: (hit: CollectionHit<D>) => ReactNode;
+	renderHit: (hit: CollectionHit<D>, displayMode: SearchDisplayMode) => ReactNode;
 }
 
 const filterUiOptions = ["dropdown", "tags", "list"] as const;
@@ -79,6 +81,8 @@ const filterUiIcons = {
 	tags: TagsIcon,
 	list: ListIcon,
 };
+
+const displayModeIcons = { list: ListIcon, card: LayoutGridIcon };
 
 /** A typesense `field:direction` sort value mapped to its `Collection.sort` message key. */
 type SortLabelKey<V extends string> = V extends `${infer Field}:${infer Direction}`
@@ -144,6 +148,10 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 	const [sortBy, setSortBy] = useQueryState(
 		"sort",
 		parseAsStringLiteral(orderValues).withDefault("_text_match:desc"),
+	);
+	const [displayMode, setDisplayMode] = useQueryState(
+		"display",
+		parseAsStringLiteral(searchDisplayModes).withDefault("card"),
 	);
 
 	const selectedCategories = useMemo(() => {
@@ -284,11 +292,15 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 		) : hits.length > 0 ? (
 			<>
 				<ul
-					className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,28rem),1fr))] gap-8"
+					className={
+						displayMode === "list"
+							? "grid grid-cols-1 gap-4"
+							: "grid grid-cols-1 gap-8 @min-[58rem]/results:grid-cols-2"
+					}
 					role="list"
 				>
 					{hits.map((hit) => {
-						return renderHit(hit);
+						return renderHit(hit, displayMode);
 					})}
 				</ul>
 				<div className="flex justify-center pt-8">
@@ -307,7 +319,7 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 		);
 
 	const resultsWithToolbar = (
-		<div className="grid gap-y-6">
+		<div className="@container/results grid gap-y-6">
 			<div className="flex items-center justify-between gap-4">
 				<ResultStatus
 					endIndex={(pagination.page - 1) * pagination.perPage + hits.length}
@@ -316,7 +328,7 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 					startIndex={(pagination.page - 1) * pagination.perPage + 1}
 					totalCount={pagination.found}
 				/>
-				<div className="ml-auto shrink-0">
+				<div className="ml-auto flex shrink-0 items-center gap-4">
 					<OrderBy
 						label={t("order-by")}
 						onChange={(value) => {
@@ -327,6 +339,28 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 						options={orderByOptions}
 						value={sortBy}
 					/>
+					<div aria-label={t("display-mode")} className="flex gap-2" role="group">
+						{searchDisplayModes.map((mode) => {
+							const Icon = displayModeIcons[mode];
+							return (
+								<TooltipTrigger key={mode} delay={300}>
+									<Button
+										aria-label={t(`display-mode-${mode}`)}
+										aria-pressed={displayMode === mode}
+										className="interactive flex size-9 cursor-pointer items-center justify-center rounded-2 border border-stroke-weak text-text-strong outline-transparent hover:hover-overlay focus-visible:focus-outline aria-pressed:border-stroke-brand-strong aria-pressed:bg-fill-brand-strong aria-pressed:text-text-inverse-strong"
+										onPress={() => {
+											void setDisplayMode(mode);
+										}}
+									>
+										<Icon aria-hidden={true} className="size-4" />
+									</Button>
+									<Tooltip className="z-50 rounded-2 border border-stroke-weak bg-background-raised p-3 text-small text-text-strong shadow-raised">
+										{t(`display-mode-${mode}`)}
+									</Tooltip>
+								</TooltipTrigger>
+							);
+						})}
+					</div>
 				</div>
 			</div>
 			{resultsContent}

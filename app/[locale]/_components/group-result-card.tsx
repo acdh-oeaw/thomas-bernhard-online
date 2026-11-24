@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
 import { HighlightedSnippet } from "@/components/typesense";
+import type { SearchDisplayMode } from "@/config/ui";
 import type { UniversalSearchDocument } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
@@ -19,13 +20,16 @@ function highlightMarkup(hit: GroupHit): string | undefined {
 	return undefined;
 }
 
-export function GroupResultCard(props: Readonly<{ hit: GroupHit }>): ReactNode {
-	const { hit } = props;
+export function GroupResultCard(
+	props: Readonly<{ hit: GroupHit; displayMode: SearchDisplayMode }>,
+): ReactNode {
+	const { hit, displayMode } = props;
 	const { document } = hit;
 	const nameHighlight = highlightMarkup(hit);
 
 	return (
 		<SearchResultCard
+			displayMode={displayMode}
 			entityType="group"
 			header={
 				nameHighlight != null ? <HighlightedSnippet snippet={nameHighlight} /> : document.name

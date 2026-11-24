@@ -6,6 +6,7 @@ import type { SearchResponseHit } from "typesense";
 
 import { LanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
+import type { SearchDisplayMode } from "@/config/ui";
 import type { WorkWithRelations } from "@/lib/data";
 
 import { SearchResultCard } from "./search-result-card";
@@ -113,10 +114,11 @@ function renderExpressions(highlight: WorkHighlight, expressions: Work["expressi
 
 interface WorkResultCardProps {
 	hit: WorkHit;
+	displayMode: SearchDisplayMode;
 }
 
 export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode {
-	const { hit } = props;
+	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
 	const t = useTranslations("WorkPage");
 	const tField = useTranslations("Collection.field");
@@ -146,6 +148,7 @@ export function WorkResultCard(props: Readonly<WorkResultCardProps>): ReactNode 
 
 	return (
 		<SearchResultCard
+			displayMode={displayMode}
 			entityType="work"
 			header={
 				titleMarkup != null ? (
