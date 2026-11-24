@@ -9,6 +9,7 @@ import { MainContent } from "@/components/ui/main-content";
 import { getManifestation } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
 import { publicationDateRange } from "@/lib/publication-date";
+import { translationLabel } from "@/lib/translation-label";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
@@ -62,11 +63,10 @@ export default async function PublicationPage(props: Readonly<PageProps>): Promi
 									return (
 										<li key={expression.id}>
 											<TBNavLink href={`/expression/${expression.id}`}>
-												{expression.title}
+												{translationLabel(expression)}
 											</TBNavLink>
 											{" · "}
 											<LanguageLabel code={expression.language} />
-											{expression.year != null ? ` (${String(expression.year)})` : null}
 										</li>
 									);
 								})}

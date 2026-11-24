@@ -207,6 +207,10 @@
 		"publishers": "Verlage",
 		"identifiers": "Identifikatoren"
 	},
+	"PublicationResultCard": {
+		"contains": "Enthält: {titles}",
+		"more": "+ {count} weitere"
+	},
 	"PerformanceResultCard": {
 		"participants": "Beteiligte",
 		"directors": "Regie",

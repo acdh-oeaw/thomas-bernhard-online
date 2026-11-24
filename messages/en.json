@@ -207,6 +207,10 @@
 		"publishers": "Publishers",
 		"identifiers": "Identifiers"
 	},
+	"PublicationResultCard": {
+		"contains": "Contains: {titles}",
+		"more": "+ {count} more"
+	},
 	"PerformanceResultCard": {
 		"participants": "Participants",
 		"directors": "Directors",

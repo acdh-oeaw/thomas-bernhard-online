@@ -67,7 +67,7 @@ interface ItemDocuments {
 	work: WorkWithRelations;
 	expression: ExpressionWithRelations;
 	person: Person;
-	manifestation: Manifestation;
+	manifestation: PublicationSearchDocument;
 	performance: Performance;
 	group: Group;
 }
@@ -142,7 +142,24 @@ export type ExpressionWithRelations = DocumentWithJoins<
 /** Publications with the translations referenced by their `translations` field. */
 export type ManifestationWithRelations = DocumentWithJoins<
 	Manifestation,
-	{ expressions: Array<Expression> }
+	{
+		expressions: Array<
+			DocumentWithJoins<Expression, { work: Pick<Work, "id" | "title" | "year"> }>
+		>;
+	}
+>;
+
+/** Publication cards need translation titles and their original work's title and year. */
+export type PublicationSearchDocument = DocumentWithJoins<
+	Manifestation,
+	{
+		expressions: Array<
+			DocumentWithJoins<
+				Pick<Expression, "id" | "title">,
+				{ work: Pick<Work, "id" | "title" | "year"> }
+			>
+		>;
+	}
 >;
 
 /** The explicitly requested relation projection returned by `getperformance`. */
@@ -311,6 +328,12 @@ const expressionIncludeFields = [
 
 const expressionJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["event"]))} || id:*)`;
 
+const publicationWorkJoin = defineJoin("work", ["id", "title", "year"]).clause;
+const publicationTranslationTitles = defineJoin("translation", `id,title,${publicationWorkJoin}`, {
+	alias: "expressions",
+	strategy: "nest_array",
+}).clause;
+
 /** Builds the same collection queries for both results and facet counts. */
 function getItemSearches(params: ItemSearchParams) {
 	const selectedTypes = new Set(
@@ -336,6 +359,7 @@ function getItemSearches(params: ItemSearchParams) {
 	const manifestationSearch = {
 		collection: "publication" as const,
 		q: params.q,
+		include_fields: publicationTranslationTitles,
 		query_by: [
 			"title",
 			"subtitle",
@@ -721,7 +745,7 @@ export async function getManifestation(
 		"publication",
 		{
 			filter_by: `id:=${filterString(id)}`,
-			include_fields: `*,${defineJoin("translation", nestArray, { alias: "expressions" }).clause}`,
+			include_fields: `*,${defineJoin("translation", `*,${publicationWorkJoin}`, { alias: "expressions", strategy: "nest_array" }).clause}`,
 			per_page: 1,
 		},
 		options,
