@@ -43,3 +43,7 @@ export function entityBrandStyle(
 		"--entity-brand-outline": "transparent",
 	};
 }
+
+export const searchDisplayModes = ["list", "card"] as const;
+
+export type SearchDisplayMode = (typeof searchDisplayModes)[number];

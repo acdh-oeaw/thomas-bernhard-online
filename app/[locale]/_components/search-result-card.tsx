@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { NavLink } from "@/components/nav-link";
-import { entityBrandStyle } from "@/config/entity-colors";
+import { entityBrandStyle } from "@/config/ui";
 import { itemCollections, type ItemType } from "@/lib/data";
 
 interface SearchResultCardProps {

@@ -10,7 +10,7 @@ import { type SearchFilters, SearchResults } from "@/app/[locale]/_components/se
 import { yearFacetFilter } from "@/components/typesense";
 import type { CollectionHit } from "@/components/typesense/use-collection-search";
 import type { FacetCountsRequest } from "@/components/typesense/use-facet-counts";
-import { entityBrandStyle } from "@/config/entity-colors";
+import { entityBrandStyle } from "@/config/ui";
 import {
 	getItemFacetCounts,
 	getItems,
