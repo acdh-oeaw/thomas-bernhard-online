@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
+import { DateRange } from "@/components/date-range";
 import { HighlightedSnippet } from "@/components/typesense";
 import type { SearchDisplayMode } from "@/config/ui";
 import type { EventSearchDocument } from "@/lib/data";
@@ -56,7 +57,7 @@ export function EventResultCard(
 			href={`/event/${document.id}`}
 			image="event"
 			metadata={displayMode === "card" ? cardMetadata : listMetadata}
-			subheader={document.date_range}
+			subheader={<DateRange from={document.date_range_from} to={document.date_range_to} />}
 			tags={
 				document.type_of_event ? [{ label: t("event-type"), value: document.type_of_event }] : []
 			}

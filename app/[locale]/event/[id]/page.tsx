@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { DateRange } from "@/components/date-range";
 import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { GroupLink } from "@/components/entity-links/group-link";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
@@ -89,7 +90,9 @@ export default async function EventPage(props: Readonly<PageProps>): Promise<Rea
 							</p>
 						</section>
 					) : null}
-					{event.date_range ? <p>{event.date_range}</p> : null}
+					<p>
+						<DateRange from={event.date_range_from} to={event.date_range_to} />
+					</p>
 					{event.participant_ids?.length ? (
 						<p>
 							{tCard("participants")}

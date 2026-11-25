@@ -2,11 +2,11 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
+import { DateRange } from "@/components/date-range";
 import { useLanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
 import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
 import type { PublicationSearchDocument } from "@/lib/data";
-import { publicationDateRange } from "@/lib/publication-date";
 import { translationLabel } from "@/lib/translation-label";
 
 import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
@@ -50,7 +50,13 @@ export function PublicationResultCard(
 			href={`/publication/${document.id}`}
 			image="publication"
 			metadata={displayMode === "card" ? cardMetadata : listMetadata}
-			subheader={publicationDateRange(document)}
+			subheader={
+				<DateRange
+					from={document.publication_date_from}
+					options={{ year: "numeric" }}
+					to={document.publication_date_to}
+				/>
+			}
 			summary={document.subtitle}
 			tags={language ? [{ label: t("language"), value: language }] : []}
 		/>

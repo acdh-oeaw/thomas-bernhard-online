@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
+import { DateRange } from "@/components/date-range";
 import { HighlightedSnippet } from "@/components/typesense";
 import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
 import type { PerformanceSearchDocument } from "@/lib/data";
@@ -56,7 +57,7 @@ export function PerformanceResultCard(
 			href={`/performance/${document.id}`}
 			image="performance"
 			metadata={metadata}
-			subheader={document.date_range}
+			subheader={<DateRange from={document.date_range_from} to={document.date_range_to} />}
 		/>
 	);
 }

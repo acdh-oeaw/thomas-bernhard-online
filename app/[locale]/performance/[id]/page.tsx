@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { DateRange } from "@/components/date-range";
 import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { GroupLink } from "@/components/entity-links/group-link";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
@@ -88,7 +89,9 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 							</p>
 						</section>
 					) : null}
-					{performance.date_range ? <p>{performance.date_range}</p> : null}
+					<p>
+						<DateRange from={performance.date_range_from} to={performance.date_range_to} />
+					</p>
 					{performance.directors?.length ? (
 						<p>
 							{tCard("directors")}

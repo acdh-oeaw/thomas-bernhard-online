@@ -9,8 +9,8 @@ import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
 import { getTranslation } from "@/lib/data";
+import { formatDateRange } from "@/lib/date-range";
 import type { IntlLocale } from "@/lib/i18n/locales";
-import { publicationDateRange } from "@/lib/publication-date";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
@@ -102,7 +102,12 @@ export default async function TranslationPage(props: Readonly<PageProps>): Promi
 							</h2>
 							<ul className="list-disc space-y-2 pl-5">
 								{translation.manifestations.map((publication) => {
-									const date = publicationDateRange(publication);
+									const date = formatDateRange(
+										publication.publication_date_from,
+										publication.publication_date_to,
+										locale,
+										{ year: "numeric" },
+									);
 									return (
 										<li key={publication.id}>
 											<TBNavLink href={`/publication/${publication.id}`}>

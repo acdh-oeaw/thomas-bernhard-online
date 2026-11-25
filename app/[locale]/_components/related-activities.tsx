@@ -1,10 +1,11 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { GroupLink } from "@/components/entity-links/group-link";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { WorkLink } from "@/components/entity-links/work-link";
 import type { EventWithRelations, PerformanceWithRelations } from "@/lib/data";
+import { formatDateRange } from "@/lib/date-range";
 
 /** Keep event and performance links and role labels distinct on related entity pages. */
 export function RelatedActivities(
@@ -14,6 +15,7 @@ export function RelatedActivities(
 	}>,
 ): ReactNode {
 	const t = useTranslations("ResultCard");
+	const locale = useLocale();
 	const { performances, events } = props;
 	const sections = [
 		{
@@ -51,7 +53,7 @@ export function RelatedActivities(
 				<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">{label}</h2>
 				<ul className="list-disc space-y-2 pl-5 text-small text-text-weak">
 					{items.map((item) => {
-						const date = item.date_range;
+						const date = formatDateRange(item.date_range_from, item.date_range_to, locale);
 						return (
 							<li key={item.id}>
 								<p>

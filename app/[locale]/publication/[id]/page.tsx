@@ -3,12 +3,12 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { DateRange } from "@/components/date-range";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
 import { getManifestation } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
-import { publicationDateRange } from "@/lib/publication-date";
 import { translationLabel } from "@/lib/translation-label";
 
 interface PageProps {
@@ -47,7 +47,12 @@ export default async function PublicationPage(props: Readonly<PageProps>): Promi
 						<p className="font-heading text-heading-4 text-text-weak">{publication.subtitle}</p>
 					) : null}
 					<p className="font-heading text-heading-4 text-text-weak">
-						{publicationDateRange(publication)} {"· "}
+						<DateRange
+							from={publication.publication_date_from}
+							options={{ year: "numeric" }}
+							to={publication.publication_date_to}
+						/>{" "}
+						{"· "}
 						<LanguageLabel code={publication.language} /> {"· "}
 						{t("publication")}
 					</p>

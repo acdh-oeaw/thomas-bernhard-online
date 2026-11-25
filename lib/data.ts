@@ -187,9 +187,9 @@ export type GroupSearchDocument = DocumentWithJoins<
 	Group,
 	object,
 	{
-		performances: Array<Pick<Performance, "title" | "date_range">>;
+		performances: Array<Pick<Performance, "title" | "date_range_from" | "date_range_to">>;
 		performances_count: number;
-		events: Array<Pick<Event, "title" | "date_range">>;
+		events: Array<Pick<Event, "title" | "date_range_from" | "date_range_to">>;
 		events_count: number;
 		publications: Array<Pick<Manifestation, "title">>;
 		publications_count: number;
@@ -436,14 +436,14 @@ const searchTranslationIncludeFields = [
 	}).clause,
 ].join(",");
 const searchGroupIncludeFields = [
-	defineJoin("performance", ["title", "date_range"], {
+	defineJoin("performance", ["title", "date_range_from", "date_range_to"], {
 		alias: "performances",
 		strategy: "nest_array",
 		sortBy: "title:asc",
 		limit: searchResultRelationLimits.performances,
 		relatedDocsCount: "performances_count",
 	}).clause,
-	defineJoin("event", ["title", "date_range"], {
+	defineJoin("event", ["title", "date_range_from", "date_range_to"], {
 		alias: "events",
 		strategy: "nest_array",
 		sortBy: "title:asc",

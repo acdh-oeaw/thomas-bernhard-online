@@ -1,10 +1,11 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
 import { HighlightedSnippet } from "@/components/typesense";
 import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
 import type { UniversalSearchDocument } from "@/lib/data";
+import { formatDateRange } from "@/lib/date-range";
 
 import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
 
@@ -27,15 +28,16 @@ export function GroupResultCard(
 	const { hit, displayMode } = props;
 	const { document } = hit;
 	const t = useTranslations("ResultCard");
+	const locale = useLocale();
 	const performances = (document.performances ?? []).map((performance) => {
-		const date = performance.date_range;
+		const date = formatDateRange(performance.date_range_from, performance.date_range_to, locale);
 		return `${performance.title}${date ? ` (${date})` : ""}`;
 	});
 	const publications = (document.publications ?? []).map((publication) => {
 		return publication.title;
 	});
 	const events = (document.events ?? []).map((event) => {
-		const date = event.date_range;
+		const date = formatDateRange(event.date_range_from, event.date_range_to, locale);
 		return `${event.title}${date ? ` (${date})` : ""}`;
 	});
 	const cardMetadata: Array<ResultCardField> = [
