@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { RelatedActivities } from "@/app/[locale]/_components/related-activities";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
@@ -116,41 +117,7 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 				</header>
 
 				<div className="grid max-w-text gap-y-8">
-					{performances && performances.length > 0 ? (
-						<MetadataSection title={tField("performances")}>
-							{performances.map((performance) => {
-								const theaters = performance.location ? [performance.location] : [];
-								const participants = performance.participant_ids ?? [];
-
-								return (
-									<li key={performance.id} className="text-small text-text-weak">
-										{performance.date_range ? (
-											<>
-												{performance.date_range}
-												{": "}
-											</>
-										) : null}
-										<TBNavLink href={`/performance/${performance.id}`}>
-											{performance.title}
-										</TBNavLink>
-										{theaters.length > 0 ? (
-											<>
-												{" at "}
-												<RelatedEntities path="/group" values={theaters} />
-											</>
-										) : null}
-										{participants.length > 0 ? (
-											<>
-												{" (participants: "}
-												<RelatedEntities path="/person" values={participants} />
-												{")"}
-											</>
-										) : null}
-									</li>
-								);
-							})}
-						</MetadataSection>
-					) : null}
+					<RelatedActivities events={document.events} performances={performances} />
 
 					{translations && translations.length > 0 ? (
 						<MetadataSection title={tField("translations")}>

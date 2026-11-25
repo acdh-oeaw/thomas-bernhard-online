@@ -22,11 +22,14 @@ inside a specific collection. Collection-specific `work > translation > manifest
 
 ## Typesense collection design
 
-The current joined design keeps `work`, `translation`, `performance`, `person`, `group`, and
-`poster` as separate collections. Relations are resolved at query time with Typesense JOINs: works
-forward-join their authors through `author_ids`, while translations and performances reverse-join
-their `work_id` back to a work. The data-layer functions in `lib/data.ts` own the JOIN clauses and
-aliases, so the returned shape can remain close to the former nested work document.
+The application indexes seven distinct collections: `work`, `translation`, `publication`,
+`performance`, `event`, `person`, and `group`. Performances have directors, cast, and references to
+multiple theaters; events have a type, participants, and an optional location. Both can reference an
+original work. Search and entity pages keep the two collections and their routes separate.
+
+Relations are resolved at query time with Typesense JOINs. The data-layer functions in `lib/data.ts`
+own the projections, aliases, sample limits, and related-document counts. Reverse joins on works and
+groups expose performances and events separately.
 
 Important JOIN constraints and design considerations are:
 
@@ -59,7 +62,7 @@ are read from the environment and validated in `config/env.config.ts`.
 | `NEXT_PUBLIC_TYPESENSE_PROTOCOL`          | No          | `http` or `https`; defaults to `https`.                                                                                                                                                                                                                        |
 | `NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY`    | No          | Search-only API key used by the application client. It is optional so collection setup can run before a search key exists.                                                                                                                                     |
 | `NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX` | No          | Prefix added to physical collection names. For example, `tbo_test_` plus registry name `work` addresses `tbo_test_work`. Defaults to an empty string.                                                                                                          |
-| `NEXT_PUBLIC_TYPESENSE_COLLECTIONS`       | Yes         | Comma-separated, unprefixed registry names to retrieve when generating `lib/typesense/collections.ts`, for example `work,person,translation,performance`. Whitespace is trimmed.                                                                               |
+| `NEXT_PUBLIC_TYPESENSE_COLLECTIONS`       | Yes         | Comma-separated, unprefixed registry names to retrieve when generating `lib/typesense/collections.ts`, for example `work,translation,publication,performance,event,person,group`. Whitespace is trimmed.                                                       |
 | `NEXT_PUBLIC_TYPESENSE_ADMIN_KEY`         | Script only | Admin key used by `create-joined-schema.ts` when creating, deleting, and importing collections. It is read directly from `process.env` and is not part of the client-side validated configuration. Keep it out of browser-exposed environments where possible. |
 
 The collection prefix is applied in one place, by `lib/typesense/collection-name.ts`. Source code
@@ -71,7 +74,7 @@ The local template is `.env.local.example`. A typical setup has values similar t
 
 ```dotenv
 NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX=tbo_dev_
-NEXT_PUBLIC_TYPESENSE_COLLECTIONS=work,person,translation,performance,poster,group
+NEXT_PUBLIC_TYPESENSE_COLLECTIONS=event,group,performance,person,publication,work,translation
 NEXT_PUBLIC_TYPESENSE_HOST=typesense.example.org
 NEXT_PUBLIC_TYPESENSE_PORT=443
 NEXT_PUBLIC_TYPESENSE_PROTOCOL=https
@@ -94,10 +97,10 @@ fields and the metadata needed by the typed search layer: queryable, sortable, a
 names. References are converted back from physical names to registry names so joined query results
 remain independent of the deployment prefix.
 
-The generated registry currently describes the main collections (`work`, `person`, `translation`,
-`performance`, `poster`, and `group`) and is consumed by `lib/typesense/schema.ts` to derive
-document and field-name types. Regenerate it whenever a Typesense schema changes, or whenever the
-configured collection set or collection prefix changes.
+The generated registry currently describes the main collections (`work`, `translation`,
+`publication`, `performance`, `event`, `person`, and `group`) and is consumed by
+`lib/typesense/schema.ts` to derive document and field-name types. Regenerate it whenever a
+Typesense schema changes, or whenever the configured collection set or collection prefix changes.
 
 The optional joined-schema workflow is handled by `scripts/typesense/create-joined-schema.ts`:
 
@@ -132,9 +135,10 @@ The application does not call the Typesense client directly from UI code. The la
   `searchCollections` performs a federated Typesense union search across multiple collections.
 - `lib/data.ts` contains the application-facing wrappers: `getWorks`, `getWork`,
   `getWorksWithRelations`, `getWorkWithRelations`, `getTranslations`, `getTranslation`,
-  `getPerformances`, `getPerformance`, `getPeople`, `getPerson`, and `getItems`.
+  `getPerformances`, `getPerformance`, `getEvents`, `getEvent`, `getPeople`, `getPerson`, and
+  `getItems`.
 
-`getItems` is the cross-collection search used for a union of performances and translations. The
+`getItems` is the cross-collection search used for a union of all seven entity types. The
 relation-aware wrappers build the `include_fields` and join expressions required by the detail and
 catalog views. Keep collection-specific field knowledge in these wrappers or in the typed search
 layer rather than duplicating Typesense calls in components.

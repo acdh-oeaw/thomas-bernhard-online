@@ -2,15 +2,14 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
-import { LanguageLabel } from "@/components/language-label";
+import { useLanguageLabel } from "@/components/language-label";
 import { HighlightedSnippet } from "@/components/typesense";
-import type { SearchDisplayMode } from "@/config/ui";
+import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
 import type { PublicationSearchDocument } from "@/lib/data";
 import { publicationDateRange } from "@/lib/publication-date";
 import { translationLabel } from "@/lib/translation-label";
 
-import { ResultCardSummary } from "./result-card-summary";
-import { type ResultCardField, SearchResultCard } from "./search-result-card";
+import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
 
 export function PublicationResultCard(
 	props: Readonly<{
@@ -21,28 +20,26 @@ export function PublicationResultCard(
 	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
 	const t = useTranslations("ResultCard");
-	const translations = (document.contained_translations ?? []).map((translation, index) => {
-		const label = translationLabel(translation);
-		return { id: `${label}:${String(index)}`, content: label };
-	});
+	const language = useLanguageLabel(document.language, true);
+	const translations = (document.contained_translations ?? []).map(translationLabel);
 	const title = highlight.title;
 	const markup = title != null && "value" in title ? (title.value ?? title.snippet) : undefined;
 	const cardMetadata: Array<ResultCardField> = [
-		{
-			label: t("language"),
-			value: document.language ? <LanguageLabel code={document.language} expand={true} /> : null,
-			isTag: true,
-		},
-		{ label: t("publisher"), value: document.publisher?.name },
+		{ label: t("publisher"), values: document.publisher?.name ? [document.publisher.name] : [] },
 		{
 			label: t("contains"),
-			value: translations.length ? <ResultCardSummary limit={4} values={translations} /> : null,
+			...resultCardValues(
+				translations,
+				searchResultRelationLimits.translations,
+				document.translations_count,
+			),
 		},
 	];
 	const listMetadata: Array<ResultCardField> = [
+		{ label: t("language"), values: language ? [language] : [] },
 		...cardMetadata,
-		{ label: t("isbn"), value: document.isbn },
-		{ label: t("source"), value: document.source },
+		{ label: t("isbn"), values: document.isbn == null ? [] : [String(document.isbn)] },
+		{ label: t("source"), values: document.source ? [document.source] : [] },
 	];
 
 	return (
@@ -55,6 +52,7 @@ export function PublicationResultCard(
 			metadata={displayMode === "card" ? cardMetadata : listMetadata}
 			subheader={publicationDateRange(document)}
 			summary={document.subtitle}
+			tags={language ? [{ label: t("language"), value: language }] : []}
 		/>
 	);
 }

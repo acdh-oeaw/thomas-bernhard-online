@@ -57,6 +57,7 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 	setRequestLocale(locale);
 
 	const t = await getTranslations("WorkPage");
+	const tCard = await getTranslations("ResultCard");
 	let performance: Awaited<ReturnType<typeof getPerformance>> = null;
 
 	try {
@@ -74,14 +75,13 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
 						{performance.title}
 					</h1>
-					<p className="font-heading text-heading-4 text-text-weak">{performance.type_of_event}</p>
 				</header>
 
 				<div className="grid max-w-text gap-y-6 text-small text-text-weak">
 					{performance.work ? (
 						<section>
 							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
-								{"Work"}
+								{tCard("original-work")}
 							</h2>
 							<p>
 								<WorkLink work={performance.work} />
@@ -89,16 +89,32 @@ export default async function PerformancePage(props: Readonly<PageProps>): Promi
 						</section>
 					) : null}
 					{performance.date_range ? <p>{performance.date_range}</p> : null}
-					{performance.participant_ids?.length ? (
+					{performance.directors?.length ? (
 						<p>
-							{"Participants: "}
-							<People values={performance.participant_ids} />
+							{tCard("directors")}
+							{": "}
+							<People values={performance.directors} />
 						</p>
 					) : null}
-					{performance.location ? (
+					{performance.actors?.length ? (
 						<p>
-							{"Location: "}
-							<GroupLink group={performance.location} />
+							{tCard("actors")}
+							{": "}
+							<People values={performance.actors} />
+						</p>
+					) : null}
+					{performance.theaters?.length ? (
+						<p>
+							{tCard("theaters")}
+							{": "}
+							{performance.theaters.map((theater, index) => {
+								return (
+									<span key={theater.id}>
+										{index > 0 ? ", " : null}
+										<GroupLink group={theater} />
+									</span>
+								);
+							})}
 						</p>
 					) : null}
 				</div>

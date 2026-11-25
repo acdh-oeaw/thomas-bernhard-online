@@ -9,7 +9,8 @@ export const entityBrandHues = {
 	group: 140,
 	translation: 190,
 	publication: 240,
-	event: 290,
+	performance: 290,
+	event: 20,
 	all: 335,
 } as const satisfies Record<CollectionName | "all", number>;
 
@@ -47,3 +48,15 @@ export function entityBrandStyle(
 export const searchDisplayModes = ["list", "card"] as const;
 
 export type SearchDisplayMode = (typeof searchDisplayModes)[number];
+
+/** Maximum examples needed by either result layout, shared with the union JOIN projections. */
+export const searchResultRelationLimits = {
+	languages: 4,
+	translations: 4,
+	performances: 4,
+	events: 4,
+	theaters: 4,
+	authors: 4,
+	manifestations: 3,
+	publications: 4,
+} as const;

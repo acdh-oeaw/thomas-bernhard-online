@@ -22,6 +22,7 @@ import {
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionSearchParams } from "@/lib/typesense/search";
 
+import { EventResultCard } from "./event-result-card";
 import { GroupResultCard } from "./group-result-card";
 import { PerformanceResultCard } from "./performance-result-card";
 import { PersonResultCard } from "./person-result-card";
@@ -36,6 +37,7 @@ const resultTypes = [
 	"translation",
 	"manifestation",
 	"performance",
+	"event",
 ] as const;
 type ResultType = (typeof resultTypes)[number];
 const resultTabs = ["all", ...resultTypes] as const;
@@ -57,6 +59,12 @@ function isPerformanceHit(
 	hit: UniversalSearchHit,
 ): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "performance" }>> {
 	return hit.document.type === "performance";
+}
+
+function isEventHit(
+	hit: UniversalSearchHit,
+): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "event" }>> {
+	return hit.document.type === "event";
 }
 
 function isGroupHit(
@@ -185,7 +193,13 @@ export function UnifiedSearch(): ReactNode {
 					queryBy={collections.work.queryableFieldNames}
 					queryKey={queryKey}
 					renderHit={(hit: CollectionHit<UniversalSearchDocument>, displayMode) => {
-						return isPerformanceHit(hit) ? (
+						return isEventHit(hit) ? (
+							<EventResultCard
+								key={`event-${hit.document.id}`}
+								displayMode={displayMode}
+								hit={hit}
+							/>
+						) : isPerformanceHit(hit) ? (
 							<PerformanceResultCard
 								key={`performance-${hit.document.id}`}
 								displayMode={displayMode}

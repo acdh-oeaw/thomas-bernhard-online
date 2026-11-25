@@ -115,6 +115,8 @@
 		"title": "Seite nicht gefunden"
 	},
 	"SearchResults": {
+		"result-collection-event": "Veranstaltungen",
+		"result-type-event": "Veranstaltungen",
 		"clear-search": "Suche zurücksetzen",
 		"filter-categories": "Kategorien filtern",
 		"display-mode": "Ergebnisansicht",
@@ -128,7 +130,7 @@
 		"filter-ui-tags": "Tags",
 		"filter-ui-tags-intro": "Alle Faceting-Werte als auswählbare Tags in einem einzigen Popover. Ohne Suche/Filter der Faceting-Werte, daher nur geeignet für Faceting-Felder mit wenigen möglichen Werten.",
 		"filters": "Filter",
-		"universal-search-intro": "Suche über Werke, Personen, Gruppen, Übersetzungen, Publikationen und Aufführungen.",
+		"universal-search-intro": "Suche über Werke, Personen, Gruppen, Übersetzungen, Publikationen, Aufführungen und Veranstaltungen.",
 		"universal-search-title": "Universelle Suche",
 		"intro": "Freitextsuche über ein oder mehrere Felder gleichzeitig. Die Ergebnisse werden in erster Linie danach sortiert, wie gut sie zur Suchanfrage passen; über Attributfilter lässt sich die Trefferliste zusätzlich eingrenzen.",
 		"no-results": "Keine Dokumente gefunden. Versuchen Sie, Ihre Suchanfrage oder Filter anzupassen.",
@@ -220,7 +222,20 @@
 		"directors": "Regie",
 		"actors": "Besetzung"
 	},
+	"ValueList": {
+		"more": "+ {count, number} weitere"
+	},
 	"ResultCard": {
+		"translation-count": "{count, plural, one {eine Übersetzung auf} other {# Übersetzungen auf}}",
+		"more-languages": "+ {count, plural, one {# weitere Sprache} other {# weitere Sprachen}}",
+		"performance-count": "{count, plural, one {# Aufführung} other {# Aufführungen}}",
+		"event-count": "{count, plural, one {# Veranstaltung} other {# Veranstaltungen}}",
+		"at-venues": "an {count, plural, one {# Spielstätte} other {# Spielstätten}}",
+		"actors": "Besetzung",
+		"directors": "Regie",
+		"theaters": "Theater",
+		"event": "Veranstaltung",
+		"events": "Veranstaltungen",
 		"location": "Ort",
 		"original-work": "Originalwerk",
 		"attributes": "Merkmale",
@@ -233,6 +248,7 @@
 		"year": "Jahr",
 		"translators": "Übersetzer:innen",
 		"publications": "Publikationen",
+		"published-in": "Erschienen in",
 		"publisher": "Verlag",
 		"contains": "Enthält",
 		"isbn": "ISBN",
@@ -246,8 +262,5 @@
 		"manifestation": "Publikation",
 		"performance": "Aufführung",
 		"poster": "Plakat"
-	},
-	"ValueList": {
-		"more": "+ {count, number} weitere"
 	}
 }

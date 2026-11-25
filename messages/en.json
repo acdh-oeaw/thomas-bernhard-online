@@ -115,6 +115,8 @@
 		"title": "Page not found"
 	},
 	"SearchResults": {
+		"result-collection-event": "events",
+		"result-type-event": "Events",
 		"clear-search": "Clear search",
 		"filter-categories": "filter categories",
 		"display-mode": "Result display",
@@ -128,7 +130,7 @@
 		"filter-ui-tags": "Tags",
 		"filter-ui-tags-intro": "All facet values as selectable tags in a single popover. The facet values themselves can't be searched or filtered, so it only suits facet fields with a small number of possible values.",
 		"filters": "Filters",
-		"universal-search-intro": "Search across works, persons, groups, translations, publications, and performances.",
+		"universal-search-intro": "Search across works, persons, groups, translations, publications, performances, and events.",
 		"universal-search-title": "Universal search",
 		"intro": "Free-text search across one or more fields at once. Results are ranked primarily by how closely they match your query; attribute filters can still be applied to narrow them down.",
 		"no-results": "No documents found. Try adjusting your search query or filters.",
@@ -220,7 +222,20 @@
 		"directors": "Directors",
 		"actors": "Cast"
 	},
+	"ValueList": {
+		"more": "+ {count, number} more"
+	},
 	"ResultCard": {
+		"translation-count": "{count, plural, one {one translation into} other {# translations into}}",
+		"more-languages": "+ {count, plural, one {# more language} other {# more languages}}",
+		"performance-count": "{count, plural, one {# performance} other {# performances}}",
+		"event-count": "{count, plural, one {# event} other {# events}}",
+		"at-venues": "at {count, plural, one {# venue} other {# venues}}",
+		"actors": "Cast",
+		"directors": "Directors",
+		"theaters": "Theaters",
+		"event": "Event",
+		"events": "Events",
 		"location": "Location",
 		"original-work": "Original work",
 		"attributes": "Attributes",
@@ -233,6 +248,7 @@
 		"year": "Year",
 		"translators": "Translators",
 		"publications": "Publications",
+		"published-in": "Published in",
 		"publisher": "Publisher",
 		"contains": "Contains",
 		"isbn": "ISBN",
@@ -246,8 +262,5 @@
 		"manifestation": "Publication",
 		"performance": "Performance",
 		"poster": "Poster"
-	},
-	"ValueList": {
-		"more": "+ {count, number} more"
 	}
 }

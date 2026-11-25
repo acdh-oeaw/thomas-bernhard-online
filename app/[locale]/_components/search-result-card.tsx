@@ -3,15 +3,48 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
 import { NavLink } from "@/components/nav-link";
+import { Tag } from "@/components/ui/tag";
+import { ValueList } from "@/components/ui/value-list";
 import { entityBrandStyle, type SearchDisplayMode } from "@/config/ui";
 import { itemCollections, type ItemType } from "@/lib/data";
 
 export interface ResultCardField {
 	label: string;
-	value: ReactNode;
-	/** Only short, discrete attributes become tags in card mode. */
-	isTag?: boolean;
+	labelSeparator?: string;
+	values: ReadonlyArray<string>;
+	more?: number;
+	suffix?: string;
 }
+
+/** Select visible examples while keeping the full backend total for the remainder. */
+export function resultCardValues(
+	values: ReadonlyArray<string>,
+	limit: number,
+	totalCount = values.length,
+): Pick<ResultCardField, "values" | "more"> {
+	const visibleValues = values.slice(0, limit);
+	const remaining = Math.max(totalCount - visibleValues.length, 0);
+	return { values: visibleValues, more: remaining > 0 ? remaining : undefined };
+}
+
+function ResultCardValue(
+	props: Readonly<Pick<ResultCardField, "values" | "more" | "suffix">>,
+): ReactNode {
+	const { values, more, suffix } = props;
+	return (
+		<>
+			<ValueList more={more} values={values} />
+			{suffix ? <span className="whitespace-nowrap text-text-weak"> {suffix}</span> : null}
+		</>
+	);
+}
+
+export interface ResultCardTag {
+	label: string;
+	value: string;
+}
+
+const emptyTags: ReadonlyArray<ResultCardTag> = [];
 
 interface SearchResultCardProps {
 	href: string;
@@ -19,24 +52,27 @@ interface SearchResultCardProps {
 	subheader?: ReactNode;
 	summary?: ReactNode;
 	metadata: ReadonlyArray<ResultCardField>;
+	tags?: ReadonlyArray<ResultCardTag>;
 	image: string;
 	entityType: ItemType;
 	displayMode: SearchDisplayMode;
 }
 
 export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactNode {
-	const { metadata, header, href, image, subheader, summary, entityType, displayMode } = props;
+	const {
+		metadata,
+		tags = emptyTags,
+		header,
+		href,
+		image,
+		subheader,
+		summary,
+		entityType,
+		displayMode,
+	} = props;
 	const isList = displayMode === "list";
-	const fields = metadata.filter(({ value }) => {
-		return value != null && value !== "" && value !== false;
-	});
-	const tags = fields
-		.filter((field) => {
-			return field.isTag;
-		})
-		.slice(0, 3);
-	const descriptions = fields.filter((field) => {
-		return !field.isTag;
+	const fields = metadata.filter(({ values, more }) => {
+		return values.length > 0 || (more != null && more > 0);
 	});
 	const imageUrl = `https://picsum.photos/seed/${encodeURIComponent(image)}/180/280`;
 	const t = useTranslations("ResultCard");
@@ -70,7 +106,7 @@ export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactN
 							) : null}
 							{summary ? <p className="line-clamp-2 text-small text-text-weak">{summary}</p> : null}
 						</header>
-						{fields.length > 0 ? (
+						{fields.length > 0 || (!isList && tags.length > 0) ? (
 							<div
 								className={cn(
 									"min-w-0 text-small text-text-weak",
@@ -79,14 +115,16 @@ export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactN
 							>
 								{isList ? (
 									<dl className="flex flex-wrap gap-x-4 gap-y-1">
-										{fields.map(({ label, value }) => {
+										{fields.map(({ label, labelSeparator = ": ", values, more, suffix }) => {
 											return (
 												<div key={label} className="min-w-0 wrap-break-word">
 													<dt className="inline font-strong">
 														{label}
-														{": "}
+														{labelSeparator}
 													</dt>
-													<dd className="inline">{value}</dd>
+													<dd className="inline">
+														<ResultCardValue more={more} suffix={suffix} values={values} />
+													</dd>
 												</div>
 											);
 										})}
@@ -94,32 +132,27 @@ export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactN
 								) : (
 									<>
 										{tags.length > 0 ? (
-											<ul aria-label={t("attributes")} className="flex flex-wrap gap-2" role="list">
+											<div
+												aria-label={t("attributes")}
+												className="flex flex-wrap gap-2"
+												role="group"
+											>
 												{tags.map(({ label, value }) => {
 													return (
-														<li
-															key={label}
-															className="rounded-full border border-(--entity-brand-border) bg-(--entity-brand-tint) px-2 py-0.5 text-tiny"
-														>
-															<span className="sr-only">
-																{label}
-																{": "}
-															</span>
-															{value}
-														</li>
+														<Tag key={JSON.stringify([label, value])} label={label} value={value} />
 													);
 												})}
-											</ul>
+											</div>
 										) : null}
-										{descriptions.map(({ label, value }) => {
+										{fields.map(({ label, labelSeparator = ": ", values, more, suffix }) => {
 											return (
-												<p key={label} className="min-w-0 wrap-break-word">
+												<div key={label} className="min-w-0 wrap-break-word">
 													<span className="font-strong">
 														{label}
-														{": "}
+														{labelSeparator}
 													</span>
-													{value}
-												</p>
+													<ResultCardValue more={more} suffix={suffix} values={values} />
+												</div>
 											);
 										})}
 									</>

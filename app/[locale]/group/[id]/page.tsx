@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { WorkLink } from "@/components/entity-links/work-link";
+import { RelatedActivities } from "@/app/[locale]/_components/related-activities";
 import { MainContent } from "@/components/ui/main-content";
 import { getGroup } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
@@ -48,31 +47,7 @@ export default async function GroupPage(props: Readonly<PageProps>): Promise<Rea
 				</header>
 
 				<div className="grid max-w-text gap-y-8 text-small text-text-weak">
-					{group.performances && group.performances.length > 0 ? (
-						<section>
-							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{tField("performances")}
-							</h2>
-							<ul className="list-disc space-y-2 pl-5">
-								{group.performances.map((performance) => {
-									return (
-										<li key={performance.id}>
-											{performance.date_range ? `${performance.date_range}: ` : null}
-											<TBNavLink href={`/performance/${performance.id}`}>
-												{performance.title}
-											</TBNavLink>
-											{performance.work ? (
-												<>
-													{" · "}
-													<WorkLink work={performance.work} />
-												</>
-											) : null}
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					) : null}
+					<RelatedActivities events={group.events} performances={group.performances} />
 
 					{group.sameas.length > 0 ? (
 						<section>

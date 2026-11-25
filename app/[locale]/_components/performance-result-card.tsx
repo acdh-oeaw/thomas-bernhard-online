@@ -5,11 +5,10 @@ import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
 import { HighlightedSnippet } from "@/components/typesense";
-import type { SearchDisplayMode } from "@/config/ui";
+import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
 import type { PerformanceSearchDocument } from "@/lib/data";
 
-import { ResultCardSummary } from "./result-card-summary";
-import { type ResultCardField, SearchResultCard } from "./search-result-card";
+import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
 
 export function PerformanceResultCard(
 	props: Readonly<{
@@ -20,41 +19,33 @@ export function PerformanceResultCard(
 	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
 	const t = useTranslations("ResultCard");
-	const identifiers = document.sameas.map((identifier) => {
-		return { id: identifier, content: identifier };
-	});
 	const title = highlight.title;
 	const markup = title != null && "value" in title ? (title.value ?? title.snippet) : undefined;
-	const participants = (document.participant_ids ?? []).flatMap((person) => {
-		return person.name ? [{ id: person.id ?? person.name, content: person.name }] : [];
+	const directors = (document.directors ?? []).flatMap((person) => {
+		return person.name ? [person.name] : [];
+	});
+	const actors = (document.actors ?? []).flatMap((person) => {
+		return person.name ? [person.name] : [];
+	});
+	const theaters = (document.theaters ?? []).map((theater) => {
+		return theater.name;
 	});
 	const work = document.work;
 	const original = work
 		? `${work.title}${work.year == null ? "" : ` (${String(work.year)})`}`
 		: undefined;
-	const relations: Array<ResultCardField> = [
-		{ label: t("original-work"), value: original },
-		{ label: t("location"), value: document.location?.name },
-	];
-	const cardMetadata: Array<ResultCardField> = [
-		{ label: t("event-type"), value: document.type_of_event, isTag: true },
-		...relations,
+	const metadata: Array<ResultCardField> = [
+		{ label: t("original-work"), values: original ? [original] : [] },
 		{
-			label: t("participants"),
-			value: participants.length ? <ResultCardSummary limit={2} values={participants} /> : null,
+			label: t("theaters"),
+			...resultCardValues(
+				theaters,
+				displayMode === "card" ? 2 : searchResultRelationLimits.theaters,
+				document.theaters_count,
+			),
 		},
-	];
-	const listMetadata: Array<ResultCardField> = [
-		{ label: t("event-type"), value: document.type_of_event },
-		...relations,
-		{
-			label: t("participants"),
-			value: participants.length ? <ResultCardSummary limit={4} values={participants} /> : null,
-		},
-		{
-			label: t("identifiers"),
-			value: document.sameas.length ? <ResultCardSummary limit={2} values={identifiers} /> : null,
-		},
+		{ label: t("directors"), ...resultCardValues(directors, displayMode === "card" ? 2 : 4) },
+		{ label: t("actors"), ...resultCardValues(actors, displayMode === "card" ? 2 : 4) },
 	];
 
 	return (
@@ -64,7 +55,7 @@ export function PerformanceResultCard(
 			header={markup ? <HighlightedSnippet snippet={markup} /> : document.title}
 			href={`/performance/${document.id}`}
 			image="performance"
-			metadata={displayMode === "card" ? cardMetadata : listMetadata}
+			metadata={metadata}
 			subheader={document.date_range}
 		/>
 	);

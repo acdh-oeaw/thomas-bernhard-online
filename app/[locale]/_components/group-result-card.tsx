@@ -3,11 +3,10 @@ import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
 import { HighlightedSnippet } from "@/components/typesense";
-import type { SearchDisplayMode } from "@/config/ui";
+import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
 import type { UniversalSearchDocument } from "@/lib/data";
 
-import { ResultCardSummary } from "./result-card-summary";
-import { type ResultCardField, SearchResultCard } from "./search-result-card";
+import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
 
 type Group = Extract<UniversalSearchDocument, { type: "group" }>;
 type GroupHit = SearchResponseHit<Group>;
@@ -28,44 +27,48 @@ export function GroupResultCard(
 	const { hit, displayMode } = props;
 	const { document } = hit;
 	const t = useTranslations("ResultCard");
-	const identifiers = document.sameas.map((identifier) => {
-		return { id: identifier, content: identifier };
+	const performances = (document.performances ?? []).map((performance) => {
+		const date = performance.date_range;
+		return `${performance.title}${date ? ` (${date})` : ""}`;
 	});
-	const performances = (document.performances ?? []).map((performance, index) => {
-		return {
-			id: `${performance.title}:${String(index)}`,
-			content: `${performance.title}${performance.date_range ? ` (${performance.date_range})` : ""}`,
-		};
+	const publications = (document.publications ?? []).map((publication) => {
+		return publication.title;
 	});
-	const publications = (document.publications ?? []).map((publication, index) => {
-		return { id: `${publication.title}:${String(index)}`, content: publication.title };
+	const events = (document.events ?? []).map((event) => {
+		const date = event.date_range;
+		return `${event.title}${date ? ` (${date})` : ""}`;
 	});
 	const cardMetadata: Array<ResultCardField> = [
 		{
 			label: t("performances"),
-			value: performances.length ? <ResultCardSummary limit={2} values={performances} /> : null,
+			...resultCardValues(performances, 2, document.performances_count),
 		},
+		{ label: t("events"), ...resultCardValues(events, 2, document.events_count) },
 		{
 			label: t("publications"),
-			value: publications.length ? <ResultCardSummary limit={2} values={publications} /> : null,
-		},
-		{
-			label: t("identifiers"),
-			value: document.sameas.length ? <ResultCardSummary limit={1} values={identifiers} /> : null,
+			...resultCardValues(publications, 2, document.publications_count),
 		},
 	];
 	const listMetadata: Array<ResultCardField> = [
 		{
 			label: t("performances"),
-			value: performances.length ? <ResultCardSummary limit={4} values={performances} /> : null,
+			...resultCardValues(
+				performances,
+				searchResultRelationLimits.performances,
+				document.performances_count,
+			),
+		},
+		{
+			label: t("events"),
+			...resultCardValues(events, searchResultRelationLimits.events, document.events_count),
 		},
 		{
 			label: t("publications"),
-			value: publications.length ? <ResultCardSummary limit={4} values={publications} /> : null,
-		},
-		{
-			label: t("identifiers"),
-			value: document.sameas.length ? <ResultCardSummary limit={3} values={identifiers} /> : null,
+			...resultCardValues(
+				publications,
+				searchResultRelationLimits.publications,
+				document.publications_count,
+			),
 		},
 	];
 	const nameHighlight = highlightMarkup(hit);

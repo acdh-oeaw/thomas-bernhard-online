@@ -5,6 +5,7 @@ import type {
 	SearchResponseRequestParams,
 } from "typesense";
 
+import { searchResultRelationLimits } from "@/config/ui";
 import { physicalCollectionName } from "@/lib/typesense/collection-name";
 import { collections } from "@/lib/typesense/collections";
 import type { DocumentFromSchema } from "@/lib/typesense/schema";
@@ -33,7 +34,7 @@ import {
  * - A joined key is OPTIONAL, and absent rather than
  *   empty when nothing matched. Callers read it as `document.translation ?? []`.
  * - A joined key is named after the collection it came from, not after the field pointing at it, so
- *   a translation's `translator_ids` resolve under `authors` (see `gettranslation`).
+ *   a translation's `translator_ids` resolve under `authors` (see `getTranslation`).
  */
 
 /* -------------------------------------------------------------------------------------------------
@@ -49,7 +50,8 @@ export type Work = DocumentOf<"work">;
 export type Person = DocumentOf<"person">;
 export type Group = DocumentOf<"group">;
 export type Translation = DocumentOf<"translation">;
-export type Performance = DocumentOf<"event">;
+export type Performance = DocumentOf<"performance">;
+export type Event = DocumentOf<"event">;
 export type Manifestation = DocumentOf<"publication">;
 
 /** UI entity names remain stable across API collection renames. */
@@ -57,7 +59,8 @@ export const itemCollections = {
 	work: "work",
 	translation: "translation",
 	manifestation: "publication",
-	performance: "event",
+	performance: "performance",
+	event: "event",
 	person: "person",
 	group: "group",
 } as const satisfies Record<string, CollectionName>;
@@ -69,6 +72,7 @@ interface ItemDocuments {
 	person: PersonSearchDocument;
 	manifestation: PublicationSearchDocument;
 	performance: PerformanceSearchDocument;
+	event: EventSearchDocument;
 	group: GroupSearchDocument;
 }
 
@@ -118,22 +122,20 @@ export type WorkWithRelations = DocumentWithJoins<
 	object,
 	{
 		translations: Array<DocumentWithJoins<Translation, { translators: Array<Translator> }>>;
-		performances: Array<
-			DocumentWithJoins<
-				Performance,
-				{
-					location: Group;
-				}
-			>
-		>;
+		performances: Array<DocumentWithJoins<Performance, { theaters: Array<Group> }>>;
+		events: Array<EventWithRelations>;
 	}
 >;
 
-/** The explicitly requested relation projection returned by `gettranslation`. */
+/** The explicitly requested relation projection returned by `getTranslation`. */
 export type TranslationWithRelations = DocumentWithJoins<
 	Translation,
 	{
-		work: DocumentWithJoins<Work, object, { performances: Array<PerformanceWithRelations> }>;
+		work: DocumentWithJoins<
+			Work,
+			object,
+			{ performances: Array<PerformanceWithRelations>; events: Array<EventWithRelations> }
+		>;
 		authors: Array<Person>;
 	},
 	{ manifestations: Array<Manifestation> }
@@ -149,7 +151,7 @@ export type ManifestationWithRelations = DocumentWithJoins<
 	}
 >;
 
-/** Union-search projections contain display labels, never related document IDs. */
+/** Union-search projections contain display labels; work summaries also need venue IDs for distinct counts. */
 type WorkLabel = Pick<Work, "title" | "year">;
 type TranslationLabel = DocumentWithJoins<Pick<Translation, "title">, { work: WorkLabel }>;
 
@@ -157,21 +159,28 @@ export type WorkSearchDocument = DocumentWithJoins<
 	Work,
 	object,
 	{
-		translations: Array<Pick<Translation, "title" | "language">>;
-		performances: Array<Pick<Performance, "title">>;
+		translations: Array<Pick<Translation, "language">>;
+		translations_count: number;
+		performances: Array<Pick<Performance, "theater_ids">>;
+		performances_count: number;
+		events: Array<Pick<Event, "location_id">>;
+		events_count: number;
 	}
 >;
 
 export type TranslationSearchDocument = DocumentWithJoins<
 	Translation,
-	{ work: WorkLabel; authors: Array<Pick<Person, "name">> },
-	{ manifestations: Array<Pick<Manifestation, "title">> }
+	{ work: WorkLabel; authors: Array<Pick<Person, "name">>; authors_count: number },
+	{ manifestations: Array<Pick<Manifestation, "title">>; manifestations_count: number }
 >;
 
 export type PersonSearchDocument = DocumentWithJoins<
 	Person,
 	object,
-	{ translations: Array<TranslationLabel> }
+	{
+		translations: Array<TranslationLabel>;
+		translations_count: number;
+	}
 >;
 
 export type GroupSearchDocument = DocumentWithJoins<
@@ -179,29 +188,37 @@ export type GroupSearchDocument = DocumentWithJoins<
 	object,
 	{
 		performances: Array<Pick<Performance, "title" | "date_range">>;
+		performances_count: number;
+		events: Array<Pick<Event, "title" | "date_range">>;
+		events_count: number;
 		publications: Array<Pick<Manifestation, "title">>;
+		publications_count: number;
 	}
 >;
 
 export type PerformanceSearchDocument = DocumentWithJoins<
 	Performance,
+	{ work: WorkLabel; theaters: Array<Pick<Group, "name">>; theaters_count: number }
+>;
+
+export type EventSearchDocument = DocumentWithJoins<
+	Event,
 	{ work: WorkLabel; location: Pick<Group, "name"> }
 >;
 
 /** Publication cards need translation titles and their original work's title and year. */
 export type PublicationSearchDocument = DocumentWithJoins<
 	Manifestation,
-	{ contained_translations: Array<TranslationLabel> }
+	{ contained_translations: Array<TranslationLabel>; translations_count: number }
 >;
 
 /** The explicitly requested relation projection returned by `getperformance`. */
 export type PerformanceWithRelations = DocumentWithJoins<
 	Performance,
-	{
-		work: Work;
-		location: Group;
-	}
+	{ work: Work; theaters: Array<Group> }
 >;
+
+export type EventWithRelations = DocumentWithJoins<Event, { work: Work; location: Group }>;
 
 export type PersonWithRelations = DocumentWithJoins<
 	Person,
@@ -216,6 +233,7 @@ export type GroupWithRelations = DocumentWithJoins<
 	object,
 	{
 		performances: Array<PerformanceWithRelations>;
+		events: Array<EventWithRelations>;
 	}
 >;
 
@@ -229,28 +247,36 @@ export type GroupWithRelations = DocumentWithJoins<
  * alias then keys the joined documents by the unprefixed name — the key named in this module's
  * concrete relation types.
  */
+interface JoinOptions {
+	alias?: string;
+	strategy?: "nest_array";
+	sortBy?: string;
+	limit?: number;
+	relatedDocsCount?: string;
+}
+
 function defineJoin<
 	K extends CollectionName,
 	const Fields extends ReadonlyArray<keyof DocumentOf<K>>,
->(
-	name: K,
-	fields: Fields,
-	options?: { alias?: string; strategy?: "nest_array" },
-): JoinSpec<Pick<DocumentOf<K>, Fields[number]>>;
+>(name: K, fields: Fields, options?: JoinOptions): JoinSpec<Pick<DocumentOf<K>, Fields[number]>>;
 function defineJoin<K extends CollectionName>(
 	name: K,
 	fields: string,
-	options?: { alias?: string; strategy?: "nest_array" },
+	options?: JoinOptions,
 ): JoinSpec<DocumentOf<K>>;
 function defineJoin(
 	name: CollectionName,
 	fields: string | ReadonlyArray<string>,
-	options?: { alias?: string; strategy?: "nest_array" },
+	options?: JoinOptions,
 ): JoinSpec<unknown> {
 	const fieldList = typeof fields === "string" ? fields : fields.join(",");
 	const strategySuffix = options?.strategy == null ? "" : `,strategy:${options.strategy}`;
+	const sortSuffix = options?.sortBy == null ? "" : `,sort_by:${options.sortBy}`;
+	const limitSuffix = options?.limit == null ? "" : `,limit:${String(options.limit)}`;
+	const countSuffix =
+		options?.relatedDocsCount == null ? "" : `,related_docs_count:${options.relatedDocsCount}`;
 	return {
-		clause: `$${physicalCollectionName(name)}(${fieldList}${strategySuffix}) as ${options?.alias ?? name}`,
+		clause: `$${physicalCollectionName(name)}(${fieldList}${strategySuffix}${sortSuffix}${limitSuffix}${countSuffix}) as ${options?.alias ?? name}`,
 	};
 }
 
@@ -309,15 +335,14 @@ export type DataSearchParams<K extends CollectionName> = Omit<
 
 export type WorkSearchParams = DataSearchParams<"work">;
 export type TranslationSearchParams = DataSearchParams<"translation">;
-export type PerformanceSearchParams = DataSearchParams<"event">;
+export type PerformanceSearchParams = DataSearchParams<"performance">;
+export type EventSearchParams = DataSearchParams<"event">;
 export type GroupSearchParams = DataSearchParams<"group">;
 
 /** The search parameters shared by the universal-search collections. */
 export interface ItemSearchParams {
 	q?: string;
-	types?: ReadonlyArray<
-		"work" | "person" | "group" | "translation" | "manifestation" | "performance"
-	>;
+	types?: ReadonlyArray<ItemType>;
 	workFilterBy?: string;
 	translationFilterBy?: string;
 	page?: number;
@@ -342,43 +367,55 @@ export function getWorks(
 	return searchCollection("work", params, options);
 }
 
+const detailPerformanceJoin = defineJoin(
+	"performance",
+	`*,${defineJoin("group", "*", { alias: "theaters", strategy: "nest_array" }).clause}`,
+	{ alias: "performances", strategy: "nest_array" },
+).clause;
+const detailEventJoin = defineJoin(
+	"event",
+	`*,${defineJoin("group", "*", { alias: "location" }).clause}`,
+	{ alias: "events", strategy: "nest_array" },
+).clause;
 const translationIncludeFields = [
-	defineJoin(
-		"work",
-		`*,${
-			defineJoin(
-				"event",
-				`*,${defineJoin("group", "*", { alias: "location" }).clause},strategy:nest_array`,
-				{ alias: "performances" },
-			).clause
-		}`,
-		{ alias: "work" },
-	).clause,
+	defineJoin("work", `*,${detailPerformanceJoin},${detailEventJoin}`, { alias: "work" }).clause,
 	defineJoin("person", nestArray, { alias: "authors" }).clause,
 	defineJoin("publication", nestArray, { alias: "manifestations" }).clause,
 ].join(",");
 
-const translationJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["event"]))} || id:*)`;
+const translationJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["performance", "event"]))} || id:*)`;
 
 const publicationWorkJoin = defineJoin("work", ["id", "title", "year"]).clause;
 
 const searchWorkLabelJoin = defineJoin("work", ["title", "year"]).clause;
+// The deployed backend requires joined sorting for limits to apply; use stable label order.
 const searchTranslationLabels = (
 	alias: "translations" | "contained_translations" = "translations",
 ) => {
 	return defineJoin("translation", `title,${searchWorkLabelJoin}`, {
 		alias,
 		strategy: "nest_array",
+		sortBy: "title:asc",
+		limit: searchResultRelationLimits.translations,
+		relatedDocsCount: "translations_count",
 	}).clause;
 };
 const searchWorkIncludeFields = [
-	defineJoin("translation", ["title", "language"], {
+	// Keep these scalar/reference-only joins complete so distinct language and venue totals are exact.
+	defineJoin("translation", ["language"], {
 		alias: "translations",
 		strategy: "nest_array",
+		relatedDocsCount: "translations_count",
 	}).clause,
-	defineJoin("event", ["title"], {
+	defineJoin("performance", ["theater_ids"], {
 		alias: "performances",
 		strategy: "nest_array",
+		relatedDocsCount: "performances_count",
+	}).clause,
+	defineJoin("event", ["location_id"], {
+		alias: "events",
+		strategy: "nest_array",
+		relatedDocsCount: "events_count",
 	}).clause,
 ].join(",");
 const searchTranslationIncludeFields = [
@@ -386,23 +423,52 @@ const searchTranslationIncludeFields = [
 	defineJoin("person", ["name"], {
 		alias: "authors",
 		strategy: "nest_array",
+		sortBy: "name:asc",
+		limit: searchResultRelationLimits.authors,
+		relatedDocsCount: "authors_count",
 	}).clause,
 	defineJoin("publication", ["title"], {
 		alias: "manifestations",
 		strategy: "nest_array",
+		sortBy: "title:asc",
+		limit: searchResultRelationLimits.manifestations,
+		relatedDocsCount: "manifestations_count",
 	}).clause,
 ].join(",");
 const searchGroupIncludeFields = [
-	defineJoin("event", ["title", "date_range"], {
+	defineJoin("performance", ["title", "date_range"], {
 		alias: "performances",
 		strategy: "nest_array",
+		sortBy: "title:asc",
+		limit: searchResultRelationLimits.performances,
+		relatedDocsCount: "performances_count",
+	}).clause,
+	defineJoin("event", ["title", "date_range"], {
+		alias: "events",
+		strategy: "nest_array",
+		sortBy: "title:asc",
+		limit: searchResultRelationLimits.events,
+		relatedDocsCount: "events_count",
 	}).clause,
 	defineJoin("publication", ["title"], {
 		alias: "publications",
 		strategy: "nest_array",
+		sortBy: "title:asc",
+		limit: searchResultRelationLimits.publications,
+		relatedDocsCount: "publications_count",
 	}).clause,
 ].join(",");
 const searchPerformanceIncludeFields = [
+	searchWorkLabelJoin,
+	defineJoin("group", ["name"], {
+		alias: "theaters",
+		strategy: "nest_array",
+		sortBy: "name:asc",
+		limit: searchResultRelationLimits.theaters,
+		relatedDocsCount: "theaters_count",
+	}).clause,
+].join(",");
+const searchEventIncludeFields = [
 	searchWorkLabelJoin,
 	defineJoin("group", ["name"], { alias: "location" }).clause,
 ].join(",");
@@ -411,7 +477,7 @@ const searchPerformanceIncludeFields = [
 function getItemSearches(params: ItemSearchParams) {
 	const selectedTypes = new Set(
 		params.types == null || params.types.length === 0
-			? ["work", "person", "group", "translation", "manifestation", "performance"]
+			? ["work", "person", "group", "translation", "manifestation", "performance", "event"]
 			: params.types,
 	);
 	const workSearch = {
@@ -420,7 +486,10 @@ function getItemSearches(params: ItemSearchParams) {
 		query_by: ["title", "sameas", "category"],
 		highlight_full_fields: ["title"],
 		include_fields: searchWorkIncludeFields,
-		filter_by: withJoinFilter(params.workFilterBy, leftJoinFilter(["translation", "event"])),
+		filter_by: withJoinFilter(
+			params.workFilterBy,
+			leftJoinFilter(["translation", "performance", "event"]),
+		),
 	};
 	const translationSearch = {
 		collection: "translation" as const,
@@ -447,11 +516,18 @@ function getItemSearches(params: ItemSearchParams) {
 		highlight_full_fields: ["title"],
 	};
 	const performanceSearch = {
-		collection: "event" as const,
+		collection: "performance" as const,
 		q: params.q,
-		query_by: ["title", "sameas", "type", "date_range", "participant_ids.name"],
+		query_by: ["title", "sameas", "type", "date_range", "directors.name", "actors.name"],
 		highlight_full_fields: ["title"],
 		include_fields: searchPerformanceIncludeFields,
+	};
+	const eventSearch = {
+		collection: "event" as const,
+		q: params.q,
+		query_by: ["title", "sameas", "type_of_event", "date_range", "participant_ids.name"],
+		highlight_full_fields: ["title"],
+		include_fields: searchEventIncludeFields,
 	};
 	const personSearch = {
 		collection: "person" as const,
@@ -468,7 +544,7 @@ function getItemSearches(params: ItemSearchParams) {
 		query_by: ["name", "sameas"],
 		highlight_full_fields: ["name"],
 		include_fields: searchGroupIncludeFields,
-		filter_by: leftJoinFilter(["event", "publication"]),
+		filter_by: leftJoinFilter(["performance", "event", "publication"]),
 	};
 
 	const searches = [
@@ -478,6 +554,7 @@ function getItemSearches(params: ItemSearchParams) {
 		["group", groupSearch],
 		["manifestation", manifestationSearch],
 		["performance", performanceSearch],
+		["event", eventSearch],
 	] as const;
 	return searches
 		.filter(([type]) => {
@@ -488,14 +565,14 @@ function getItemSearches(params: ItemSearchParams) {
 		});
 }
 
-/** Searches works, persons, groups, translations, publications, and performances as one combined result set. */
+/** Searches works, persons, groups, translations, publications, performances, and events as one combined result set. */
 export async function getItems(
 	params: ItemSearchParams,
 	options?: SearchOptions,
 ): Promise<UniversalSearchResponse> {
 	const selectedTypes = new Set(
 		params.types == null || params.types.length === 0
-			? ["work", "person", "group", "translation", "manifestation", "performance"]
+			? ["work", "person", "group", "translation", "manifestation", "performance", "event"]
 			: params.types,
 	);
 	const commonParams = {
@@ -628,7 +705,7 @@ export async function getWork(id: string, options?: SearchOptions): Promise<Work
 	return response.hits?.[0]?.document ?? null;
 }
 
-/** Works with their translations and events resolved through reverse joins. */
+/** Works with their translations and performances resolved through reverse joins. */
 export function getWorksWithRelations(
 	params: WorkSearchParams,
 	options?: SearchOptions,
@@ -644,18 +721,18 @@ export function getWorksWithRelations(
 			},sort_by:year:asc,strategy:nest_array`,
 			{ alias: "translations" },
 		).clause,
-		defineJoin(
-			"event",
-			`*,${defineJoin("group", "*", { alias: "location" }).clause},strategy:nest_array`,
-			{ alias: "performances" },
-		).clause,
+		detailPerformanceJoin,
+		detailEventJoin,
 	].join(",");
 
 	return searchCollection<"work", WorkWithRelations>(
 		"work",
 		{
 			...params,
-			filter_by: withJoinFilter(params.filter_by, leftJoinFilter(["translation", "event"])),
+			filter_by: withJoinFilter(
+				params.filter_by,
+				leftJoinFilter(["translation", "performance", "event"]),
+			),
 			include_fields: includeFields,
 		},
 		options,
@@ -704,7 +781,7 @@ export async function getTranslation(
 }
 
 /**
- * performance with the work they belong to resolved. As with `gettranslation`, `work` is a forward
+ * performance with the work they belong to resolved. As with `getTranslation`, `work` is a forward
  * join and needs no `filter_by` clause.
  */
 export function getPerformances(
@@ -713,11 +790,11 @@ export function getPerformances(
 ): Promise<SearchResponse<PerformanceWithRelations>> {
 	const includeFields = [
 		defineJoin("work", "*").clause,
-		defineJoin("group", "*", { alias: "location" }).clause,
+		defineJoin("group", "*", { alias: "theaters", strategy: "nest_array" }).clause,
 	].join(",");
 
-	return searchCollection<"event", PerformanceWithRelations>(
-		"event",
+	return searchCollection<"performance", PerformanceWithRelations>(
+		"performance",
 		{ ...params, include_fields: includeFields },
 		options,
 	);
@@ -731,6 +808,31 @@ export async function getPerformance(
 		{ filter_by: `id:=${filterString(id)}`, per_page: 1 },
 		options,
 	);
+
+	return response.hits?.[0]?.document ?? null;
+}
+
+export function getEvents(
+	params: EventSearchParams,
+	options?: SearchOptions,
+): Promise<SearchResponse<EventWithRelations>> {
+	const includeFields = [
+		defineJoin("work", "*").clause,
+		defineJoin("group", "*", { alias: "location" }).clause,
+	].join(",");
+
+	return searchCollection<"event", EventWithRelations>(
+		"event",
+		{ ...params, include_fields: includeFields },
+		options,
+	);
+}
+
+export async function getEvent(
+	id: string,
+	options?: SearchOptions,
+): Promise<EventWithRelations | null> {
+	const response = await getEvents({ filter_by: `id:=${filterString(id)}`, per_page: 1 }, options);
 
 	return response.hits?.[0]?.document ?? null;
 }
@@ -775,17 +877,22 @@ export function getGroups(
 	params: GroupSearchParams,
 	options?: SearchOptions,
 ): Promise<SearchResponse<GroupWithRelations>> {
-	const includeFields = defineJoin(
-		"event",
-		`*,${defineJoin("work", "*").clause},strategy:nest_array`,
-		{ alias: "performances" },
-	).clause;
+	const includeFields = [
+		defineJoin("performance", `*,${defineJoin("work", "*").clause}`, {
+			alias: "performances",
+			strategy: "nest_array",
+		}).clause,
+		defineJoin("event", `*,${defineJoin("work", "*").clause}`, {
+			alias: "events",
+			strategy: "nest_array",
+		}).clause,
+	].join(",");
 
 	return searchCollection<"group", GroupWithRelations>(
 		"group",
 		{
 			...params,
-			filter_by: withJoinFilter(params.filter_by, leftJoinFilter(["event"])),
+			filter_by: withJoinFilter(params.filter_by, leftJoinFilter(["performance", "event"])),
 			include_fields: includeFields,
 		},
 		options,

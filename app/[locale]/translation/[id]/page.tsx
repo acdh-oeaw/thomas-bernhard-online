@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
+import { RelatedActivities } from "@/app/[locale]/_components/related-activities";
 import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
@@ -13,21 +14,6 @@ import { publicationDateRange } from "@/lib/publication-date";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
-}
-
-function Names(props: Readonly<{ values: ReadonlyArray<{ name?: string | null }> }>): ReactNode {
-	const { values } = props;
-
-	if (values.length === 0) {
-		return null;
-	}
-
-	return values
-		.map((value) => {
-			return value.name;
-		})
-		.filter(Boolean)
-		.join(", ");
 }
 
 export async function generateMetadata(
@@ -129,36 +115,10 @@ export default async function TranslationPage(props: Readonly<PageProps>): Promi
 							</ul>
 						</section>
 					) : null}
-					{translation.work?.performances && translation.work.performances.length > 0 ? (
-						<section>
-							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
-								{"Performances"}
-							</h2>
-							<ul className="list-disc space-y-2 pl-5">
-								{translation.work.performances.map((performance) => {
-									return (
-										<li key={performance.id}>
-											<p>
-												{performance.date_range ? `${performance.date_range}: ` : null}
-												<TBNavLink href={`/performance/${performance.id}`}>
-													{performance.title}
-												</TBNavLink>
-												{" · "}
-												{performance.type_of_event}
-											</p>
-											{performance.participant_ids?.length ? (
-												<p>
-													{"Participants: "}
-													<Names values={performance.participant_ids} />
-												</p>
-											) : null}
-											{performance.location ? <p>{performance.location.name}</p> : null}
-										</li>
-									);
-								})}
-							</ul>
-						</section>
-					) : null}
+					<RelatedActivities
+						events={translation.work?.events}
+						performances={translation.work?.performances}
+					/>
 				</div>
 
 				<details className="mt-4">
