@@ -246,5 +246,8 @@
 		"manifestation": "Publikation",
 		"performance": "Aufführung",
 		"poster": "Plakat"
+	},
+	"ValueList": {
+		"more": "+ {count, number} weitere"
 	}
 }

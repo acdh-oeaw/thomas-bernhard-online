@@ -246,5 +246,8 @@
 		"manifestation": "Publication",
 		"performance": "Performance",
 		"poster": "Poster"
+	},
+	"ValueList": {
+		"more": "+ {count, number} more"
 	}
 }
