@@ -10,7 +10,7 @@ import { defineCollection, type DocumentFromSchema } from "@/lib/typesense/schem
 
 /**
  * Creates the collections that model the same data as the flat, nested-object `tbo_work` collection
- * — but with the nested `expressions` / `performances` objects split out into their own collections,
+ * — but with the nested `translations` / `performances` objects split out into their own collections,
  * wired back to the work via a Typesense JOIN. They are seeded from the live source collection
  * itself (`--source=`, default `tbo_work`), taken apart along its nested objects, so the join can be
  * queried against real data right away.
@@ -33,7 +33,7 @@ const adminApiKey = process.env.TYPESENSE_ADMIN_API_KEY;
 
 export const workCollectionName = "work";
 export const authorsCollectionName = "authors";
-export const expressionsCollectionName = "expressions";
+export const translationsCollectionName = "translations";
 export const performancesCollectionName = "performances";
 
 /**
@@ -41,18 +41,18 @@ export const performancesCollectionName = "performances";
  * so that resolving the joins puts it back together. The original:
  *
  *     authors:      object[] of { id, name }
- *     expressions:  object[] of { id, title, language }
+ *     translations:  object[] of { id, title, language }
  *     performances: object[] of { id, label }
  *     sameas: string[], category: string, title: string
  *
  * Each `object[]` becomes a collection of its element type. The elements' `id` sub-field becomes the
  * typesense document id, so it is never declared as a field; and the array-ness of the sub-fields
- * (`expressions.title: string[]`) was an artifact of typesense flattening an `object[]`, so they are
+ * (`translations.title: string[]`) was an artifact of typesense flattening an `object[]`, so they are
  * plain `string`s per document here. `enable_nested_fields` is therefore not needed anywhere.
  *
  * The two directions are deliberate, because the underlying relationships differ:
  *
- * - expressions and performances belong to exactly one work, so they carry the reference
+ * - translations and performances belong to exactly one work, so they carry the reference
  *   (`work_id`), and a search on the works reaches them through a REVERSE join;
  * - an author has many works and a work has many authors, so duplicating the author per work would
  *   be wrong. The work carries an array reference (`author_ids`) instead, and reaches its authors
@@ -67,7 +67,7 @@ const authorsReference = `${physicalCollectionName(authorsCollectionName)}.id`;
 
 /**
  * The element type of the original `authors: object[]` — one document per person, not per work.
- * Unlike `expressions` and `performances` it carries no `type`: the work reaches it through a
+ * Unlike `translations` and `performances` it carries no `type`: the work reaches it through a
  * forward reference, so there is nothing to tell apart on the joined side.
  */
 const authorsCollection = defineCollection({
@@ -89,13 +89,13 @@ const workCollection = defineCollection({
 });
 
 /**
- * The element type of the original `expressions: object[]`, pointing back at its work — and, through
+ * The element type of the original `translations: object[]`, pointing back at its work — and, through
  * `translator_ids`, at the same `authors` collection the work references. That second reference is
- * what makes a two-level join possible: work → expressions → authors (see `demonstrate-joins.ts`).
+ * what makes a two-level join possible: work → translations → authors (see `demonstrate-joins.ts`).
  * One collection serves both roles, so the field name carries the role while the join key follows
  * the collection; the seeded values are arbitrary.
  */
-const expressionsCollection = defineCollection({
+const translationsCollection = defineCollection({
 	fields: [
 		{ name: "work_id", type: "string", reference: workReference },
 		{ name: "translator_ids", type: "string[]", optional: true, reference: authorsReference },
@@ -116,12 +116,12 @@ const performancesCollection = defineCollection({
 
 /**
  * Referenced collections must exist before the collections referencing them, so order matters:
- * authors before works (the work references them), works before expressions and performances.
+ * authors before works (the work references them), works before translations and performances.
  */
 const collectionsToCreate = [
 	{ name: authorsCollectionName, collection: authorsCollection },
 	{ name: workCollectionName, collection: workCollection },
-	{ name: expressionsCollectionName, collection: expressionsCollection },
+	{ name: translationsCollectionName, collection: translationsCollection },
 	{ name: performancesCollectionName, collection: performancesCollection },
 ] as const;
 
@@ -129,7 +129,7 @@ const collectionsToCreate = [
 interface SeedDocuments {
 	authors: Array<DocumentFromSchema<typeof authorsCollection>>;
 	work: Array<DocumentFromSchema<typeof workCollection>>;
-	expressions: Array<DocumentFromSchema<typeof expressionsCollection>>;
+	translations: Array<DocumentFromSchema<typeof translationsCollection>>;
 	performances: Array<DocumentFromSchema<typeof performancesCollection>>;
 }
 
@@ -152,7 +152,7 @@ interface SourceWork {
 	category?: string | null;
 	sameas?: Array<string> | null;
 	authors?: Array<{ id?: string; name?: string }> | null;
-	expressions?: Array<{ id?: string; title?: string; language?: string }> | null;
+	translations?: Array<{ id?: string; title?: string; language?: string }> | null;
 	performances?: Array<{ id?: string; label?: string }> | null;
 }
 
@@ -176,7 +176,7 @@ async function fetchSourceWorks(client: Client): Promise<Array<SourceWork>> {
  * Invented translators, added to the `authors` collection alongside the real authors taken from the
  * source. The source carries no translator information at all, so without these the `translator_ids`
  * reference — and the two-level join that walks it in `demonstrate-joins.ts` — would resolve to
- * nothing on every expression.
+ * nothing on every translation.
  *
  * These people do not exist. Their ids are prefixed `invented-` so that a document sourced from the
  * live data can never be confused with one made up here, in the seed data or in a query result.
@@ -207,11 +207,11 @@ function pseudoRandom(seed: string): number {
 }
 
 /**
- * Assigns invented translators to an expression: usually one, sometimes two, and for roughly one in
+ * Assigns invented translators to a translation: usually one, sometimes two, and for roughly one in
  * seven none at all — so the empty case the left join relies on stays represented.
  */
-function pickTranslatorIds(expressionId: string): Array<string> {
-	const wanted = pseudoRandom(`${expressionId}:count`);
+function pickTranslatorIds(translationId: string): Array<string> {
+	const wanted = pseudoRandom(`${translationId}:count`);
 	const count = wanted < 0.15 ? 0 : wanted < 0.85 ? 1 : 2;
 	const picked: Array<string> = [];
 
@@ -220,11 +220,11 @@ function pickTranslatorIds(expressionId: string): Array<string> {
 			break;
 		}
 		const index = Math.floor(
-			pseudoRandom(`${expressionId}:${String(attempt)}`) * inventedTranslators.length,
+			pseudoRandom(`${translationId}:${String(attempt)}`) * inventedTranslators.length,
 		);
 		const id = inventedTranslators[index]?.id;
 		// A repeat means this draw is wasted; the next attempt uses a different seed. Two draws landing
-		// on the same person just leaves the expression with one translator.
+		// on the same person just leaves the translation with one translator.
 		if (id != null && !picked.includes(id)) {
 			picked.push(id);
 		}
@@ -250,9 +250,9 @@ interface SeedSkips {
  *
  * - nested entries without an `id` (the source has a handful of empty `performances` entries): the
  *   `id` is what a document is addressed by, and inventing one would fabricate a record;
- * - repeated ids: an expression id can appear under several works, and importing with
+ * - repeated ids: a translation id can appear under several works, and importing with
  *   `action: "create"` rejects the second. The first occurrence wins, which also picks a single work
- *   for its `work_id` — the split schema has no way to express one expression belonging to two works.
+ *   for its `work_id` — the split schema has no way to express one translation belonging to two works.
  *
  * `translator_ids` has no counterpart in the source, so it is filled from `inventedTranslators` —
  * the one part of the seed data that is made up rather than copied. Every other value here comes
@@ -260,15 +260,15 @@ interface SeedSkips {
  */
 function toSeedDocuments(works: Array<SourceWork>): {
 	documents: SeedDocuments;
-	skips: Record<"authors" | "expressions" | "performances", SeedSkips>;
+	skips: Record<"authors" | "translations" | "performances", SeedSkips>;
 } {
 	const authorsById = new Map<string, DocumentFromSchema<typeof authorsCollection>>();
-	const expressionsById = new Map<string, DocumentFromSchema<typeof expressionsCollection>>();
+	const translationsById = new Map<string, DocumentFromSchema<typeof translationsCollection>>();
 	const performancesById = new Map<string, DocumentFromSchema<typeof performancesCollection>>();
 
-	const skips: Record<"authors" | "expressions" | "performances", SeedSkips> = {
+	const skips: Record<"authors" | "translations" | "performances", SeedSkips> = {
 		authors: { withoutId: 0, duplicateIds: [] },
-		expressions: { withoutId: 0, duplicateIds: [] },
+		translations: { withoutId: 0, duplicateIds: [] },
 		performances: { withoutId: 0, duplicateIds: [] },
 	};
 
@@ -290,24 +290,24 @@ function toSeedDocuments(works: Array<SourceWork>): {
 			}
 		}
 
-		for (const expression of work.expressions ?? []) {
-			if (expression.id == null) {
-				skips.expressions.withoutId += 1;
+		for (const translation of work.translations ?? []) {
+			if (translation.id == null) {
+				skips.translations.withoutId += 1;
 				continue;
 			}
-			if (expressionsById.has(expression.id)) {
-				skips.expressions.duplicateIds.push(expression.id);
+			if (translationsById.has(translation.id)) {
+				skips.translations.duplicateIds.push(translation.id);
 				continue;
 			}
-			const translatorIds = pickTranslatorIds(expression.id);
+			const translatorIds = pickTranslatorIds(translation.id);
 
-			expressionsById.set(expression.id, {
-				id: expression.id,
+			translationsById.set(translation.id, {
+				id: translation.id,
 				work_id: work.id,
-				type: "expression",
+				type: "translation",
 				...(translatorIds.length > 0 && { translator_ids: translatorIds }),
-				...(expression.title != null && { title: expression.title }),
-				...(expression.language != null && { language: expression.language }),
+				...(translation.title != null && { title: translation.title }),
+				...(translation.language != null && { language: translation.language }),
 			});
 		}
 
@@ -344,7 +344,7 @@ function toSeedDocuments(works: Array<SourceWork>): {
 			// in the same collection as the real authors — one `authors` collection serves both roles.
 			authors: [...authorsById.values(), ...inventedTranslators],
 			work: workDocuments,
-			expressions: [...expressionsById.values()],
+			translations: [...translationsById.values()],
 			performances: [...performancesById.values()],
 		},
 		skips,
@@ -451,11 +451,11 @@ function joinClause(name: string, fields: string): string {
  *
  * Naming a collection here is necessary but NOT sufficient for the *reverse* joins: without a
  * matching `$collection(...)` clause in `filter_by`, typesense silently returns the works with no
- * expressions or performances attached. The forward `authors` join needs no such clause.
+ * translations or performances attached. The forward `authors` join needs no such clause.
  */
 const joinedIncludeFields = [
 	authorsCollectionName,
-	expressionsCollectionName,
+	translationsCollectionName,
 	performancesCollectionName,
 ]
 	.map((name) => {
@@ -500,17 +500,17 @@ async function reportJoinedWorks(
 
 /**
  * INNER join: a bare `$collection(...)` clause requires a match, so works with no referencing
- * document drop out of the result entirely — here the work seeded with neither an expression nor a
+ * document drop out of the result entirely — here the work seeded with neither a translation nor a
  * performance, which is why a wildcard `id:*` filter still returns fewer works than exist.
  */
-const innerJoinFilter = `$${physicalCollectionName(expressionsCollectionName)}(id:*) && $${physicalCollectionName(performancesCollectionName)}(id:*)`;
+const innerJoinFilter = `$${physicalCollectionName(translationsCollectionName)}(id:*) && $${physicalCollectionName(performancesCollectionName)}(id:*)`;
 
 /**
  * LEFT join: OR-ing each join clause with a condition satisfied by every work (`id:*`) keeps the
  * unmatched works in the result, with the joined key simply absent on them. Each clause is
  * parenthesised so the `||` binds to its own join rather than across both of them.
  */
-const leftJoinFilter = `($${physicalCollectionName(expressionsCollectionName)}(id:*) || id:*) && ($${physicalCollectionName(performancesCollectionName)}(id:*) || id:*)`;
+const leftJoinFilter = `($${physicalCollectionName(translationsCollectionName)}(id:*) || id:*) && ($${physicalCollectionName(performancesCollectionName)}(id:*) || id:*)`;
 
 /** Reports what the source data lost on the way in (see `toSeedDocuments`). */
 function reportSkips(skips: Record<string, SeedSkips>): void {
@@ -576,11 +576,11 @@ async function main() {
 	}
 
 	console.warn(
-		`\n✓ Created ${String(collectionsToCreate.length)} collections. ${expressionsCollectionName} and ${performancesCollectionName} reference ${workCollectionName} via \`work_id\`; ${workCollectionName} references ${authorsCollectionName} via \`author_ids\`. Resolving all three reconstitutes the nested document:`,
+		`\n✓ Created ${String(collectionsToCreate.length)} collections. ${translationsCollectionName} and ${performancesCollectionName} reference ${workCollectionName} via \`work_id\`; ${workCollectionName} references ${authorsCollectionName} via \`author_ids\`. Resolving all three reconstitutes the nested document:`,
 	);
 
 	await reportJoinedWorks(client, {
-		description: "Inner join — only works that have both an expression and a performance:",
+		description: "Inner join — only works that have both a translation and a performance:",
 		filterBy: innerJoinFilter,
 		totalWorks: documents.work.length,
 	});

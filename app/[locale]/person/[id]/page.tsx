@@ -4,7 +4,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { ExpressionOfWork } from "@/components/expression-of-work";
+import { TranslationOfWork } from "@/components/translation-of-work";
 import { MainContent } from "@/components/ui/main-content";
 import { getPerson } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
@@ -47,26 +47,26 @@ export default async function PersonPage(props: Readonly<PageProps>): Promise<Re
 				</header>
 
 				<div className="grid max-w-text gap-y-8 text-small text-text-weak">
-					{person.expressions && person.expressions.length > 0 ? (
+					{person.translations && person.translations.length > 0 ? (
 						<section>
 							<h2 className="mb-4 font-heading text-heading-4 font-strong text-text-strong">
-								{"Expressions"}
+								{"Translations"}
 							</h2>
 							<ul className="list-disc space-y-2 pl-5">
-								{person.expressions.map((expression) => {
+								{person.translations.map((translation) => {
 									return (
-										<li key={expression.id}>
-											{expression.year != null ? `${String(expression.year)}: ` : null}
-											{expression.work ? (
-												<ExpressionOfWork
-													expressionHref={`/expression/${expression.id}`}
-													expressionTitle={expression.title}
-													originalHref={`/work/${expression.work.id}`}
-													originalTitle={expression.work.title}
+										<li key={translation.id}>
+											{translation.year != null ? `${String(translation.year)}: ` : null}
+											{translation.work ? (
+												<TranslationOfWork
+													originalHref={`/work/${translation.work.id}`}
+													originalTitle={translation.work.title}
+													translationHref={`/translation/${translation.id}`}
+													translationTitle={translation.title}
 												/>
 											) : (
-												<TBNavLink href={`/expression/${expression.id}`}>
-													{expression.title} {"·"} {expression.language}
+												<TBNavLink href={`/translation/${translation.id}`}>
+													{translation.title} {"·"} {translation.language}
 												</TBNavLink>
 											)}
 										</li>

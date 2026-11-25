@@ -2,16 +2,16 @@ import type { DocumentSchema, SearchOptions, SearchParams, SearchResponse } from
 
 import { defaultSearchParams } from "@/config/typesense.config";
 import type {
-	ExpressionWithRelations,
+	TranslationWithRelations,
 	WorkWithRelations as AppWorkWithRelations,
 } from "@/lib/data";
 import { physicalCollectionName } from "@/lib/typesense/collection-name";
 import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 import {
 	authorsCollectionName,
-	expressionsCollectionName,
 	findMissingCollections,
 	performancesCollectionName,
+	translationsCollectionName,
 	workCollectionName,
 } from "@/scripts/typesense/create-joined-schema";
 
@@ -63,7 +63,7 @@ function searchPhysicalCollection<D extends DocumentSchema>(
 }
 
 /**
- * Hits per example query. The collections hold the whole live dataset (187 works, 1258 expressions),
+ * Hits per example query. The collections hold the whole live dataset (187 works, 1258 translations),
  * so every query takes a small sample — this script is about the shape of a response, not its size.
  */
 const samplePerPage = 3;
@@ -85,25 +85,25 @@ function printHeading(title: string, params: Record<string, string | undefined>)
 }
 
 /**
- * FORWARD join, the direction the schema declares: each expression carries a `work_id` reference, so
- * the work it belongs to can be pulled into the expression's document. Naming the collection in
+ * FORWARD join, the direction the schema declares: each translation carries a `work_id` reference, so
+ * the work it belongs to can be pulled into the translation's document. Naming the collection in
  * `include_fields` is all it takes — no `filter_by` clause is involved (contrast the reverse
  * direction below, where the same query silently returns nothing joined).
  *
  * A `filter_by` join clause would change *which documents match* rather than their shape:
  * it makes the join an inner one, which is only observable when the reference can be absent. Here
- * `work_id` is required, so every expression has a work and the filter would drop nothing.
+ * `work_id` is required, so every translation has a work and the filter would drop nothing.
  *
  * The default `nest` strategy is deliberate (rather than the `nest_array` used for the reverse
  * direction): this join is many-to-one, so a single work comes back as a bare object — which is
- * exactly the bare-object shape declared by `ExpressionWithRelations`, the local `work_id` field not
+ * exactly the bare-object shape declared by `TranslationWithRelations`, the local `work_id` field not
  * being an array.
  */
 const forwardJoinIncludeFields = joinClause(workCollectionName, "*");
 
 /**
- * The same forward join, carried one level further: expression → work → authors. The work pulled in
- * by the expression pulls in its own authors, so a single search on the expressions answers "who
+ * The same forward join, carried one level further: translation → work → authors. The work pulled in
+ * by the translation pulls in its own authors, so a single search on the translations answers "who
  * wrote the work this is a translation of".
  *
  * Both levels are forward references (`work_id`, then `author_ids`), so neither needs a `filter_by`
@@ -117,13 +117,13 @@ const forwardNestedJoinIncludeFields = joinClause(
 );
 
 /**
- * The same again, plus the expression's *own* link to the authors collection — its `translator_ids`.
+ * The same again, plus the translation's *own* link to the authors collection — its `translator_ids`.
  * One search then answers both "who wrote the original" and "who translated this".
  *
  * Both land under the key `authors`, because a joined key is named after the target collection and
- * not after the field pointing at it: the expression's translators at the top level, the work's
+ * not after the field pointing at it: the translation's translators at the top level, the work's
  * authors one level down inside `work`. Aliasing the outer one `as translators` would read better but
- * would no longer match the explicit `ExpressionWithRelations` response shape — the typed access
+ * would no longer match the explicit `TranslationWithRelations` response shape — the typed access
  * below would then be reading a key the response does not have.
  */
 const translatorJoinIncludeFields = [
@@ -133,27 +133,27 @@ const translatorJoinIncludeFields = [
 
 /**
  * The work's own joins, in both directions at once — resolving them reconstitutes the nested document
- * the split-up schema was derived from (`authors` / `expressions` / `performances` as arrays).
+ * the split-up schema was derived from (`authors` / `translations` / `performances` as arrays).
  *
  * - `authors` is FORWARD, through the work's own `author_ids` array reference, so `include_fields`
- *   alone materialises it — as in the expressions search above.
- * - `expressions` and `performances` are REVERSE: nothing on the work points at them, so the join is
+ *   alone materialises it — as in the translations search above.
+ * - `translations` and `performances` are REVERSE: nothing on the work points at them, so the join is
  *   driven from the other side. Unlike the forward direction, `include_fields` alone is not enough —
  *   without a matching `$collection(...)` clause in `filter_by`, typesense returns the works with no
  *   joined documents attached and no error at all.
  *
  * OR-ing each `filter_by` clause with `id:*` makes it a left join, keeping works that have no
- * expression or performance, and `strategy:nest_array` keeps every joined value an array whether one
+ * translation or performance, and `strategy:nest_array` keeps every joined value an array whether one
  * or several documents match — matching the `object[]` each one stands in for.
  */
-const reverseJoinFilter = [expressionsCollectionName, performancesCollectionName]
+const reverseJoinFilter = [translationsCollectionName, performancesCollectionName]
 	.map((name) => {
 		return `(${joinFilterClause(name, "id:*")} || id:*)`;
 	})
 	.join(" && ");
 const reverseJoinIncludeFields = [
 	authorsCollectionName,
-	expressionsCollectionName,
+	translationsCollectionName,
 	performancesCollectionName,
 ]
 	.map((name) => {
@@ -162,39 +162,39 @@ const reverseJoinIncludeFields = [
 	.join(",");
 
 /**
- * A NESTED join, two levels deep: work ← expressions → authors. A join clause may itself contain a
- * join clause, so the expressions pulled in by the work each pull in their own translators
- * (`expressions.translator_ids` points at the same `authors` collection the work's `author_ids` do,
+ * A NESTED join, two levels deep: work ← translations → authors. A join clause may itself contain a
+ * join clause, so the translations pulled in by the work each pull in their own translators
+ * (`translations.translator_ids` points at the same `authors` collection the work's `author_ids` do,
  * which is why the joined key is `authors` rather than the field's name).
  *
  * The inner clause takes its own `as authors` alias; without it the inner key keeps the physical
  * collection name (`tbo_test_authors`) even though the outer one was aliased.
  *
  * The `filter_by` requirement applies to the outer, reverse level only — the inner forward join
- * resolves from `include_fields` alone, and an expression with no `author_ids` simply comes back
+ * resolves from `include_fields` alone, and a translation with no `author_ids` simply comes back
  * without the key.
  */
 const nestedJoinIncludeFields = joinClause(
-	expressionsCollectionName,
+	translationsCollectionName,
 	`*,${joinClause(authorsCollectionName, "*,strategy:nest_array")},strategy:nest_array`,
 );
 
-async function demonstrateExpressionJoins(): Promise<void> {
+async function demonstrateTranslationJoins(): Promise<void> {
 	const params = { q: "*", per_page: samplePerPage } as const;
 
-	printHeading(`1. ${expressionsCollectionName} WITHOUT join`, { q: params.q });
-	const plain = await searchPhysicalCollection(expressionsCollectionName, params);
+	printHeading(`1. ${translationsCollectionName} WITHOUT join`, { q: params.q });
+	const plain = await searchPhysicalCollection(translationsCollectionName, params);
 	printDocuments(
 		(plain.hits ?? []).map((hit) => {
 			return hit.document;
 		}),
 	);
 
-	printHeading(`2. ${expressionsCollectionName} WITH join (forward: expression → work)`, {
+	printHeading(`2. ${translationsCollectionName} WITH join (forward: translation → work)`, {
 		include_fields: forwardJoinIncludeFields,
 	});
-	const joined = await searchPhysicalCollection<ExpressionWithRelations>(
-		expressionsCollectionName,
+	const joined = await searchPhysicalCollection<TranslationWithRelations>(
+		translationsCollectionName,
 		{
 			...params,
 			include_fields: forwardJoinIncludeFields,
@@ -212,15 +212,15 @@ async function demonstrateExpressionJoins(): Promise<void> {
 		return `${hit.document.title} → ${work?.title ?? "(not joined)"}`;
 	});
 	console.warn(
-		`\n  typed access — expression title → joined work title:\n    ${titles.join("\n    ")}`,
+		`\n  typed access — translation title → joined work title:\n    ${titles.join("\n    ")}`,
 	);
 
 	printHeading(
-		`3. ${expressionsCollectionName} WITH two-level join (expression → work → ${authorsCollectionName})`,
+		`3. ${translationsCollectionName} WITH two-level join (translation → work → ${authorsCollectionName})`,
 		{ include_fields: forwardNestedJoinIncludeFields },
 	);
-	const nested = await searchPhysicalCollection<ExpressionWithRelations>(
-		expressionsCollectionName,
+	const nested = await searchPhysicalCollection<TranslationWithRelations>(
+		translationsCollectionName,
 		{
 			...params,
 			include_fields: forwardNestedJoinIncludeFields,
@@ -238,15 +238,15 @@ async function demonstrateExpressionJoins(): Promise<void> {
 		return `${hit.document.title} → ${hit.document.work?.title ?? "(not joined)"}`;
 	});
 	console.warn(
-		`\n  typed access stops at the first level — expression → work is typed, the work's \`${authorsCollectionName}\` is not:\n    ${attributions.join("\n    ")}`,
+		`\n  typed access stops at the first level — translation → work is typed, the work's \`${authorsCollectionName}\` is not:\n    ${attributions.join("\n    ")}`,
 	);
 
 	printHeading(
-		`4. ${expressionsCollectionName} WITH the same joins plus its own translators (\`translator_ids\`)`,
+		`4. ${translationsCollectionName} WITH the same joins plus its own translators (\`translator_ids\`)`,
 		{ include_fields: translatorJoinIncludeFields },
 	);
-	const withTranslators = await searchPhysicalCollection<ExpressionWithRelations>(
-		expressionsCollectionName,
+	const withTranslators = await searchPhysicalCollection<TranslationWithRelations>(
+		translationsCollectionName,
 		{
 			...params,
 			include_fields: translatorJoinIncludeFields,
@@ -258,7 +258,7 @@ async function demonstrateExpressionJoins(): Promise<void> {
 		}),
 	);
 
-	// Both of the expression's own joins are first-level, so both are typed: `work` from `work_id`
+	// Both of the translation's own joins are first-level, so both are typed: `work` from `work_id`
 	// (a single document) and `authors` from `translator_ids` (an array, because the reference field is
 	// one). The work's own authors, a level deeper, are still untyped.
 	const attributionsWithTranslators = (withTranslators.hits ?? []).map((hit) => {
@@ -283,10 +283,13 @@ async function demonstrateWorkJoins(): Promise<void> {
 		}),
 	);
 
-	printHeading(`6. ${workCollectionName} WITH all joins (→ authors, ← expressions, performances)`, {
-		filter_by: reverseJoinFilter,
-		include_fields: reverseJoinIncludeFields,
-	});
+	printHeading(
+		`6. ${workCollectionName} WITH all joins (→ authors, ← translations, performances)`,
+		{
+			filter_by: reverseJoinFilter,
+			include_fields: reverseJoinIncludeFields,
+		},
+	);
 	const joined = await searchPhysicalCollection<WorkWithRelations>(workCollectionName, {
 		...params,
 		filter_by: reverseJoinFilter,
@@ -299,14 +302,14 @@ async function demonstrateWorkJoins(): Promise<void> {
 	);
 
 	// All three are typed by the explicit `WorkWithRelations` response shape: `authors` is a forward
-	// join through `author_ids`, while `expressions` / `performances` are reverse joins. Each is
+	// join through `author_ids`, while `translations` / `performances` are reverse joins. Each is
 	// optional — hence the `?? 0` for the work seeded with no authors, and the one with neither
-	// expressions nor performances.
+	// translations nor performances.
 	const counts = (joined.hits ?? []).map((hit) => {
 		const authors = hit.document.authors?.length ?? 0;
-		const expressions = hit.document.expressions?.length ?? 0;
+		const translations = hit.document.translations?.length ?? 0;
 		const performances = hit.document.performances?.length ?? 0;
-		return `${hit.document.title}: ${String(authors)} author(s), ${String(expressions)} expression(s), ${String(performances)} performance(s)`;
+		return `${hit.document.title}: ${String(authors)} author(s), ${String(translations)} translation(s), ${String(performances)} performance(s)`;
 	});
 	console.warn(
 		`\n  typed access — joined documents, keyed by the other collection:\n    ${counts.join("\n    ")}`,
@@ -314,10 +317,10 @@ async function demonstrateWorkJoins(): Promise<void> {
 }
 
 async function demonstrateNestedJoin(): Promise<void> {
-	const filterBy = `${joinFilterClause(expressionsCollectionName, "id:*")} || id:*`;
+	const filterBy = `${joinFilterClause(translationsCollectionName, "id:*")} || id:*`;
 
 	printHeading(
-		`7. ${workCollectionName} WITH two-level join (work ← ${expressionsCollectionName} → ${authorsCollectionName})`,
+		`7. ${workCollectionName} WITH two-level join (work ← ${translationsCollectionName} → ${authorsCollectionName})`,
 		{ filter_by: filterBy, include_fields: nestedJoinIncludeFields },
 	);
 	const joined = await searchPhysicalCollection<WorkWithRelations>(workCollectionName, {
@@ -334,7 +337,7 @@ async function demonstrateNestedJoin(): Promise<void> {
 	);
 
 	// Printed rather than read field by field, because `WorkWithRelations` models only the first-level
-	// projection. `hit.document.expressions` is typed, but `…expressions[0].authors` is not — how deep
+	// projection. `hit.document.translations` is typed, but `…translations[0].authors` is not — how deep
 	// a query nests is a property of that individual query, not of the base collection.
 	console.warn(
 		`\n  the nested \`${authorsCollectionName}\` key is present at runtime but not in the document type —` +
@@ -353,7 +356,7 @@ async function main() {
 		);
 	}
 
-	await demonstrateExpressionJoins();
+	await demonstrateTranslationJoins();
 	await demonstrateWorkJoins();
 	await demonstrateNestedJoin();
 }

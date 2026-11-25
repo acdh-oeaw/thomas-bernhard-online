@@ -32,7 +32,7 @@ export function PersonResultCard(
 	const identifiers = document.sameas.map((identifier) => {
 		return { id: identifier, content: identifier };
 	});
-	const translations = (document.expressions ?? []).map((translation, index) => {
+	const translations = (document.translations ?? []).map((translation, index) => {
 		const label = translationLabel(translation);
 		return { id: `${label}:${String(index)}`, content: label };
 	});

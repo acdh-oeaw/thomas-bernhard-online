@@ -22,18 +22,18 @@ import {
 import { collections } from "@/lib/typesense/collections";
 import type { CollectionSearchParams } from "@/lib/typesense/search";
 
-import { ExpressionResultCard } from "./expression-result-card";
 import { GroupResultCard } from "./group-result-card";
 import { PerformanceResultCard } from "./performance-result-card";
 import { PersonResultCard } from "./person-result-card";
 import { PublicationResultCard } from "./publication-result-card";
+import { TranslationResultCard } from "./translation-result-card";
 import { WorkResultCard } from "./work-result-card";
 
 const resultTypes = [
 	"work",
 	"person",
 	"group",
-	"expression",
+	"translation",
 	"manifestation",
 	"performance",
 ] as const;
@@ -41,10 +41,10 @@ type ResultType = (typeof resultTypes)[number];
 const resultTabs = ["all", ...resultTypes] as const;
 const resultTypeParser = parseAsStringLiteral(resultTabs).withDefault("all");
 
-function isExpressionHit(
+function isTranslationHit(
 	hit: UniversalSearchHit,
-): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "expression" }>> {
-	return hit.document.type === "expression";
+): hit is SearchResponseHit<Extract<UniversalSearchDocument, { type: "translation" }>> {
+	return hit.document.type === "translation";
 }
 
 function isManifestationHit(
@@ -99,7 +99,7 @@ function itemFilterParams(
 		q: q === "" ? "*" : (q ?? "*"),
 		types: Array.from(types),
 		workFilterBy: workFilter === "" ? undefined : workFilter,
-		expressionFilterBy: yearFilter,
+		translationFilterBy: yearFilter,
 	};
 }
 
@@ -197,8 +197,8 @@ export function UnifiedSearch(): ReactNode {
 								displayMode={displayMode}
 								hit={hit}
 							/>
-						) : isExpressionHit(hit) ? (
-							<ExpressionResultCard key={hit.document.id} displayMode={displayMode} hit={hit} />
+						) : isTranslationHit(hit) ? (
+							<TranslationResultCard key={hit.document.id} displayMode={displayMode} hit={hit} />
 						) : isGroupHit(hit) ? (
 							<GroupResultCard
 								key={`group-${hit.document.id}`}

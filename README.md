@@ -7,12 +7,12 @@ Thomas Bernhard Online allows users to browse content from a number of different
 navigation the website follows the general pattern of:
 
 ```
-work by Thomas Bernhard [ > expression or interpretation of the work ] > concrete manifestation of the expression (with media assets)
+work by Thomas Bernhard [ > translation or interpretation of the work ] > concrete manifestation of the translation (with media assets)
 ```
 
 While Bernhard works are the global collection-unspecific entities which hold the content of all
-collections together, as soon as the (optional) expression layer is entered one is navigating inside
-a specific collection. Collection-specific `work > expression > manifestation` chains are:
+collections together, as soon as the (optional) translation layer is entered one is navigating
+inside a specific collection. Collection-specific `work > translation > manifestation` chains are:
 
 - `work > translation > publication`
   - the same translation might be published in multiple publications, one publication can contain
@@ -22,16 +22,16 @@ a specific collection. Collection-specific `work > expression > manifestation` c
 
 ## Typesense collection design
 
-The current joined design keeps `work`, `expression`, `performance`, `person`, `group`, and `poster`
-as separate collections. Relations are resolved at query time with Typesense JOINs: works
-forward-join their authors through `author_ids`, while expressions and performances reverse-join
+The current joined design keeps `work`, `translation`, `performance`, `person`, `group`, and
+`poster` as separate collections. Relations are resolved at query time with Typesense JOINs: works
+forward-join their authors through `author_ids`, while translations and performances reverse-join
 their `work_id` back to a work. The data-layer functions in `lib/data.ts` own the JOIN clauses and
 aliases, so the returned shape can remain close to the former nested work document.
 
 Important JOIN constraints and design considerations are:
 
 - JOINs primarily shape the response and support relation-aware filtering/sorting; they do not
-  extend the parent collection's full-text index. For example, a joined `expressions.title` can be
+  extend the parent collection's full-text index. For example, a joined `translations.title` can be
   returned through `include_fields`, but cannot be added to the work collection's `query_by` unless
   that field is denormalized into the work schema. Joined filtering uses Typesense's
   `$collection(...)` syntax.
@@ -59,7 +59,7 @@ are read from the environment and validated in `config/env.config.ts`.
 | `NEXT_PUBLIC_TYPESENSE_PROTOCOL`          | No          | `http` or `https`; defaults to `https`.                                                                                                                                                                                                                        |
 | `NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY`    | No          | Search-only API key used by the application client. It is optional so collection setup can run before a search key exists.                                                                                                                                     |
 | `NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX` | No          | Prefix added to physical collection names. For example, `tbo_test_` plus registry name `work` addresses `tbo_test_work`. Defaults to an empty string.                                                                                                          |
-| `NEXT_PUBLIC_TYPESENSE_COLLECTIONS`       | Yes         | Comma-separated, unprefixed registry names to retrieve when generating `lib/typesense/collections.ts`, for example `work,person,expression,performance`. Whitespace is trimmed.                                                                                |
+| `NEXT_PUBLIC_TYPESENSE_COLLECTIONS`       | Yes         | Comma-separated, unprefixed registry names to retrieve when generating `lib/typesense/collections.ts`, for example `work,person,translation,performance`. Whitespace is trimmed.                                                                               |
 | `NEXT_PUBLIC_TYPESENSE_ADMIN_KEY`         | Script only | Admin key used by `create-joined-schema.ts` when creating, deleting, and importing collections. It is read directly from `process.env` and is not part of the client-side validated configuration. Keep it out of browser-exposed environments where possible. |
 
 The collection prefix is applied in one place, by `lib/typesense/collection-name.ts`. Source code
@@ -71,7 +71,7 @@ The local template is `.env.local.example`. A typical setup has values similar t
 
 ```dotenv
 NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX=tbo_dev_
-NEXT_PUBLIC_TYPESENSE_COLLECTIONS=work,person,expression,performance,poster,group
+NEXT_PUBLIC_TYPESENSE_COLLECTIONS=work,person,translation,performance,poster,group
 NEXT_PUBLIC_TYPESENSE_HOST=typesense.example.org
 NEXT_PUBLIC_TYPESENSE_PORT=443
 NEXT_PUBLIC_TYPESENSE_PROTOCOL=https
@@ -94,7 +94,7 @@ fields and the metadata needed by the typed search layer: queryable, sortable, a
 names. References are converted back from physical names to registry names so joined query results
 remain independent of the deployment prefix.
 
-The generated registry currently describes the main collections (`work`, `person`, `expression`,
+The generated registry currently describes the main collections (`work`, `person`, `translation`,
 `performance`, `poster`, and `group`) and is consumed by `lib/typesense/schema.ts` to derive
 document and field-name types. Regenerate it whenever a Typesense schema changes, or whenever the
 configured collection set or collection prefix changes.
@@ -107,7 +107,7 @@ pnpm run typesense:create-joined-schema -- --source=tbo_work
 pnpm run typesense:create-joined-schema -- --recreate
 ```
 
-It exports the source work collection (by default `tbo_work`), splits nested authors, expressions,
+It exports the source work collection (by default `tbo_work`), splits nested authors, translations,
 and performances into collections, creates the required references, and imports the derived
 documents. Referenced collections are created first. `--recreate` drops and recreates the target
 collections, so use it only when that destructive operation is intended. The script needs the admin
@@ -119,7 +119,7 @@ The joined-query demonstration is available with:
 pnpm run typesense:demonstrate-joins
 ```
 
-It exercises forward and reverse joins, including the nested work → expression → author path. The
+It exercises forward and reverse joins, including the nested work → translation → author path. The
 script is diagnostic/example code and does not generate application types.
 
 ## Query wrappers
@@ -131,10 +131,10 @@ The application does not call the Typesense client directly from UI code. The la
   helpers, applies shared defaults, and translates registry names to physical names.
   `searchCollections` performs a federated Typesense union search across multiple collections.
 - `lib/data.ts` contains the application-facing wrappers: `getWorks`, `getWork`,
-  `getWorksWithRelations`, `getWorkWithRelations`, `getExpressions`, `getExpression`,
+  `getWorksWithRelations`, `getWorkWithRelations`, `getTranslations`, `getTranslation`,
   `getPerformances`, `getPerformance`, `getPeople`, `getPerson`, and `getItems`.
 
-`getItems` is the cross-collection search used for a union of performances and expressions. The
+`getItems` is the cross-collection search used for a union of performances and translations. The
 relation-aware wrappers build the `include_fields` and join expressions required by the detail and
 catalog views. Keep collection-specific field knowledge in these wrappers or in the typed search
 layer rather than duplicating Typesense calls in components.

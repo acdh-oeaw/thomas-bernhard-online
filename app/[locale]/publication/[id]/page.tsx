@@ -53,20 +53,20 @@ export default async function PublicationPage(props: Readonly<PageProps>): Promi
 					</p>
 				</header>
 				<div className="grid max-w-text gap-y-6 text-small text-text-weak">
-					{publication.expressions?.length ? (
+					{publication.contained_translations?.length ? (
 						<section>
 							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
 								{t("translations")}
 							</h2>
 							<ul className="list-disc space-y-2 pl-5">
-								{publication.expressions.map((expression) => {
+								{publication.contained_translations.map((translation) => {
 									return (
-										<li key={expression.id}>
-											<TBNavLink href={`/expression/${expression.id}`}>
-												{translationLabel(expression)}
+										<li key={translation.id}>
+											<TBNavLink href={`/translation/${translation.id}`}>
+												{translationLabel(translation)}
 											</TBNavLink>
 											{" · "}
-											<LanguageLabel code={expression.language} />
+											<LanguageLabel code={translation.language} />
 										</li>
 									);
 								})}

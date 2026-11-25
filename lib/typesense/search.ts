@@ -23,7 +23,7 @@ export type CollectionName = keyof typeof collections;
 
 /**
  * The collection the app's own UI is built around. The registry also holds the collections it joins
- * to (`expressions`, `performances` — see `scripts/typesense/create-joined-schema.ts`), which have
+ * to (`translations`, `performances` — see `scripts/typesense/create-joined-schema.ts`), which have
  * different fields, so components that render *work* documents pin themselves to this name rather
  * than accepting any `CollectionName`.
  */

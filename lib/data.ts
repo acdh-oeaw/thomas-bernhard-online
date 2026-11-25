@@ -31,9 +31,9 @@ import {
  * Two consequences of returning the response as it comes, both deliberate:
  *
  * - A joined key is OPTIONAL, and absent rather than
- *   empty when nothing matched. Callers read it as `document.expression ?? []`.
+ *   empty when nothing matched. Callers read it as `document.translation ?? []`.
  * - A joined key is named after the collection it came from, not after the field pointing at it, so
- *   an expression's `translator_ids` resolve under `authors` (see `getexpression`).
+ *   a translation's `translator_ids` resolve under `authors` (see `gettranslation`).
  */
 
 /* -------------------------------------------------------------------------------------------------
@@ -48,14 +48,14 @@ type DocumentOf<K extends CollectionName> = DocumentFromSchema<
 export type Work = DocumentOf<"work">;
 export type Person = DocumentOf<"person">;
 export type Group = DocumentOf<"group">;
-export type Expression = DocumentOf<"translation">;
+export type Translation = DocumentOf<"translation">;
 export type Performance = DocumentOf<"event">;
 export type Manifestation = DocumentOf<"publication">;
 
 /** UI entity names remain stable across API collection renames. */
 export const itemCollections = {
 	work: "work",
-	expression: "translation",
+	translation: "translation",
 	manifestation: "publication",
 	performance: "event",
 	person: "person",
@@ -65,7 +65,7 @@ export type ItemType = keyof typeof itemCollections;
 
 interface ItemDocuments {
 	work: WorkSearchDocument;
-	expression: ExpressionSearchDocument;
+	translation: TranslationSearchDocument;
 	person: PersonSearchDocument;
 	manifestation: PublicationSearchDocument;
 	performance: PerformanceSearchDocument;
@@ -117,7 +117,7 @@ export type WorkWithRelations = DocumentWithJoins<
 	Work,
 	object,
 	{
-		expressions: Array<DocumentWithJoins<Expression, { translators: Array<Translator> }>>;
+		translations: Array<DocumentWithJoins<Translation, { translators: Array<Translator> }>>;
 		performances: Array<
 			DocumentWithJoins<
 				Performance,
@@ -129,9 +129,9 @@ export type WorkWithRelations = DocumentWithJoins<
 	}
 >;
 
-/** The explicitly requested relation projection returned by `getexpression`. */
-export type ExpressionWithRelations = DocumentWithJoins<
-	Expression,
+/** The explicitly requested relation projection returned by `gettranslation`. */
+export type TranslationWithRelations = DocumentWithJoins<
+	Translation,
 	{
 		work: DocumentWithJoins<Work, object, { performances: Array<PerformanceWithRelations> }>;
 		authors: Array<Person>;
@@ -143,27 +143,27 @@ export type ExpressionWithRelations = DocumentWithJoins<
 export type ManifestationWithRelations = DocumentWithJoins<
 	Manifestation,
 	{
-		expressions: Array<
-			DocumentWithJoins<Expression, { work: Pick<Work, "id" | "title" | "year"> }>
+		contained_translations: Array<
+			DocumentWithJoins<Translation, { work: Pick<Work, "id" | "title" | "year"> }>
 		>;
 	}
 >;
 
 /** Union-search projections contain display labels, never related document IDs. */
 type WorkLabel = Pick<Work, "title" | "year">;
-type TranslationLabel = DocumentWithJoins<Pick<Expression, "title">, { work: WorkLabel }>;
+type TranslationLabel = DocumentWithJoins<Pick<Translation, "title">, { work: WorkLabel }>;
 
 export type WorkSearchDocument = DocumentWithJoins<
 	Work,
 	object,
 	{
-		expressions: Array<Pick<Expression, "title" | "language">>;
+		translations: Array<Pick<Translation, "title" | "language">>;
 		performances: Array<Pick<Performance, "title">>;
 	}
 >;
 
-export type ExpressionSearchDocument = DocumentWithJoins<
-	Expression,
+export type TranslationSearchDocument = DocumentWithJoins<
+	Translation,
 	{ work: WorkLabel; authors: Array<Pick<Person, "name">> },
 	{ manifestations: Array<Pick<Manifestation, "title">> }
 >;
@@ -171,7 +171,7 @@ export type ExpressionSearchDocument = DocumentWithJoins<
 export type PersonSearchDocument = DocumentWithJoins<
 	Person,
 	object,
-	{ expressions: Array<TranslationLabel> }
+	{ translations: Array<TranslationLabel> }
 >;
 
 export type GroupSearchDocument = DocumentWithJoins<
@@ -191,7 +191,7 @@ export type PerformanceSearchDocument = DocumentWithJoins<
 /** Publication cards need translation titles and their original work's title and year. */
 export type PublicationSearchDocument = DocumentWithJoins<
 	Manifestation,
-	{ expressions: Array<TranslationLabel> }
+	{ contained_translations: Array<TranslationLabel> }
 >;
 
 /** The explicitly requested relation projection returned by `getperformance`. */
@@ -207,7 +207,7 @@ export type PersonWithRelations = DocumentWithJoins<
 	Person,
 	object,
 	{
-		expressions: Array<DocumentWithJoins<Expression, { work: Work }>>;
+		translations: Array<DocumentWithJoins<Translation, { work: Work }>>;
 	}
 >;
 
@@ -263,7 +263,7 @@ function joinFilterClause(name: CollectionName, filter: string): string {
  * A reverse join — one where the *other* collection holds the reference — is not materialised by
  * `include_fields` alone: without a matching clause in `filter_by`, typesense returns the documents
  * with nothing joined and no error. OR-ing each clause with `id:*` makes it a LEFT join, so a work
- * with no expression (or no performance) is still returned.
+ * with no translation (or no performance) is still returned.
  */
 function leftJoinFilter(names: ReadonlyArray<CollectionName>): string {
 	return names
@@ -308,7 +308,7 @@ export type DataSearchParams<K extends CollectionName> = Omit<
 >;
 
 export type WorkSearchParams = DataSearchParams<"work">;
-export type ExpressionSearchParams = DataSearchParams<"translation">;
+export type TranslationSearchParams = DataSearchParams<"translation">;
 export type PerformanceSearchParams = DataSearchParams<"event">;
 export type GroupSearchParams = DataSearchParams<"group">;
 
@@ -316,10 +316,10 @@ export type GroupSearchParams = DataSearchParams<"group">;
 export interface ItemSearchParams {
 	q?: string;
 	types?: ReadonlyArray<
-		"work" | "person" | "group" | "expression" | "manifestation" | "performance"
+		"work" | "person" | "group" | "translation" | "manifestation" | "performance"
 	>;
 	workFilterBy?: string;
-	expressionFilterBy?: string;
+	translationFilterBy?: string;
 	page?: number;
 	perPage?: number;
 	sortBy?: string | ReadonlyArray<string>;
@@ -342,7 +342,7 @@ export function getWorks(
 	return searchCollection("work", params, options);
 }
 
-const expressionIncludeFields = [
+const translationIncludeFields = [
 	defineJoin(
 		"work",
 		`*,${
@@ -358,18 +358,22 @@ const expressionIncludeFields = [
 	defineJoin("publication", nestArray, { alias: "manifestations" }).clause,
 ].join(",");
 
-const expressionJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["event"]))} || id:*)`;
+const translationJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["event"]))} || id:*)`;
 
 const publicationWorkJoin = defineJoin("work", ["id", "title", "year"]).clause;
 
 const searchWorkLabelJoin = defineJoin("work", ["title", "year"]).clause;
-const searchTranslationLabels = defineJoin("translation", `title,${searchWorkLabelJoin}`, {
-	alias: "expressions",
-	strategy: "nest_array",
-}).clause;
+const searchTranslationLabels = (
+	alias: "translations" | "contained_translations" = "translations",
+) => {
+	return defineJoin("translation", `title,${searchWorkLabelJoin}`, {
+		alias,
+		strategy: "nest_array",
+	}).clause;
+};
 const searchWorkIncludeFields = [
 	defineJoin("translation", ["title", "language"], {
-		alias: "expressions",
+		alias: "translations",
 		strategy: "nest_array",
 	}).clause,
 	defineJoin("event", ["title"], {
@@ -377,7 +381,7 @@ const searchWorkIncludeFields = [
 		strategy: "nest_array",
 	}).clause,
 ].join(",");
-const searchExpressionIncludeFields = [
+const searchTranslationIncludeFields = [
 	searchWorkLabelJoin,
 	defineJoin("person", ["name"], {
 		alias: "authors",
@@ -407,7 +411,7 @@ const searchPerformanceIncludeFields = [
 function getItemSearches(params: ItemSearchParams) {
 	const selectedTypes = new Set(
 		params.types == null || params.types.length === 0
-			? ["work", "person", "group", "expression", "manifestation", "performance"]
+			? ["work", "person", "group", "translation", "manifestation", "performance"]
 			: params.types,
 	);
 	const workSearch = {
@@ -418,19 +422,19 @@ function getItemSearches(params: ItemSearchParams) {
 		include_fields: searchWorkIncludeFields,
 		filter_by: withJoinFilter(params.workFilterBy, leftJoinFilter(["translation", "event"])),
 	};
-	const expressionSearch = {
+	const translationSearch = {
 		collection: "translation" as const,
 		q: params.q,
 		query_by: ["title", "sameas", "language", "type"],
 		highlight_full_fields: ["title"],
-		include_fields: searchExpressionIncludeFields,
+		include_fields: searchTranslationIncludeFields,
 		// Keep the work left join explicit alongside reverse publications for stable pagination.
-		filter_by: withJoinFilter(params.expressionFilterBy, leftJoinFilter(["publication", "work"])),
+		filter_by: withJoinFilter(params.translationFilterBy, leftJoinFilter(["publication", "work"])),
 	};
 	const manifestationSearch = {
 		collection: "publication" as const,
 		q: params.q,
-		include_fields: searchTranslationLabels,
+		include_fields: searchTranslationLabels("contained_translations"),
 		query_by: [
 			"title",
 			"subtitle",
@@ -454,7 +458,7 @@ function getItemSearches(params: ItemSearchParams) {
 		q: params.q,
 		query_by: ["name", "sameas"],
 		highlight_full_fields: ["name"],
-		include_fields: searchTranslationLabels,
+		include_fields: searchTranslationLabels(),
 		filter_by: leftJoinFilter(["translation"]),
 	};
 
@@ -469,7 +473,7 @@ function getItemSearches(params: ItemSearchParams) {
 
 	const searches = [
 		["work", workSearch],
-		["expression", expressionSearch],
+		["translation", translationSearch],
 		["person", personSearch],
 		["group", groupSearch],
 		["manifestation", manifestationSearch],
@@ -491,7 +495,7 @@ export async function getItems(
 ): Promise<UniversalSearchResponse> {
 	const selectedTypes = new Set(
 		params.types == null || params.types.length === 0
-			? ["work", "person", "group", "expression", "manifestation", "performance"]
+			? ["work", "person", "group", "translation", "manifestation", "performance"]
 			: params.types,
 	);
 	const commonParams = {
@@ -638,7 +642,7 @@ export function getWorksWithRelations(
 					strategy: "nest_array",
 				}).clause
 			},sort_by:year:asc,strategy:nest_array`,
-			{ alias: "expressions" },
+			{ alias: "translations" },
 		).clause,
 		defineJoin(
 			"event",
@@ -672,26 +676,26 @@ export async function getWorkWithRelations(
 }
 
 /** Translations with their work, translators, and reverse-joined publications resolved. */
-export function getExpressions(
-	params: ExpressionSearchParams,
+export function getTranslations(
+	params: TranslationSearchParams,
 	options?: SearchOptions,
-): Promise<SearchResponse<ExpressionWithRelations>> {
-	return searchCollection<"translation", ExpressionWithRelations>(
+): Promise<SearchResponse<TranslationWithRelations>> {
+	return searchCollection<"translation", TranslationWithRelations>(
 		"translation",
 		{
 			...params,
-			filter_by: withJoinFilter(params.filter_by, expressionJoinFilter),
-			include_fields: expressionIncludeFields,
+			filter_by: withJoinFilter(params.filter_by, translationJoinFilter),
+			include_fields: translationIncludeFields,
 		},
 		options,
 	);
 }
 
-export async function getExpression(
+export async function getTranslation(
 	id: string,
 	options?: SearchOptions,
-): Promise<ExpressionWithRelations | null> {
-	const response = await getExpressions(
+): Promise<TranslationWithRelations | null> {
+	const response = await getTranslations(
 		{ filter_by: `id:=${filterString(id)}`, per_page: 1 },
 		options,
 	);
@@ -700,7 +704,7 @@ export async function getExpression(
 }
 
 /**
- * performance with the work they belong to resolved. As with `getexpression`, `work` is a forward
+ * performance with the work they belong to resolved. As with `gettranslation`, `work` is a forward
  * join and needs no `filter_by` clause.
  */
 export function getPerformances(
@@ -742,7 +746,7 @@ export function getPeople(
 			"translation",
 			`*,${defineJoin("work", "*").clause},sort_by:year:asc,strategy:nest_array`,
 			{
-				alias: "expressions",
+				alias: "translations",
 			},
 		).clause,
 	].join(",");
@@ -806,7 +810,7 @@ export async function getManifestation(
 		"publication",
 		{
 			filter_by: `id:=${filterString(id)}`,
-			include_fields: `*,${defineJoin("translation", `*,${publicationWorkJoin}`, { alias: "expressions", strategy: "nest_array" }).clause}`,
+			include_fields: `*,${defineJoin("translation", `*,${publicationWorkJoin}`, { alias: "contained_translations", strategy: "nest_array" }).clause}`,
 			per_page: 1,
 		},
 		options,

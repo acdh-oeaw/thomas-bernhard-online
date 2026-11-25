@@ -47,14 +47,14 @@ export function WorkResultCard(
 	const tWork = useTranslations("WorkPage");
 	const title = fieldMarkup(highlight, "title");
 	const category = fieldMarkup(highlight, "category");
-	const translations = (document.expressions ?? []).map((expression, index) => {
+	const translations = (document.translations ?? []).map((translation, index) => {
 		return {
-			id: `${expression.title}:${expression.language}:${String(index)}`,
+			id: `${translation.title}:${translation.language}:${String(index)}`,
 			content: (
 				<>
-					{relationTitle(highlight, "expressions", index, expression.title)}
+					{relationTitle(highlight, "translations", index, translation.title)}
 					{" ("}
-					<LanguageLabel code={expression.language} />
+					<LanguageLabel code={translation.language} />
 					{")"}
 				</>
 			),

@@ -10,10 +10,10 @@ import type { UniversalSearchDocument } from "@/lib/data";
 import { ResultCardSummary } from "./result-card-summary";
 import { type ResultCardField, SearchResultCard } from "./search-result-card";
 
-type Expression = Extract<UniversalSearchDocument, { type: "expression" }>;
+type Translation = Extract<UniversalSearchDocument, { type: "translation" }>;
 
-export function ExpressionResultCard(
-	props: Readonly<{ hit: SearchResponseHit<Expression>; displayMode: SearchDisplayMode }>,
+export function TranslationResultCard(
+	props: Readonly<{ hit: SearchResponseHit<Translation>; displayMode: SearchDisplayMode }>,
 ): ReactNode {
 	const { hit, displayMode } = props;
 	const { document, highlight } = hit;
@@ -61,10 +61,10 @@ export function ExpressionResultCard(
 	return (
 		<SearchResultCard
 			displayMode={displayMode}
-			entityType="expression"
+			entityType="translation"
 			header={markup ? <HighlightedSnippet snippet={markup} /> : document.title}
-			href={`/expression/${document.id}`}
-			image="expression"
+			href={`/translation/${document.id}`}
+			image="translation"
 			metadata={displayMode === "card" ? cardMetadata : listMetadata}
 			subheader={document.year}
 		/>

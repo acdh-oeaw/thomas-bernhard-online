@@ -98,7 +98,7 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 	}
 	if (document == null) notFound();
 
-	const { title, category, performances, expressions, sameas, year } = document;
+	const { title, category, performances, translations, sameas, year } = document;
 
 	return (
 		<MainContent className="layout-grid content-start">
@@ -152,22 +152,24 @@ export default async function WorkPage(props: Readonly<WorkPageProps>): Promise<
 						</MetadataSection>
 					) : null}
 
-					{expressions && expressions.length > 0 ? (
-						<MetadataSection title={tField("expressions")}>
-							{expressions.map((expression) => {
-								const translators = expression.translators ?? [];
+					{translations && translations.length > 0 ? (
+						<MetadataSection title={tField("translations")}>
+							{translations.map((translation) => {
+								const translators = translation.translators ?? [];
 
 								return (
-									<li key={expression.id} className="text-small text-text-weak">
-										{expression.year != null ? (
+									<li key={translation.id} className="text-small text-text-weak">
+										{translation.year != null ? (
 											<>
-												{expression.year}
+												{translation.year}
 												{": "}
 											</>
 										) : null}
-										<TBNavLink href={`/expression/${expression.id}`}>{expression.title}</TBNavLink>{" "}
+										<TBNavLink href={`/translation/${translation.id}`}>
+											{translation.title}
+										</TBNavLink>{" "}
 										<span className="text-tiny">
-											(<LanguageLabel code={expression.language} />
+											(<LanguageLabel code={translation.language} />
 											{translators.length > 0 && (
 												<>
 													{", translated by "}

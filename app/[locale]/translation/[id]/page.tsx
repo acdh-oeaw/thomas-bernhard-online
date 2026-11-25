@@ -7,7 +7,7 @@ import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
 import { TBNavLink } from "@/components/entity-links/tb-nav-link";
 import { LanguageLabel } from "@/components/language-label";
 import { MainContent } from "@/components/ui/main-content";
-import { getExpression } from "@/lib/data";
+import { getTranslation } from "@/lib/data";
 import type { IntlLocale } from "@/lib/i18n/locales";
 import { publicationDateRange } from "@/lib/publication-date";
 
@@ -35,27 +35,27 @@ export async function generateMetadata(
 	_parent: ResolvingMetadata,
 ): Promise<Metadata> {
 	const { id } = await props.params;
-	const expression = await getExpression(id);
+	const translation = await getTranslation(id);
 
-	return { title: expression?.title ?? "Expression" };
+	return { title: translation?.title ?? "Translation" };
 }
 
-export default async function ExpressionPage(props: Readonly<PageProps>): Promise<ReactNode> {
+export default async function TranslationPage(props: Readonly<PageProps>): Promise<ReactNode> {
 	const { id, locale } = await props.params;
 	setRequestLocale(locale);
 
 	const t = await getTranslations("WorkPage");
-	let expression: Awaited<ReturnType<typeof getExpression>> = null;
+	let translation: Awaited<ReturnType<typeof getTranslation>> = null;
 
 	try {
-		expression = await getExpression(id);
+		translation = await getTranslation(id);
 	} catch {
 		notFound();
 	}
-	if (expression == null) notFound();
+	if (translation == null) notFound();
 
 	const translatorNames =
-		expression.authors
+		translation.authors
 			?.map((author) => {
 				return author.name;
 			})
@@ -63,10 +63,10 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 				return Boolean(name);
 			}) ?? [];
 
-	const expressionBreadcrumbLabel = (
+	const translationBreadcrumbLabel = (
 		<>
-			{expression.title} {"("}
-			<LanguageLabel code={expression.language} />
+			{translation.title} {"("}
+			<LanguageLabel code={translation.language} />
 			{translatorNames.length > 0 ? `, tr. ${translatorNames.join(", ")}` : null}
 			{")"}
 		</>
@@ -75,30 +75,30 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 	return (
 		<MainContent className="layout-grid content-start">
 			<article className="relative layout-subgrid gap-y-8 py-16 xs:py-24">
-				<WorkBreadcrumb items={[{ label: expressionBreadcrumbLabel }]} work={expression.work} />
+				<WorkBreadcrumb items={[{ label: translationBreadcrumbLabel }]} work={translation.work} />
 				<header className="grid max-w-text gap-y-4">
 					<h1 className="font-heading text-display font-strong text-balance text-text-strong">
-						{expression.title}
+						{translation.title}
 					</h1>
 					<p className="font-heading text-heading-4 text-text-weak">
-						{expression.year != null ? (
+						{translation.year != null ? (
 							<>
-								{expression.year}
+								{translation.year}
 								{": "}
 							</>
 						) : null}
-						<LanguageLabel code={expression.language} /> {"·"} {expression.type}
+						<LanguageLabel code={translation.language} /> {"·"} {translation.type}
 					</p>
 				</header>
 
 				<div className="grid max-w-text gap-y-6 text-small text-text-weak">
-					{expression.authors && expression.authors.length > 0 ? (
+					{translation.authors && translation.authors.length > 0 ? (
 						<section>
 							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
 								{"Translators"}
 							</h2>
 							<p>
-								{expression.authors.map((author, index) => {
+								{translation.authors.map((author, index) => {
 									return (
 										<span key={author.id}>
 											{index > 0 ? ", " : null}
@@ -109,13 +109,13 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 							</p>
 						</section>
 					) : null}
-					{expression.manifestations?.length ? (
+					{translation.manifestations?.length ? (
 						<section>
 							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
 								{"Published in"}
 							</h2>
 							<ul className="list-disc space-y-2 pl-5">
-								{expression.manifestations.map((publication) => {
+								{translation.manifestations.map((publication) => {
 									const date = publicationDateRange(publication);
 									return (
 										<li key={publication.id}>
@@ -129,13 +129,13 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 							</ul>
 						</section>
 					) : null}
-					{expression.work?.performances && expression.work.performances.length > 0 ? (
+					{translation.work?.performances && translation.work.performances.length > 0 ? (
 						<section>
 							<h2 className="mb-2 font-heading text-heading-4 font-strong text-text-strong">
 								{"Performances"}
 							</h2>
 							<ul className="list-disc space-y-2 pl-5">
-								{expression.work.performances.map((performance) => {
+								{translation.work.performances.map((performance) => {
 									return (
 										<li key={performance.id}>
 											<p>
@@ -166,7 +166,7 @@ export default async function ExpressionPage(props: Readonly<PageProps>): Promis
 						{t("raw-data")}
 					</summary>
 					<pre className="mt-2 overflow-x-auto rounded-2 border border-stroke-weak bg-background-raised p-4 font-code text-tiny text-text-weak">
-						{JSON.stringify(expression, null, 2)}
+						{JSON.stringify(translation, null, 2)}
 					</pre>
 				</details>
 			</article>
