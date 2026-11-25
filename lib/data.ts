@@ -131,11 +131,7 @@ export type WorkWithRelations = DocumentWithJoins<
 export type TranslationWithRelations = DocumentWithJoins<
 	Translation,
 	{
-		work: DocumentWithJoins<
-			Work,
-			object,
-			{ performances: Array<PerformanceWithRelations>; events: Array<EventWithRelations> }
-		>;
+		work: DocumentWithJoins<Work, object, { events: Array<EventWithRelations> }>;
 		authors: Array<Person>;
 	},
 	{ manifestations: Array<Manifestation> }
@@ -381,12 +377,12 @@ const detailEventJoin = defineJoin(
 	{ alias: "events", strategy: "nest_array" },
 ).clause;
 const translationIncludeFields = [
-	defineJoin("work", `*,${detailPerformanceJoin},${detailEventJoin}`, { alias: "work" }).clause,
+	defineJoin("work", `*,${detailEventJoin}`, { alias: "work" }).clause,
 	defineJoin("person", nestArray, { alias: "authors" }).clause,
 	defineJoin("publication", nestArray, { alias: "manifestations" }).clause,
 ].join(",");
 
-const translationJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["performance", "event"]))} || id:*)`;
+const translationJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["event"]))} || id:*)`;
 
 const publicationWorkJoin = defineJoin("work", ["id", "title"]).clause;
 

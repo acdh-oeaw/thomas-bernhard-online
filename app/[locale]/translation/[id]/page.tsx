@@ -120,10 +120,7 @@ export default async function TranslationPage(props: Readonly<PageProps>): Promi
 							</ul>
 						</section>
 					) : null}
-					<RelatedActivities
-						events={translation.work?.events}
-						performances={translation.work?.performances}
-					/>
+					<RelatedActivities events={translation.work?.events} />
 				</div>
 
 				<details className="mt-4">
