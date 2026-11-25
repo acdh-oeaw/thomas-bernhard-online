@@ -146,14 +146,17 @@ export type ManifestationWithRelations = DocumentWithJoins<
 	Manifestation,
 	{
 		contained_translations: Array<
-			DocumentWithJoins<Translation, { work: Pick<Work, "id" | "title" | "year"> }>
+			DocumentWithJoins<Translation, { work: Pick<Work, "id" | "title"> }>
 		>;
 	}
 >;
 
 /** Union-search projections contain display labels; work summaries also need venue IDs for distinct counts. */
 type WorkLabel = Pick<Work, "title" | "year">;
-type TranslationLabel = DocumentWithJoins<Pick<Translation, "title">, { work: WorkLabel }>;
+type TranslationLabel = DocumentWithJoins<
+	Pick<Translation, "title">,
+	{ work: Pick<Work, "title"> }
+>;
 
 export type WorkSearchDocument = DocumentWithJoins<
 	Work,
@@ -206,7 +209,7 @@ export type EventSearchDocument = DocumentWithJoins<
 	{ work: WorkLabel; location: Pick<Group, "name"> }
 >;
 
-/** Publication cards need translation titles and their original work's title and year. */
+/** Publication cards need translation titles and their original work's title. */
 export type PublicationSearchDocument = DocumentWithJoins<
 	Manifestation,
 	{ contained_translations: Array<TranslationLabel>; translations_count: number }
@@ -385,14 +388,14 @@ const translationIncludeFields = [
 
 const translationJoinFilter = `${leftJoinFilter(["publication"])} && (${joinFilterClause("work", leftJoinFilter(["performance", "event"]))} || id:*)`;
 
-const publicationWorkJoin = defineJoin("work", ["id", "title", "year"]).clause;
+const publicationWorkJoin = defineJoin("work", ["id", "title"]).clause;
 
 const searchWorkLabelJoin = defineJoin("work", ["title", "year"]).clause;
 // The deployed backend requires joined sorting for limits to apply; use stable label order.
 const searchTranslationLabels = (
 	alias: "translations" | "contained_translations" = "translations",
 ) => {
-	return defineJoin("translation", `title,${searchWorkLabelJoin}`, {
+	return defineJoin("translation", `title,${defineJoin("work", ["title"]).clause}`, {
 		alias,
 		strategy: "nest_array",
 		sortBy: "title:asc",
