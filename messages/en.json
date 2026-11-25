@@ -226,6 +226,8 @@
 		"more": "+ {count, number} more"
 	},
 	"ResultCard": {
+		"translator-of": "Translator of",
+		"languages": "Languages",
 		"translation-count": "{count, plural, one {one translation into} other {# translations into}}",
 		"more-languages": "+ {count, plural, one {# more language} other {# more languages}}",
 		"performance-count": "{count, plural, one {# performance} other {# performances}}",

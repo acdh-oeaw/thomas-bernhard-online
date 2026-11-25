@@ -1,4 +1,4 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
@@ -28,16 +28,40 @@ export function PersonResultCard(
 	const { hit, displayMode } = props;
 	const { document } = hit;
 	const t = useTranslations("ResultCard");
+	const locale = useLocale();
+	const languageNames = new Intl.DisplayNames([locale], { type: "language" });
 	const translations = (document.translations ?? []).map(translationLabel);
+	const languages = [
+		...new Set(
+			(document.translations ?? []).map(({ language }) => {
+				return language;
+			}),
+		),
+	]
+		.map((code) => {
+			try {
+				return languageNames.of(code) ?? code;
+			} catch {
+				return code;
+			}
+		})
+		.sort((a, b) => {
+			return a.localeCompare(b, locale);
+		});
+	const languageField: ResultCardField = {
+		label: t("languages"),
+		values: languages,
+	};
 	const cardMetadata: Array<ResultCardField> = [
 		{
-			label: t("translations"),
+			label: t("translator-of"),
 			...resultCardValues(translations, 2, document.translations_count),
 		},
 	];
 	const listMetadata: Array<ResultCardField> = [
+		languageField,
 		{
-			label: t("translations"),
+			label: t("translator-of"),
 			...resultCardValues(
 				translations,
 				searchResultRelationLimits.translations,
@@ -57,6 +81,9 @@ export function PersonResultCard(
 			href={`/person/${document.id}`}
 			image="person"
 			metadata={displayMode === "card" ? cardMetadata : listMetadata}
+			tags={languages.map((language) => {
+				return { label: t("language"), value: language };
+			})}
 		/>
 	);
 }

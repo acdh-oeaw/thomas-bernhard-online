@@ -181,7 +181,7 @@ export type PersonSearchDocument = DocumentWithJoins<
 	Person,
 	object,
 	{
-		translations: Array<TranslationLabel>;
+		translations: Array<TranslationLabel & Pick<Translation, "language">>;
 		translations_count: number;
 	}
 >;
@@ -395,13 +395,17 @@ const searchWorkLabelJoin = defineJoin("work", ["title", "year"]).clause;
 const searchTranslationLabels = (
 	alias: "translations" | "contained_translations" = "translations",
 ) => {
-	return defineJoin("translation", `title,${defineJoin("work", ["title"]).clause}`, {
-		alias,
-		strategy: "nest_array",
-		sortBy: "title:asc",
-		limit: searchResultRelationLimits.translations,
-		relatedDocsCount: "translations_count",
-	}).clause;
+	return defineJoin(
+		"translation",
+		`${alias === "translations" ? "title,language" : "title"},${defineJoin("work", ["title"]).clause}`,
+		{
+			alias,
+			strategy: "nest_array",
+			sortBy: "title:asc",
+			limit: searchResultRelationLimits.translations,
+			relatedDocsCount: "translations_count",
+		},
+	).clause;
 };
 const searchWorkIncludeFields = [
 	// Keep these scalar/reference-only joins complete so distinct language and venue totals are exact.
