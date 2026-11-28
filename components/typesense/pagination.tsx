@@ -68,6 +68,7 @@ export function Pagination(props: Readonly<PaginationProps>): ReactNode {
 				<ChevronLeftIcon aria-hidden="true" className="size-5" data-slot="icon" />
 			</button>
 
+			{/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Keep a named group for these related controls. */}
 			<div aria-label="Page numbers" className="flex gap-x-1" role="group">
 				{pages.map((item) => {
 					if (item.type === "ellipsis") {
@@ -88,7 +89,6 @@ export function Pagination(props: Readonly<PaginationProps>): ReactNode {
 						<button
 							key={item.value}
 							aria-current={isCurrentPage ? "page" : undefined}
-							// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
 							aria-label={`Go to page ${item.value}${isCurrentPage ? " (current)" : ""}`}
 							className={`interactive cursor-pointer rounded-2 px-3 py-1 outline-transparent focus-visible:focus-outline disabled:cursor-not-allowed disabled:opacity-50 ${
 								isCurrentPage

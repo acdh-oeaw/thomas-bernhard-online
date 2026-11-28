@@ -4,8 +4,8 @@ import { cn } from "@acdh-oeaw/style-variants";
 import type { ReactNode } from "react";
 import { Label as AriaLabel, type LabelProps as AriaLabelProps } from "react-aria-components";
 
-import { useFieldStatus } from "@/components/ui/field-status-context";
-import { RequiredIndicator } from "@/components/ui/required-indicator";
+import { useFieldStatus } from "#/components/ui/field-status-context.tsx";
+import { RequiredIndicator } from "#/components/ui/required-indicator.tsx";
 
 interface LabelProps extends AriaLabelProps {}
 

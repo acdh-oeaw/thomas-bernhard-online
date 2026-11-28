@@ -1,24 +1,29 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { DateRange } from "@/components/date-range";
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { LanguageLabel } from "@/components/language-label";
-import { MainContent } from "@/components/ui/main-content";
-import { getManifestation } from "@/lib/data";
-import type { IntlLocale } from "@/lib/i18n/locales";
-import { translationLabel } from "@/lib/translation-label";
+import { DateRange } from "#/components/date-range.tsx";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import { LanguageLabel } from "#/components/language-label.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getManifestation } from "#/lib/data.ts";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
+import { translationLabel } from "#/lib/translation-label.ts";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
 }
 
 export async function generateMetadata(props: Readonly<PageProps>): Promise<Metadata> {
-	const { id } = await props.params;
+	const { id, locale } = await props.params;
 	const publication = await getManifestation(id);
-	return { title: publication?.title };
+
+	return {
+		title: publication?.title,
+		alternates: getAlternates(locale, `/publication/${id}`),
+	};
 }
 
 export default async function PublicationPage(props: Readonly<PageProps>): Promise<ReactNode> {

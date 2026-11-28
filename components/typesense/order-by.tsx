@@ -4,10 +4,10 @@ import type { LucideIcon } from "lucide-react";
 import type { Key, ReactNode } from "react";
 import { Select } from "react-aria-components";
 
-import { Label } from "@/components/ui/label";
-import { ListBox, ListBoxItem } from "@/components/ui/listbox";
-import { Popover } from "@/components/ui/popover";
-import { SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "#/components/ui/label.tsx";
+import { ListBox, ListBoxItem } from "#/components/ui/listbox.tsx";
+import { Popover } from "#/components/ui/popover.tsx";
+import { SelectTrigger, SelectValue } from "#/components/ui/select.tsx";
 
 interface OrderByOption<T extends string> {
 	value: T;

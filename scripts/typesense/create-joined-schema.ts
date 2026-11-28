@@ -1,21 +1,22 @@
-import { assert } from "@acdh-oeaw/lib";
-import { Client, type ImportResponseFail } from "typesense";
 import { pathToFileURL } from "url";
 
-import { env } from "@/config/env.config";
-import { clientConfig } from "@/config/typesense.config";
-import { physicalCollectionName } from "@/lib/typesense/collection-name";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
-import { defineCollection, type DocumentFromSchema } from "@/lib/typesense/schema";
+import { assert } from "@acdh-oeaw/lib";
+import { Client, type ImportResponseFail } from "typesense";
+
+import { env } from "#/config/env.config.ts";
+import { clientConfig } from "#/config/typesense.config.ts";
+import { physicalCollectionName } from "#/lib/typesense/collection-name.ts";
+import { createTypesenseClient } from "#/lib/typesense/create-typesense-client.ts";
+import { defineCollection, type DocumentFromSchema } from "#/lib/typesense/schema.ts";
 
 /**
  * Creates the collections that model the same data as the flat, nested-object `tbo_work` collection
- * — but with the nested `translations` / `performances` objects split out into their own collections,
- * wired back to the work via a Typesense JOIN. They are seeded from the live source collection
- * itself (`--source=`, default `tbo_work`), taken apart along its nested objects, so the join can be
- * queried against real data right away.
+ * — but with the nested `translations` / `performances` objects split out into their own
+ * collections, wired back to the work via a Typesense JOIN. They are seeded from the live source
+ * collection itself (`--source=`, default `tbo_work`), taken apart along its nested objects, so the
+ * join can be queried against real data right away.
  *
- * The names below are the *registry* names; the collections are created under
+ * The names below are the _registry_ names; the collections are created under
  * `NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX` + that name, so this script writes exactly the
  * collections the app then reads (`physicalCollectionName`).
  *
@@ -25,10 +26,11 @@ import { defineCollection, type DocumentFromSchema } from "@/lib/typesense/schem
  */
 
 /**
- * The admin key is deliberately NOT part of `@/config/env.config`: it must never be bundled into
- * the client. Read it straight from the environment (populated from `.env.local` by `dotenv-cli`).
+ * The admin key is deliberately NOT part of `#/config/env.config`: it must never be bundled into
+ * the client. The script reads it from the environment, including values Node loads from
+ * `.env.local`.
  */
-// eslint-disable-next-line no-restricted-syntax -- admin-only, server-side script (see above).
+// oxlint-disable-next-line app/no-process-env -- admin-only, server-side script (see above).
 const adminApiKey = process.env.TYPESENSE_ADMIN_API_KEY;
 
 export const workCollectionName = "work";
@@ -37,28 +39,29 @@ export const translationsCollectionName = "translations";
 export const performancesCollectionName = "performances";
 
 /**
- * These collections are the nested-object `tbo_work` schema taken apart along its `object[]` fields,
- * so that resolving the joins puts it back together. The original:
+ * These collections are the nested-object `tbo_work` schema taken apart along its `object[]`
+ * fields, so that resolving the joins puts it back together. The original:
  *
  *     authors:      object[] of { id, name }
  *     translations:  object[] of { id, title, language }
  *     performances: object[] of { id, label }
  *     sameas: string[], category: string, title: string
  *
- * Each `object[]` becomes a collection of its element type. The elements' `id` sub-field becomes the
- * typesense document id, so it is never declared as a field; and the array-ness of the sub-fields
- * (`translations.title: string[]`) was an artifact of typesense flattening an `object[]`, so they are
- * plain `string`s per document here. `enable_nested_fields` is therefore not needed anywhere.
+ * Each `object[]` becomes a collection of its element type. The elements' `id` sub-field becomes
+ * the typesense document id, so it is never declared as a field; and the array-ness of the
+ * sub-fields (`translations.title: string[]`) was an artifact of typesense flattening an
+ * `object[]`, so they are plain `string`s per document here. `enable_nested_fields` is therefore
+ * not needed anywhere.
  *
  * The two directions are deliberate, because the underlying relationships differ:
  *
- * - translations and performances belong to exactly one work, so they carry the reference
+ * - Translations and performances belong to exactly one work, so they carry the reference
  *   (`work_id`), and a search on the works reaches them through a REVERSE join;
- * - an author has many works and a work has many authors, so duplicating the author per work would
- *   be wrong. The work carries an array reference (`author_ids`) instead, and reaches its authors
+ * - An author has many works and a work has many authors, so duplicating the author per work would be
+ *   wrong. The work carries an array reference (`author_ids`) instead, and reaches its authors
  *   through a FORWARD join.
  *
- * References are stored *physically*: the created collections know nothing of the registry's
+ * References are stored _physically_: the created collections know nothing of the registry's
  * unprefixed naming. `get-schema.ts` strips the prefix again when generating the registry, so the
  * joins resolve there, and `as <registry name>` aliases keep the prefix out of query responses.
  */
@@ -89,11 +92,11 @@ const workCollection = defineCollection({
 });
 
 /**
- * The element type of the original `translations: object[]`, pointing back at its work — and, through
- * `translator_ids`, at the same `authors` collection the work references. That second reference is
- * what makes a two-level join possible: work → translations → authors (see `demonstrate-joins.ts`).
- * One collection serves both roles, so the field name carries the role while the join key follows
- * the collection; the seeded values are arbitrary.
+ * The element type of the original `translations: object[]`, pointing back at its work — and,
+ * through `translator_ids`, at the same `authors` collection the work references. That second
+ * reference is what makes a two-level join possible: work → translations → authors (see
+ * `demonstrate-joins.ts`). One collection serves both roles, so the field name carries the role
+ * while the join key follows the collection; the seeded values are arbitrary.
  */
 const translationsCollection = defineCollection({
 	fields: [
@@ -134,7 +137,7 @@ interface SeedDocuments {
 }
 
 /**
- * The live, nested-object collection the seed data is taken from — a *physical* name, unrelated to
+ * The live, nested-object collection the seed data is taken from — a _physical_ name, unrelated to
  * this deployment's prefix, and not part of the registry. Override with `--source=<collection>`.
  */
 const sourceCollectionName =
@@ -157,9 +160,9 @@ interface SourceWork {
 }
 
 /**
- * Exports the whole source collection. `export` streams every document as JSONL, which is what makes
- * this a full copy rather than a paginated search capped at `per_page`. Read-only, and it needs only
- * the app's search key — the admin key is scoped to the collections this script writes.
+ * Exports the whole source collection. `export` streams every document as JSONL, which is what
+ * makes this a full copy rather than a paginated search capped at `per_page`. Read-only, and it
+ * needs only the app's search key — the admin key is scoped to the collections this script writes.
  */
 async function fetchSourceWorks(client: Client): Promise<Array<SourceWork>> {
 	const jsonl = await client.collections(sourceCollectionName).documents().export();
@@ -174,9 +177,9 @@ async function fetchSourceWorks(client: Client): Promise<Array<SourceWork>> {
 
 /**
  * Invented translators, added to the `authors` collection alongside the real authors taken from the
- * source. The source carries no translator information at all, so without these the `translator_ids`
- * reference — and the two-level join that walks it in `demonstrate-joins.ts` — would resolve to
- * nothing on every translation.
+ * source. The source carries no translator information at all, so without these the
+ * `translator_ids` reference — and the two-level join that walks it in `demonstrate-joins.ts` —
+ * would resolve to nothing on every translation.
  *
  * These people do not exist. Their ids are prefixed `invented-` so that a document sourced from the
  * live data can never be confused with one made up here, in the seed data or in a query result.
@@ -245,14 +248,14 @@ interface SeedSkips {
  * Turns the nested source documents into the four flat collections — the inverse of the join query
  * in `reportJoinedWorks`.
  *
- * The real data is not as tidy as the schema suggests, so two things are dropped rather than allowed
- * to fail the import:
+ * The real data is not as tidy as the schema suggests, so two things are dropped rather than
+ * allowed to fail the import:
  *
- * - nested entries without an `id` (the source has a handful of empty `performances` entries): the
+ * - Nested entries without an `id` (the source has a handful of empty `performances` entries): the
  *   `id` is what a document is addressed by, and inventing one would fabricate a record;
- * - repeated ids: a translation id can appear under several works, and importing with
- *   `action: "create"` rejects the second. The first occurrence wins, which also picks a single work
- *   for its `work_id` — the split schema has no way to express one translation belonging to two works.
+ * - Repeated ids: a translation id can appear under several works, and importing with `action:
+ *   "create"` rejects the second. The first occurrence wins, which also picks a single work for its
+ *   `work_id` — the split schema has no way to express one translation belonging to two works.
  *
  * `translator_ids` has no counterpart in the source, so it is filled from `inventedTranslators` —
  * the one part of the seed data that is made up rather than copied. Every other value here comes
@@ -380,8 +383,9 @@ async function exists(client: Client, name: string): Promise<boolean> {
 /**
  * The collections this script would create that do not exist (yet), in creation order, named as the
  * registry names them. Exported so other scripts — `demonstrate-joins.ts` — can check whether the
- * join schema is in place before querying it, rather than failing with a bare 404. Any client scoped
- * to these collections works; the app's search key is enough, since this only reads schemas.
+ * join schema is in place before querying it, rather than failing with a bare 404. Any client
+ * scoped to these collections works; the app's search key is enough, since this only reads
+ * schemas.
  */
 export async function findMissingCollections(client: Client): Promise<Array<string>> {
 	const missing: Array<string> = [];
@@ -396,9 +400,9 @@ export async function findMissingCollections(client: Client): Promise<Array<stri
 }
 
 /**
- * Bulk-imports the dummy documents. Typesense's import endpoint reports per-document failures in its
- * response body rather than by rejecting, so the results have to be inspected — otherwise a document
- * whose `work_id` points at a non-existent work (a broken join) would fail silently.
+ * Bulk-imports the dummy documents. Typesense's import endpoint reports per-document failures in
+ * its response body rather than by rejecting, so the results have to be inspected — otherwise a
+ * document whose `work_id` points at a non-existent work (a broken join) would fail silently.
  */
 async function importDocuments(
 	client: Client,
@@ -426,7 +430,7 @@ async function importDocuments(
 }
 
 /**
- * A `$collection(...)` join clause, which typesense resolves against *physical* collection names.
+ * A `$collection(...)` join clause, which typesense resolves against _physical_ collection names.
  * The trailing `as <registry name>` keys the joined documents by the registry name instead of the
  * prefixed one, so the response shape matches the generated collection registry (and the types
  * derived from it) rather than leaking the deployment's prefix.
@@ -439,17 +443,17 @@ function joinClause(name: string, fields: string): string {
  * Pulls all three joined collections in, nested under their registry name — the query that puts the
  * original nested `tbo_work` document back together.
  *
- * Each clause takes the whole joined document (`*`), so the reconstituted arrays carry a little more
- * than the `object[]` elements used to: the `work_id` / `type` bookkeeping fields that only exist
- * because the objects became collections of their own, and `author_ids` remains on the work beside
- * the `authors` it resolves to. Narrowing a clause to `id,title,language` would reproduce the old
- * element type exactly, at the cost of a query that has to restate the schema.
+ * Each clause takes the whole joined document (`*`), so the reconstituted arrays carry a little
+ * more than the `object[]` elements used to: the `work_id` / `type` bookkeeping fields that only
+ * exist because the objects became collections of their own, and `author_ids` remains on the work
+ * beside the `authors` it resolves to. Narrowing a clause to `id,title,language` would reproduce
+ * the old element type exactly, at the cost of a query that has to restate the schema.
  *
- * `strategy:nest_array` is deliberate throughout — the default `nest` strategy varies the *shape* of
- * the joined value with the number of matches (a bare object for a single match, an array for
+ * `strategy:nest_array` is deliberate throughout — the default `nest` strategy varies the _shape_
+ * of the joined value with the number of matches (a bare object for a single match, an array for
  * several), while `nest_array` always yields an array, matching the `object[]` it stands in for.
  *
- * Naming a collection here is necessary but NOT sufficient for the *reverse* joins: without a
+ * Naming a collection here is necessary but NOT sufficient for the _reverse_ joins: without a
  * matching `$collection(...)` clause in `filter_by`, typesense silently returns the works with no
  * translations or performances attached. The forward `authors` join needs no such clause.
  */
@@ -464,7 +468,7 @@ const joinedIncludeFields = [
 	.join(",");
 
 /**
- * Reads the seeded works back *through* the join, so a run visibly proves the references resolve.
+ * Reads the seeded works back _through_ the join, so a run visibly proves the references resolve.
  * Both joined collections reference the work collection, so these are reverse joins.
  */
 async function reportJoinedWorks(

@@ -1,16 +1,17 @@
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { DateRange } from "@/components/date-range";
-import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
-import { GroupLink } from "@/components/entity-links/group-link";
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { WorkLink } from "@/components/entity-links/work-link";
-import { MainContent } from "@/components/ui/main-content";
-import { getPerformance } from "@/lib/data";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { DateRange } from "#/components/date-range.tsx";
+import { WorkBreadcrumb } from "#/components/entity-breadcrumbs.tsx";
+import { GroupLink } from "#/components/entity-links/group-link.tsx";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import { WorkLink } from "#/components/entity-links/work-link.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getPerformance } from "#/lib/data.ts";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
@@ -28,7 +29,9 @@ function People(
 			}
 
 			return value.id ? (
-				<TBNavLink href={`/person/${value.id}`}>{value.name}</TBNavLink>
+				<TBNavLink key={value.id} href={`/person/${value.id}`}>
+					{value.name}
+				</TBNavLink>
 			) : (
 				value.name
 			);
@@ -47,10 +50,13 @@ export async function generateMetadata(
 	props: Readonly<PageProps>,
 	_parent: ResolvingMetadata,
 ): Promise<Metadata> {
-	const { id } = await props.params;
+	const { id, locale } = await props.params;
 	const performance = await getPerformance(id);
 
-	return { title: performance?.title ?? "Performance" };
+	return {
+		title: performance?.title ?? "Performance",
+		alternates: getAlternates(locale, `/performance/${id}`),
+	};
 }
 
 export default async function PerformancePage(props: Readonly<PageProps>): Promise<ReactNode> {

@@ -1,9 +1,9 @@
-import "@/styles/index.css";
+import "#/styles/index.css";
 
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
-import { env } from "@/config/env.config";
+import { env } from "#/config/env.config.ts";
 
 interface AppLayoutProps {
 	children: ReactNode;
@@ -17,14 +17,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
 	metadataBase: new URL(env.NEXT_PUBLIC_APP_BASE_URL),
-	alternates: {
-		canonical: "./",
-	},
 };
 
 /**
- * Since we have a root `not-found.tsx` page, a layout file is required,
- * even if it's just passing children through.
+ * Since we have a root `not-found.tsx` page, a layout file is required, even if it's just passing
+ * children through.
  */
 export default function AppLayout(props: Readonly<AppLayoutProps>): ReactNode {
 	const { children } = props;

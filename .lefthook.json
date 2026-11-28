@@ -1,0 +1,23 @@
+{
+	"$schema": "./node_modules/lefthook/schema.json",
+	"pre-commit": {
+		"jobs": [
+			{
+				"name": "oxlint",
+				"run": "pnpm exec oxlint --fix --no-error-on-unmatched-pattern {staged_files}",
+				"stage_fixed": true
+			},
+			{
+				"name": "stylelint",
+				"glob": "*.css",
+				"run": "pnpm exec stylelint --fix --ignore-path .gitignore {staged_files}",
+				"stage_fixed": true
+			},
+			{
+				"name": "oxfmt",
+				"run": "pnpm exec oxfmt --write --no-error-on-unmatched-pattern {staged_files}",
+				"stage_fixed": true
+			}
+		]
+	}
+}

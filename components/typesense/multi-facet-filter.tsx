@@ -15,9 +15,9 @@ import {
 	TagList,
 } from "react-aria-components";
 
-import { type FacetValue, useFacetCounts } from "@/components/typesense/use-facet-counts";
-import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/schema";
-import type { CollectionName } from "@/lib/typesense/search";
+import { type FacetValue, useFacetCounts } from "#/components/typesense/use-facet-counts.ts";
+import type { Collection, CollectionFacetableFieldName } from "#/lib/typesense/schema.ts";
+import type { CollectionName } from "#/lib/typesense/search.ts";
 
 const EMPTY_SELECTION = new Set<string>();
 
@@ -41,8 +41,8 @@ interface FacetTagGroupProps {
 }
 
 /**
- * A single facet rendered as a React Aria multi-select `TagGroup`: one tag per facet value with
- * its result count. Modelled on the filter panel in the React Aria CRUD example.
+ * A single facet rendered as a React Aria multi-select `TagGroup`: one tag per facet value with its
+ * result count. Modelled on the filter panel in the React Aria CRUD example.
  */
 function FacetTagGroup(props: Readonly<FacetTagGroupProps>): ReactNode {
 	const t = useTranslations("Typesense.MultiFacetFilter");
@@ -89,7 +89,7 @@ interface FacetConfig<C extends Collection<ReadonlyArray<never>>> {
 	facetBy?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 interface MultiFacetFilterProps<C extends Collection<any>> {
 	collection: C;
 	collectionName: CollectionName;
@@ -105,7 +105,7 @@ interface MultiFacetFilterProps<C extends Collection<any>> {
  * A single filter popover behind which several facetable fields are displayed as `TagGroup`s. Facet
  * counts for all fields are fetched together from typesense for the current search query.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 export function MultiFacetFilter<C extends Collection<any>>(
 	props: Readonly<MultiFacetFilterProps<C>>,
 ): ReactNode {
@@ -160,10 +160,7 @@ export function MultiFacetFilter<C extends Collection<any>>(
 				) : null}
 			</Button>
 			<Popover>
-				<Dialog
-					className="grid max-h-112 w-80 max-w-[calc(100vw-2rem)] gap-y-4 overflow-y-auto rounded-2 border border-stroke-weak bg-background-raised p-4 shadow-raised"
-					role="dialog"
-				>
+				<Dialog className="grid max-h-112 w-80 max-w-[calc(100vw-2rem)] gap-y-4 overflow-y-auto rounded-2 border border-stroke-weak bg-background-raised p-4 shadow-raised">
 					{isFetching && isEmpty ? (
 						<p className="text-small text-text-weak">{t("loading")}</p>
 					) : (

@@ -1,10 +1,9 @@
-/* eslint-disable no-restricted-syntax */
+/* oxlint-disable app/no-process-env */
 
-import { err, isErr, ok } from "@acdh-oeaw/lib";
 import { createEnv, ValidationError } from "@acdh-oeaw/validate-env/next";
 import * as v from "valibot";
 
-const result = createEnv({
+export const env = createEnv({
 	schemas: {
 		system(environment) {
 			const schema = v.object({
@@ -14,14 +13,12 @@ const result = createEnv({
 			const result = v.safeParse(schema, environment);
 
 			if (!result.success) {
-				return err(
-					new ValidationError(
-						`Invalid or missing environment variables.\n${v.summarize(result.issues)}`,
-					),
+				throw new ValidationError(
+					`Invalid or missing environment variables.\n${v.summarize(result.issues)}`,
 				);
 			}
 
-			return ok(result.output);
+			return result.output;
 		},
 		private(environment) {
 			const schema = v.object({
@@ -34,14 +31,12 @@ const result = createEnv({
 			const result = v.safeParse(schema, environment);
 
 			if (!result.success) {
-				return err(
-					new ValidationError(
-						`Invalid or missing environment variables.\n${v.summarize(result.issues)}`,
-					),
+				throw new ValidationError(
+					`Invalid or missing environment variables.\n${v.summarize(result.issues)}`,
 				);
 			}
 
-			return ok(result.output);
+			return result.output;
 		},
 		public(environment) {
 			const schema = v.object({
@@ -61,15 +56,15 @@ const result = createEnv({
 					v.minValue(1),
 				),
 				/**
-				 * Prepended to every collection name to form the physical typesense collection (e.g.
-				 * prefix "tbo_test_" + "work" → "tbo_test_work"), so one server can host several
-				 * deployments of the same schema. Optional: an empty prefix means the names are used
-				 * as-is. Only `physicalCollectionName` should apply it.
+				 * Prepended to every collection name to form the physical typesense collection (e.g. prefix
+				 * "tbo_" + "work" → "tbo_work"), so one server can host several deployments of the same
+				 * schema. Optional: an empty prefix means the names are used as-is. Only
+				 * `physicalCollectionName` should apply it.
 				 */
 				NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX: v.optional(v.string(), ""),
 				/**
-				 * The collections this deployment uses, comma-separated and *without* the prefix —
-				 * these are the names the generated collection registry is keyed by.
+				 * The collections this deployment uses, comma-separated and _without_ the prefix — these
+				 * are the names the generated collection registry is keyed by.
 				 */
 				NEXT_PUBLIC_TYPESENSE_COLLECTIONS: v.pipe(
 					v.string(),
@@ -95,8 +90,8 @@ const result = createEnv({
 				),
 				NEXT_PUBLIC_TYPESENSE_PROTOCOL: v.optional(v.picklist(["http", "https"]), "https"),
 				/**
-				 * Optional, because we need to be able to create a collection, before we create
-				 * a search-only api key for that collection.
+				 * Optional, because we need to be able to create a collection, before we create a
+				 * search-only api key for that collection.
 				 */
 				NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY: v.optional(v.pipe(v.string(), v.nonEmpty())),
 				// NEXT_RUNTIME: process.env.NEXT_RUNTIME,
@@ -105,14 +100,12 @@ const result = createEnv({
 			const result = v.safeParse(schema, environment);
 
 			if (!result.success) {
-				return err(
-					new ValidationError(
-						`Invalid or missing environment variables.\n${v.summarize(result.issues)}`,
-					),
+				throw new ValidationError(
+					`Invalid or missing environment variables.\n${v.summarize(result.issues)}`,
 				);
 			}
 
-			return ok(result.output);
+			return result.output;
 		},
 	},
 	environment: {
@@ -140,10 +133,3 @@ const result = createEnv({
 		process.env.ENV_VALIDATION,
 	),
 });
-
-if (isErr(result)) {
-	delete result.error.stack;
-	throw result.error;
-}
-
-export const env = result.value;

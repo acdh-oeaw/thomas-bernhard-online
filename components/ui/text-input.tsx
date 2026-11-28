@@ -8,7 +8,7 @@ import {
 	type TextFieldProps as AriaTextFieldProps,
 } from "react-aria-components";
 
-import { FieldStatusContext } from "@/components/ui/field-status-context";
+import { FieldStatusContext } from "#/components/ui/field-status-context.tsx";
 
 interface TextInputProps extends AriaTextFieldProps {}
 

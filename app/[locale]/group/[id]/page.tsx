@@ -1,12 +1,13 @@
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { RelatedActivities } from "@/app/[locale]/_components/related-activities";
-import { MainContent } from "@/components/ui/main-content";
-import { getGroup } from "@/lib/data";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { RelatedActivities } from "#/app/[locale]/_components/related-activities.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getGroup } from "#/lib/data.ts";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
@@ -16,10 +17,13 @@ export async function generateMetadata(
 	props: Readonly<PageProps>,
 	_parent: ResolvingMetadata,
 ): Promise<Metadata> {
-	const { id } = await props.params;
+	const { id, locale } = await props.params;
 	const group = await getGroup(id);
 
-	return { title: group?.name ?? "Group" };
+	return {
+		title: group?.name ?? "Group",
+		alternates: getAlternates(locale, `/group/${id}`),
+	};
 }
 
 export default async function GroupPage(props: Readonly<PageProps>): Promise<ReactNode> {

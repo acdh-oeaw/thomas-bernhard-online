@@ -3,7 +3,7 @@
 import { type ComponentPropsWithRef, Fragment, type ReactNode } from "react";
 import { composeRenderProps } from "react-aria-components";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button.tsx";
 
 interface IconButtonProps extends Omit<ComponentPropsWithRef<typeof Button>, "variant"> {
 	label: ReactNode;

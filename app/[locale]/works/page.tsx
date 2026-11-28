@@ -2,20 +2,26 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { NuqsProvider } from "@/app/[locale]/_components/nuqs-adapter";
-import { WorkSearch } from "@/app/[locale]/_components/work-search";
-import { MainContent } from "@/components/ui/main-content";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { NuqsProvider } from "#/app/[locale]/_components/nuqs-adapter.tsx";
+import { WorkSearch } from "#/app/[locale]/_components/work-search.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface WorksPageProps {
 	params: Promise<{ locale: IntlLocale }>;
 }
 
-export function generateMetadata(
-	_props: Readonly<WorksPageProps>,
+export async function generateMetadata(
+	props: Readonly<WorksPageProps>,
 	_parent: ResolvingMetadata,
-): Metadata {
-	return { title: "Works" };
+): Promise<Metadata> {
+	const { locale } = await props.params;
+
+	return {
+		title: "Works",
+		alternates: getAlternates(locale, "/works"),
+	};
 }
 
 export default async function WorksPage(props: Readonly<WorksPageProps>): Promise<ReactNode> {

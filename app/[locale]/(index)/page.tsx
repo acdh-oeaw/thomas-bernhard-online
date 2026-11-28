@@ -4,11 +4,12 @@ import { useTranslations } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { Image } from "@/components/image";
-import { Link } from "@/components/link";
-import { Logo } from "@/components/logo";
-import { MainContent } from "@/components/ui/main-content";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { Image } from "#/components/image.tsx";
+import { Link } from "#/components/link.tsx";
+import { Logo } from "#/components/logo.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface IndexPageProps {
 	params: Promise<{
@@ -32,6 +33,7 @@ export async function generateMetadata(
 		 * @see https://nextjs.org/docs/app/api-reference/functions/generate-metadata#title
 		 */
 		// title: undefined,
+		alternates: getAlternates(locale, "/"),
 	};
 
 	return metadata;
@@ -83,7 +85,7 @@ function FeaturesSection(): ReactNode {
 		authentication: { title: "Authentication" },
 	};
 
-	/* eslint-disable react/jsx-no-literals */
+	/* oxlint-disable react/jsx-no-literals */
 	return (
 		<section className="relative layout-subgrid gap-y-12 border-t border-stroke-weak py-16 xs:py-24">
 			<header className="grid max-w-text gap-y-4">

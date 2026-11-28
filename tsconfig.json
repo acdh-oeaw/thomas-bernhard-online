@@ -3,17 +3,11 @@
 	"extends": "@acdh-oeaw/tsconfig",
 	"compilerOptions": {
 		"paths": {
-			"@/*": ["./*"]
+			"#/*": ["./*"]
 		},
+		"types": ["node", "react", "react-dom"],
 		"plugins": [{ "name": "next" }]
 	},
-	"include": [
-		"./next-env.d.ts",
-		"./**/*.js",
-		"./**/*.ts",
-		"./**/*.tsx",
-		"./types/**/*.d.ts",
-		".next/types/**/*.ts"
-	],
-	"exclude": [".next", "content", "node_modules", "out", "public"]
+	"include": ["**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts"],
+	"exclude": ["content", "node_modules", "out", "public"]
 }

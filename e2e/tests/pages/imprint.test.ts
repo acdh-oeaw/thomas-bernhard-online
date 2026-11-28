@@ -1,5 +1,5 @@
-import { expect, test } from "@/e2e/lib/test";
-import { getIntlLanguage, locales } from "@/lib/i18n/locales";
+import { expect, test } from "#/e2e/lib/test.ts";
+import { getIntlLanguage, locales } from "#/lib/i18n/locales.ts";
 
 test.describe("imprint page", () => {
 	test("should have document title", async ({ createImprintPage }) => {

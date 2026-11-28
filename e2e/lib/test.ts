@@ -1,17 +1,16 @@
-/* eslint-disable react-hooks/rules-of-hooks */
-
+/* oxlint-disable react-hooks/rules-of-hooks -- Playwright fixtures use `use` as a callback. */
 import { createUrl } from "@acdh-oeaw/lib";
 import { test as base } from "@playwright/test";
 
-import { env } from "@/config/env.config";
-import { type AccessibilityScanner, createAccessibilityScanner } from "@/e2e/lib/fixtures/a11y";
-import { createI18n, type I18n, type WithI18n } from "@/e2e/lib/fixtures/i18n";
-import { ImprintPage } from "@/e2e/lib/fixtures/imprint-page";
-import { IndexPage } from "@/e2e/lib/fixtures/index-page";
-import { defaultLocale, type IntlLocale } from "@/lib/i18n/locales";
+import { env } from "#/config/env.config.ts";
+import { type AccessibilityScanner, createAccessibilityScanner } from "#/e2e/lib/fixtures/a11y.ts";
+import { createI18n, type I18n, type WithI18n } from "#/e2e/lib/fixtures/i18n.ts";
+import { ImprintPage } from "#/e2e/lib/fixtures/imprint-page.ts";
+import { IndexPage } from "#/e2e/lib/fixtures/index-page.ts";
+import { defaultLocale, type IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface Fixtures {
-	// eslint-disable-next-line @typescript-eslint/no-invalid-void-type
+	// oxlint-disable-next-line typescript/no-invalid-void-type
 	beforeEachTest: void;
 
 	createAccessibilityScanner: () => Promise<AccessibilityScanner>;
@@ -26,9 +25,9 @@ export const test = base.extend<Fixtures>({
 		async ({ context }, use) => {
 			if (env.NEXT_PUBLIC_MATOMO_BASE_URL != null) {
 				/**
-				 * If we were to block loading the actual matomo javascript snippet, we would need to
-				 * check if `windows._paq` was pushed to (because no requests to `matomo.php`
-				 * would be dispatched).
+				 * If we were to block loading the actual matomo javascript snippet, we would need to check
+				 * if `windows._paq` was pushed to (because no requests to `matomo.php` would be
+				 * dispatched).
 				 */
 				// const scriptUrl = String(
 				// 	createUrl({ baseUrl: env.NEXT_PUBLIC_MATOMO_BASE_URL, pathname: "/matomo.js" }),

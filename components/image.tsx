@@ -1,5 +1,5 @@
-/* eslint-disable no-restricted-imports */
-/* eslint-disable @next/next/no-img-element */
+/* oxlint-disable no-restricted-imports */
+/* oxlint-disable nextjs/no-img-element */
 
 import NextImage, { getImageProps, type ImageProps as NextImageProps } from "next/image";
 import type { ReactNode } from "react";

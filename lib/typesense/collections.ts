@@ -1,4 +1,4 @@
-import { defineCollection } from "@/lib/typesense/schema";
+import { defineCollection } from "#/lib/typesense/schema.ts";
 
 export const collections = {
 	event: {

@@ -2,11 +2,11 @@ import { cn } from "@acdh-oeaw/style-variants";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import { NavLink } from "@/components/nav-link";
-import { Tag } from "@/components/ui/tag";
-import { ValueList } from "@/components/ui/value-list";
-import { entityBrandStyle, type SearchDisplayMode } from "@/config/ui";
-import { itemCollections, type ItemType } from "@/lib/data";
+import { NavLink } from "#/components/nav-link.tsx";
+import { Tag } from "#/components/ui/tag.tsx";
+import { ValueList } from "#/components/ui/value-list.tsx";
+import { entityBrandStyle, type SearchDisplayMode } from "#/config/ui.ts";
+import { itemCollections, type ItemType } from "#/lib/data.ts";
 
 export interface ResultCardField {
 	label: string;
@@ -135,6 +135,7 @@ export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactN
 											<div
 												aria-label={t("attributes")}
 												className="flex flex-wrap gap-2"
+												// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Group the result attributes under a shared accessible name.
 												role="group"
 											>
 												{tags.map(({ label, value }) => {
@@ -166,7 +167,7 @@ export function SearchResultCard(props: Readonly<SearchResultCardProps>): ReactN
 							isList ? "flex items-start justify-end" : "relative min-h-0",
 						)}
 					>
-						{/* eslint-disable-next-line @next/next/no-img-element */}
+						{/* oxlint-disable-next-line nextjs/no-img-element */}
 						<img
 							alt=""
 							className={cn(

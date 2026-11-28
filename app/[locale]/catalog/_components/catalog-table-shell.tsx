@@ -4,13 +4,13 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, useRef } from "react";
 import { Button, Cell, Row } from "react-aria-components";
 
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { type CollectionSearchState, Pagination } from "@/components/typesense";
-import { LoadingIndicator } from "@/components/ui/loading-indicator";
-import type { WorkCollectionName } from "@/lib/typesense/search";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import { type CollectionSearchState, Pagination } from "#/components/typesense/index.ts";
+import { LoadingIndicator } from "#/components/ui/loading-indicator.tsx";
+import type { WorkCollectionName } from "#/lib/typesense/search.ts";
 
-import { formatCell } from "./format-cell";
-import type { CatalogTableController } from "./use-catalog-table";
+import { formatCell } from "./format-cell.ts";
+import type { CatalogTableController } from "./use-catalog-table.ts";
 
 /** The `<Row>` elements for the current hits, shared verbatim by both table variants. */
 export function catalogRows(

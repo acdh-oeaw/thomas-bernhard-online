@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 
-import { Link } from "@/components/link";
-import type { IntlLocale } from "@/lib/i18n/locales";
-import { createHref } from "@/lib/navigation/create-href";
-import { usePathname, useSearchParams } from "@/lib/navigation/navigation";
+import { Link } from "#/components/link.tsx";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
+import { createHref } from "#/lib/navigation/create-href.ts";
+import { usePathname, useSearchParams } from "#/lib/navigation/navigation.ts";
 
 interface LocaleSwitcherLinkProps {
 	children: ReactNode;

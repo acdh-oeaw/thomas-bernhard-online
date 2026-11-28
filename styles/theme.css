@@ -812,10 +812,12 @@
 		}
 	}
 
+	/* stylelint-disable-next-line selector-no-unmatchable -- View Transitions defines :only-child for these pseudo-elements. */
 	::view-transition-new(.toast):only-child {
 		animation: toast-in 300ms;
 	}
 
+	/* stylelint-disable-next-line selector-no-unmatchable -- View Transitions defines :only-child for these pseudo-elements. */
 	::view-transition-old(.toast):only-child {
 		animation: toast-out 200ms;
 	}

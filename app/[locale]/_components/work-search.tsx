@@ -4,13 +4,13 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchOptions } from "typesense";
 
-import { type SearchFilters, SearchResults } from "@/app/[locale]/_components/search-results";
-import type { CollectionSearchResult } from "@/components/typesense/use-collection-search";
-import { getWorksWithRelations, type WorkWithRelations } from "@/lib/data";
-import { collections } from "@/lib/typesense/collections";
-import type { CollectionSearchParams } from "@/lib/typesense/search";
+import { type SearchFilters, SearchResults } from "#/app/[locale]/_components/search-results.tsx";
+import type { CollectionSearchResult } from "#/components/typesense/use-collection-search.ts";
+import { getWorksWithRelations, type WorkWithRelations } from "#/lib/data.ts";
+import { collections } from "#/lib/typesense/collections.ts";
+import type { CollectionSearchParams } from "#/lib/typesense/search.ts";
 
-import { WorkResultCard } from "./work-result-card";
+import { WorkResultCard } from "./work-result-card.tsx";
 
 export function WorkSearch(): ReactNode {
 	const t = useTranslations("SearchResults");

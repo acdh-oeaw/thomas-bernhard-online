@@ -96,11 +96,11 @@
 
 	& :where(blockquote) {
 		margin-block: 1.25rem;
+		padding-inline-start: 1rem;
+		border-inline-start: 0.25rem solid var(--color-stroke-weak);
 		color: var(--color-typography-strong);
 		font-weight: 500;
 		font-style: italic;
-		border-inline-start: 0.25rem solid var(--color-stroke-weak);
-		padding-inline-start: 1rem;
 
 		& > :first-child {
 			margin-block-start: 0;
@@ -157,14 +157,14 @@
 
 	& :where(ul) {
 		margin-block: 0.375rem;
-		list-style-type: disc;
 		padding-inline-start: 1.5rem;
+		list-style-type: disc;
 	}
 
 	& :where(ol) {
 		margin-block: 0.375rem;
-		list-style-type: decimal;
 		padding-inline-start: 1.5rem;
+		list-style-type: decimal;
 
 		&:where([type="A"]) {
 			list-style-type: upper-alpha;
@@ -258,10 +258,10 @@
 
 	& :where(figcaption) {
 		margin-inline: 1.5rem;
+		margin-block-start: 0.5rem;
 		color: var(--color-typography-weak);
 		font-size: var(--text-tiny);
 		line-height: var(--text-tiny--line-height);
-		margin-block-start: 0.5rem;
 	}
 
 	& :where(strong) {
@@ -284,9 +284,9 @@
 			& :where(th) {
 				vertical-align: bottom;
 				padding-inline: 0.625rem;
+				padding-block-end: 0.625rem;
 				color: var(--color-stroke-weak);
 				font-weight: var(--font-weight-strong);
-				padding-block-end: 0.625rem;
 
 				&:first-child {
 					padding-inline-start: 0;

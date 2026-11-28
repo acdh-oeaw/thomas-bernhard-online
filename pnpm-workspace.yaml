@@ -1,12 +1,26 @@
-ignoredBuiltDependencies:
-  - unrs-resolver
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  lefthook: true
 
-onlyBuiltDependencies:
-  - '@swc/core'
-  - '@tailwindcss/oxide'
-  - esbuild
-  - sharp
-  - simple-git-hooks
+autoDedupe: true
+
+engineStrict: true
+
+lockfile:
+  includeResolutionSettings: true
+
+minimumReleaseAge: 1440
+
+packageExtensions:
+  eslint-plugin-playwright:
+    peerDependenciesMeta:
+      eslint:
+        optional: true
 
 patchedDependencies:
   next: patches/next.patch
+
+saveTypes: true
+
+shellEmulator: true

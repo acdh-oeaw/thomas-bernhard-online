@@ -1,0 +1,33 @@
+# Local typesense server for development, so that development collections never have to be
+# created on the shared server.
+#
+#   pnpm run typesense:local:up
+#   pnpm run typesense:local:seed
+#
+# The admin api key is a local-only value. Override it by exporting `TYPESENSE_ADMIN_API_KEY` before
+# running `pnpm run typesense:local:up`; it has to match `TYPESENSE_ADMIN_API_KEY` in `.env.local`.
+
+name: thomas-bernhard-online
+
+services:
+  typesense:
+    container_name: thomas-bernhard-online-typesense
+    image: typesense/typesense:30.2
+    restart: unless-stopped
+    command:
+      - --data-dir=/data
+      - --api-key=${TYPESENSE_ADMIN_API_KEY:-local-admin-api-key}
+      - --enable-cors
+    ports:
+      - "127.0.0.1:8108:8108"
+    volumes:
+      - typesense-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/8108' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  typesense-data:
+    name: thomas-bernhard-online-typesense-data

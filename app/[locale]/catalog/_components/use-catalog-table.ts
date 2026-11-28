@@ -14,9 +14,9 @@ import {
 	type CollectionSearchState,
 	useCollectionSearch,
 	yearFacetFilter,
-} from "@/components/typesense";
-import { collections } from "@/lib/typesense/collections";
-import type { WorkCollectionName } from "@/lib/typesense/search";
+} from "#/components/typesense/index.ts";
+import { collections } from "#/lib/typesense/collections.ts";
+import type { WorkCollectionName } from "#/lib/typesense/search.ts";
 
 type SortDirection = "asc" | "desc";
 
@@ -28,7 +28,10 @@ type SortDirection = "asc" | "desc";
  */
 export interface CatalogTableController {
 	collection: (typeof collections)[WorkCollectionName];
-	/** Column ids in display order: the synthetic `id`, then top-level fields by `queryableFieldNames`. */
+	/**
+	 * Column ids in display order: the synthetic `id`, then top-level fields by
+	 * `queryableFieldNames`.
+	 */
 	columns: Array<string>;
 	/** Translated header label for a column, falling back to the raw name (e.g. the `id` column). */
 	columnLabel: (column: string) => string;

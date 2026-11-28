@@ -4,8 +4,8 @@ import { ChevronRightIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Breadcrumb, Breadcrumbs } from "react-aria-components";
 
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import type { Work } from "@/lib/data";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import type { Work } from "#/lib/data.ts";
 
 export interface EntityBreadcrumbItem {
 	label: ReactNode;

@@ -1,8 +1,8 @@
 import { assert } from "@acdh-oeaw/lib";
 import { Client } from "typesense";
 
-import { env } from "@/config/env.config";
-import { clientConfig } from "@/config/typesense.config";
+import { env } from "#/config/env.config.ts";
+import { clientConfig } from "#/config/typesense.config.ts";
 
 export function createTypesenseClient(): Client {
 	const apiKey = env.NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY;

@@ -1,11 +1,11 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import { AppNavigation, AppNavigationMobile } from "@/app/[locale]/_components/app-navigation";
-import { ColorSchemeSwitcher } from "@/app/[locale]/_components/color-scheme-switcher";
-import { LocaleSwitcher } from "@/app/[locale]/_components/locale-switcher";
-import { createHref } from "@/lib/navigation/create-href";
-import type { NavigationItem } from "@/lib/navigation/navigation";
+import { AppNavigation, AppNavigationMobile } from "#/app/[locale]/_components/app-navigation.tsx";
+import { ColorSchemeSwitcher } from "#/app/[locale]/_components/color-scheme-switcher.tsx";
+import { LocaleSwitcher } from "#/app/[locale]/_components/locale-switcher.tsx";
+import { createHref } from "#/lib/navigation/create-href.ts";
+import type { NavigationItem } from "#/lib/navigation/navigation.ts";
 
 export function AppHeader(): ReactNode {
 	const t = useTranslations("AppHeader");

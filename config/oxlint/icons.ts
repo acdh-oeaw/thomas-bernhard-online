@@ -1,7 +1,6 @@
-import { AST_NODE_TYPES, ESLintUtils } from "@typescript-eslint/utils";
+import { defineRule } from "@oxlint/plugins";
 
-/** @see https://typescript-eslint.io/developers/custom-rules/ */
-export const rule = ESLintUtils.RuleCreator.withoutDocs({
+export const rule = defineRule({
 	meta: {
 		type: "suggestion",
 		schema: [],
@@ -14,13 +13,12 @@ export const rule = ESLintUtils.RuleCreator.withoutDocs({
 			"icon-props": 'Icons should set `aria-hidden` and `data-slot="icon"` props.',
 		},
 	},
-	defaultOptions: [],
 	create(context) {
-		const components = new Set();
+		const components = new Set<string>();
 
 		return {
 			ImportDeclaration(node): void {
-				if (node.source.value !== "lucide-react") {
+				if (node.source.value !== "lucide-react" || node.importKind === "type") {
 					return;
 				}
 
@@ -29,7 +27,7 @@ export const rule = ESLintUtils.RuleCreator.withoutDocs({
 				});
 			},
 			JSXOpeningElement(node): void {
-				if (node.name.type !== AST_NODE_TYPES.JSXIdentifier) {
+				if (node.name.type !== "JSXIdentifier") {
 					return;
 				}
 				if (!components.has(node.name.name)) {
@@ -38,7 +36,11 @@ export const rule = ESLintUtils.RuleCreator.withoutDocs({
 
 				function hasAttribute(name: string) {
 					return node.attributes.some((attribute) => {
-						return attribute.type === AST_NODE_TYPES.JSXAttribute && attribute.name.name === name;
+						return (
+							attribute.type === "JSXAttribute" &&
+							attribute.name.type === "JSXIdentifier" &&
+							attribute.name.name === name
+						);
 					});
 				}
 

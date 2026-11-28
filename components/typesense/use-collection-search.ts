@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { DocumentSchema, SearchOptions, SearchResponseHit } from "typesense";
 
-import { abortableEffect } from "@/lib/abortable-effect";
-import type { collections } from "@/lib/typesense/collections";
-import type { DocumentFromSchema } from "@/lib/typesense/schema";
+import { abortableEffect } from "#/lib/abortable-effect.ts";
+import type { collections } from "#/lib/typesense/collections.ts";
+import type { DocumentFromSchema } from "#/lib/typesense/schema.ts";
 import {
 	type CollectionName,
 	type CollectionSearchParams,
 	searchCollection,
-} from "@/lib/typesense/search";
+} from "#/lib/typesense/search.ts";
 
 /** A search hit for the named collection. */
 export type CollectionHit<D extends DocumentSchema> = D extends unknown
@@ -57,9 +57,9 @@ type CollectionSearchStatus<D extends DocumentSchema> = CollectionSearchPage<D> 
 
 /**
  * The result of {@link useCollectionSearch}: a discriminated union over `status` so consumers can
- * render distinct loading / error / results branches. An *empty* result is `status: "success"` with
- * an empty `hits` array — distinct from `status: "error"`, which carries the thrown `Error`. `retry`
- * re-runs the most recent search, e.g. from an error state's "try again" button.
+ * render distinct loading / error / results branches. An _empty_ result is `status: "success"` with
+ * an empty `hits` array — distinct from `status: "error"`, which carries the thrown `Error`.
+ * `retry` re-runs the most recent search, e.g. from an error state's "try again" button.
  */
 export type CollectionSearchState<
 	K extends CollectionName,
@@ -72,7 +72,7 @@ const emptyPage = { hits: [], found: 0, page: 1, perPage: 0 } as const;
 
 /**
  * Runs a typesense search for the current `params` and exposes it as a discriminated-union state
- * machine (loading / error / success). The search re-runs whenever the *content* of `params`
+ * machine (loading / error / success). The search re-runs whenever the _content_ of `params`
  * changes and aborts any superseded request (so a slow earlier response can't overwrite newer
  * state). Shared by the search and catalog views; see `CollectionSearchState`.
  */

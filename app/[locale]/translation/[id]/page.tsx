@@ -1,16 +1,17 @@
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { RelatedActivities } from "@/app/[locale]/_components/related-activities";
-import { WorkBreadcrumb } from "@/components/entity-breadcrumbs";
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { LanguageLabel } from "@/components/language-label";
-import { MainContent } from "@/components/ui/main-content";
-import { getTranslation } from "@/lib/data";
-import { formatDateRange } from "@/lib/date-range";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { RelatedActivities } from "#/app/[locale]/_components/related-activities.tsx";
+import { WorkBreadcrumb } from "#/components/entity-breadcrumbs.tsx";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import { LanguageLabel } from "#/components/language-label.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getTranslation } from "#/lib/data.ts";
+import { formatDateRange } from "#/lib/date-range.ts";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
@@ -20,10 +21,13 @@ export async function generateMetadata(
 	props: Readonly<PageProps>,
 	_parent: ResolvingMetadata,
 ): Promise<Metadata> {
-	const { id } = await props.params;
+	const { id, locale } = await props.params;
 	const translation = await getTranslation(id);
 
-	return { title: translation?.title ?? "Translation" };
+	return {
+		title: translation?.title ?? "Translation",
+		alternates: getAlternates(locale, `/translation/${id}`),
+	};
 }
 
 export default async function TranslationPage(props: Readonly<PageProps>): Promise<ReactNode> {

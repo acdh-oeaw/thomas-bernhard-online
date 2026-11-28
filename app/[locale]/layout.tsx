@@ -1,27 +1,26 @@
 // import { pick } from "@acdh-oeaw/lib";
 import { cn } from "@acdh-oeaw/style-variants";
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
-import { type ReactNode, Suspense } from "react";
+import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import { LocalizedStringProvider as Translations } from "react-aria-components/i18n";
 import { jsonLdScriptProps } from "react-schemaorg";
 
-import { AppFooter } from "@/app/[locale]/_components/app-footer";
-import { AppHeader } from "@/app/[locale]/_components/app-header";
-import { AppLayout } from "@/app/[locale]/_components/app-layout";
-import { Providers } from "@/app/[locale]/_components/providers";
-import { TailwindIndicator } from "@/app/[locale]/_components/tailwind-indicator";
-import { ServerToast } from "@/components/server-toast";
-import { id } from "@/components/ui/main-content";
-import { SkipLink } from "@/components/ui/skip-link";
-import { ToastRegion } from "@/components/ui/toast-region";
-import { env } from "@/config/env.config";
-import { AnalyticsScript } from "@/lib/analytics-script";
-import { ColorSchemeScript } from "@/lib/color-scheme-script";
-import * as fonts from "@/lib/fonts";
-import { type IntlLocale, isValidLocale, locales } from "@/lib/i18n/locales";
-import { getMetadata } from "@/lib/i18n/metadata";
+import { AppFooter } from "#/app/[locale]/_components/app-footer.tsx";
+import { AppHeader } from "#/app/[locale]/_components/app-header.tsx";
+import { AppLayout } from "#/app/[locale]/_components/app-layout.tsx";
+import { Providers } from "#/app/[locale]/_components/providers.tsx";
+import { TailwindIndicator } from "#/app/[locale]/_components/tailwind-indicator.tsx";
+import { id } from "#/components/ui/main-content.tsx";
+import { SkipLink } from "#/components/ui/skip-link.tsx";
+import { ToastRegion } from "#/components/ui/toast-region.tsx";
+import { env } from "#/config/env.config.ts";
+import { AnalyticsScript } from "#/lib/analytics-script.tsx";
+import { ColorSchemeScript } from "#/lib/color-scheme-script.tsx";
+import * as fonts from "#/lib/fonts.ts";
+import { type IntlLocale, isValidLocale, locales } from "#/lib/i18n/locales.ts";
+import { getMetadata } from "#/lib/i18n/metadata.ts";
 
 interface LocaleLayoutProps {
 	children: ReactNode;
@@ -87,9 +86,9 @@ export default async function LocaleLayout(props: Readonly<LocaleLayoutProps>): 
 	const meta = await getMetadata();
 	const messages = await getMessages();
 	/**
-	 * TODO: Passing all messages to the client is fine for most apps. For larger apps, it can
-	 * make sense to only pass messages for the error page globally, and pass other required
-	 * messages via components props, or via a page-level or layout-level `NextIntlClientProvider`.
+	 * TODO: Passing all messages to the client is fine for most apps. For larger apps, it can make
+	 * sense to only pass messages for the error page globally, and pass other required messages via
+	 * components props, or via a page-level or layout-level `NextIntlClientProvider`.
 	 *
 	 * @see https://next-intl.dev/docs/environments/server-client-components#using-internationalization-in-client-components
 	 */
@@ -105,9 +104,7 @@ export default async function LocaleLayout(props: Readonly<LocaleLayoutProps>): 
 				"bg-background-base text-text-strong antialiased",
 			)}
 			lang={locale}
-			/**
-			 * Suppressing hydration warning because we add `data-ui-color-scheme` before first paint.
-			 */
+			/** Suppressing hydration warning because we add `data-ui-color-scheme` before first paint. */
 			suppressHydrationWarning={true}
 		>
 			<body>
@@ -127,7 +124,6 @@ export default async function LocaleLayout(props: Readonly<LocaleLayoutProps>): 
 				 * @see https://react-spectrum.adobe.com/react-aria/ssr.html#optimizing-bundle-size
 				 *
 				 * TODO: only include translations for components actually used
-				 *
 				 * @see https://react-spectrum.adobe.com/react-aria/ssr.html#advanced-optimization
 				 */}
 				<Translations locale={locale} />
@@ -139,9 +135,6 @@ export default async function LocaleLayout(props: Readonly<LocaleLayoutProps>): 
 					/>
 
 					<ToastRegion />
-					<Suspense>
-						<ServerToast />
-					</Suspense>
 
 					<SkipLink targetId={id}>{t("skip-to-main-content")}</SkipLink>
 

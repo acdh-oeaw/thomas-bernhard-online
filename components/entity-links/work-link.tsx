@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import type { Work } from "@/lib/data";
+import type { Work } from "#/lib/data.ts";
 
-import { TBNavLink } from "./tb-nav-link";
+import { TBNavLink } from "./tb-nav-link.tsx";
 
 interface WorkLinkProps {
 	work: Pick<Work, "id" | "title" | "year">;

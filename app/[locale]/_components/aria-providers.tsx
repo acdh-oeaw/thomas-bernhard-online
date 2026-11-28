@@ -6,8 +6,8 @@ import {
 	RouterProvider as AriaRouterProvider,
 } from "react-aria-components";
 
-import type { IntlLocale } from "@/lib/i18n/locales";
-import { useRouter } from "@/lib/navigation/navigation";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
+import { useRouter } from "#/lib/navigation/navigation.ts";
 
 interface AriaProvidersProps {
 	children: ReactNode;

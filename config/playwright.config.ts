@@ -1,16 +1,16 @@
+import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { loadEnvFile } from "node:process";
 
 import { defineConfig, devices } from "@playwright/test";
-import { config as dotenv } from "dotenv";
-import { expand } from "dotenv-expand";
 import isCI from "is-in-ci";
 
-/**
- * Reading `.env` files here instead of using `dotenv-cli` so environment variables are
- * available to the vs code plugin as well.
- */
+/** Load env files here so the VS Code Playwright extension gets them too. */
 for (const envFilePath of [".env.test.local", ".env.local", ".env.test", ".env"]) {
-	expand(dotenv({ path: join(process.cwd(), envFilePath), quiet: true }));
+	const path = join(process.cwd(), envFilePath);
+	if (existsSync(path)) {
+		loadEnvFile(path);
+	}
 }
 
 const port = 3000;
@@ -32,50 +32,55 @@ export default defineConfig({
 	},
 	projects: [
 		{
-			name: "setup",
-			testMatch: "global.setup.ts",
-		},
-		{
 			name: "chromium",
 			use: { ...devices["Desktop Chrome"], channel: "chromium" },
-			dependencies: ["setup"],
 		},
 		{
 			name: "firefox",
 			use: { ...devices["Desktop Firefox"] },
-			dependencies: ["setup"],
 		},
 		{
 			name: "webkit",
 			use: { ...devices["Desktop Safari"] },
-			dependencies: ["setup"],
 		},
 		/** Test against mobile viewports. */
 		// {
 		// 	name: "Mobile Chrome",
 		// 	use: { ...devices["Pixel 5"] },
-		// 	dependencies: ["setup"],
 		// },
 		// {
 		// 	name: "Mobile Safari",
 		// 	use: { ...devices["iPhone 12"] },
-		// 	dependencies: ["setup"],
 		// },
 		/** Test against branded browsers. */
 		// {
 		// 	name: "Microsoft Edge",
 		// 	use: { ...devices["Desktop Edge"], channel: "msedge" },
-		// 	dependencies: ["setup"],
 		// },
 		// {
 		// 	name: "Google Chrome",
 		// 	use: { ...devices["Desktop Chrome"], channel: "chrome" },
-		// 	dependencies: ["setup"],
 		// },
 	],
 	webServer: {
-		command: "pnpm run start",
+		/**
+		 * The standalone output that the `Dockerfile` serves, not `next start`, which runs from the
+		 * project folder.
+		 */
+		command: "pnpm run build && pnpm run start:standalone",
+		cwd: "..",
+		env: {
+			BUILD_MODE: "standalone",
+			/**
+			 * Not a loopback ip like 127.0.0.1, which breaks the rewrites of the i18n proxy.
+			 *
+			 * @see {@link https://github.com/vercel/next.js/issues/94745}
+			 */
+			HOSTNAME: "0.0.0.0",
+			PORT: String(port),
+		},
 		url: baseUrl,
+		timeout: 5 * 60 * 1000,
 		reuseExistingServer: !isCI,
 	},
 });

@@ -3,7 +3,7 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button.tsx";
 
 interface SubmitButtonProps extends Omit<
 	ComponentPropsWithRef<typeof Button>,

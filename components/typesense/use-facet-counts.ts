@@ -3,9 +3,9 @@
 import { createContext, use, useEffect, useMemo, useRef, useState } from "react";
 import type { SearchOptions } from "typesense";
 
-import { abortableEffect } from "@/lib/abortable-effect";
-import { collections } from "@/lib/typesense/collections";
-import { type CollectionName, searchCollectionUnchecked } from "@/lib/typesense/search";
+import { abortableEffect } from "#/lib/abortable-effect.ts";
+import { collections } from "#/lib/typesense/collections.ts";
+import { type CollectionName, searchCollectionUnchecked } from "#/lib/typesense/search.ts";
 
 export interface FacetValue {
 	value: string;
@@ -80,7 +80,8 @@ function areFacetDataEqual(
 /**
  * Fetches typesense facet counts for several fields at once for the current search query. Selected
  * values that the query returns no results for (and are therefore absent from the counts) are
- * appended with a count of 0 so they stay visible and deselectable. Shared by the facet filter UIs.
+ * appended with a count of 0 so they stay visible and deselectable. Shared by the facet filter
+ * UIs.
  *
  * The fetched counts keep their previous reference when unchanged, so downstream memos (and the
  * components' selection lists) don't churn on identical refetches.

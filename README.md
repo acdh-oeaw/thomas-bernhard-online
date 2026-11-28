@@ -55,36 +55,65 @@ Important JOIN constraints and design considerations are:
 The application uses Typesense for catalog, search, and joined work data. The Typesense variables
 are read from the environment and validated in `config/env.config.ts`.
 
-| Variable                                  | Required    | Meaning and usage                                                                                                                                                                                                                                              |
-| ----------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_TYPESENSE_HOST`              | Yes         | Typesense host name, without the protocol or port.                                                                                                                                                                                                             |
-| `NEXT_PUBLIC_TYPESENSE_PORT`              | Yes         | Integer port used by the Typesense client, for example `443`.                                                                                                                                                                                                  |
-| `NEXT_PUBLIC_TYPESENSE_PROTOCOL`          | No          | `http` or `https`; defaults to `https`.                                                                                                                                                                                                                        |
-| `NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY`    | No          | Search-only API key used by the application client. It is optional so collection setup can run before a search key exists.                                                                                                                                     |
-| `NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX` | No          | Prefix added to physical collection names. For example, `tbo_test_` plus registry name `work` addresses `tbo_test_work`. Defaults to an empty string.                                                                                                          |
-| `NEXT_PUBLIC_TYPESENSE_COLLECTIONS`       | Yes         | Comma-separated, unprefixed registry names to retrieve when generating `lib/typesense/collections.ts`, for example `work,translation,publication,performance,event,person,group`. Whitespace is trimmed.                                                       |
-| `NEXT_PUBLIC_TYPESENSE_ADMIN_KEY`         | Script only | Admin key used by `create-joined-schema.ts` when creating, deleting, and importing collections. It is read directly from `process.env` and is not part of the client-side validated configuration. Keep it out of browser-exposed environments where possible. |
+| Variable                                  | Required    | Meaning and usage                                                                                                                                                                                                                                             |
+| ----------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_TYPESENSE_HOST`              | Yes         | Typesense host name, without the protocol or port.                                                                                                                                                                                                            |
+| `NEXT_PUBLIC_TYPESENSE_PORT`              | Yes         | Integer port used by the Typesense client, for example `443`.                                                                                                                                                                                                 |
+| `NEXT_PUBLIC_TYPESENSE_PROTOCOL`          | No          | `http` or `https`; defaults to `https`.                                                                                                                                                                                                                       |
+| `NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY`    | No          | Search-only API key used by the application client. It is optional so collection setup can run before a search key exists.                                                                                                                                    |
+| `NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX` | No          | Prefix added to physical collection names. For example, `tbo_` plus registry name `work` addresses `tbo_work`. Defaults to an empty string.                                                                                                                   |
+| `NEXT_PUBLIC_TYPESENSE_COLLECTIONS`       | Yes         | Comma-separated, unprefixed registry names to retrieve when generating `lib/typesense/collections.ts`, for example `work,translation,publication,performance,event,person,group`. Whitespace is trimmed.                                                      |
+| `TYPESENSE_ADMIN_API_KEY`                 | Script only | Admin key used by `create-joined-schema.ts` and `seed-local.ts` to create collections and import documents. It is read directly from `process.env` and is not part of the validated configuration. Never expose it to the browser (no `NEXT_PUBLIC_` prefix). |
+| `TYPESENSE_SEED_HOST`                     | Script only | Shared Typesense server that `seed-local.ts` copies collections from (HTTPS, port 443). Defaults to `typesense.acdh.oeaw.ac.at`.                                                                                                                              |
+| `TYPESENSE_SEED_SEARCH_API_KEY`           | Script only | Search key for `TYPESENSE_SEED_HOST`, used by `seed-local.ts` to read schemas and export documents.                                                                                                                                                           |
 
 The collection prefix is applied in one place, by `lib/typesense/collection-name.ts`. Source code
 and the generated registry use unprefixed names; only requests sent to the Typesense server use the
 physical, prefixed name. This allows several deployments to share a Typesense server without
 colliding.
 
-The local template is `.env.local.example`. A typical setup has values similar to:
+### Local Typesense server
+
+The collections are populated by the backend service, which lives outside this repository, on the
+shared Typesense server. For development, run a local Typesense server and seed it with a copy of
+those collections, so that development never creates or drops collections on the shared server:
+
+```sh
+pnpm run typesense:local:up
+pnpm run typesense:local:seed
+```
+
+`scripts/typesense/seed-local.ts` copies the schemas and documents of the collections in
+`NEXT_PUBLIC_TYPESENSE_COLLECTIONS`, plus every collection they reference, from `TYPESENSE_SEED_HOST`
+into the local server, and creates a search-only key with the value of
+`NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY`. It refuses to write to any host other than a local one. The
+local copy does not follow later changes on the shared server; re-seed with
+`pnpm run typesense:local:seed -- --recreate`. Stop the server with
+`pnpm run typesense:local:down` (add `-v` to also delete its data).
+
+`.env.local.example` is set up for the local server:
 
 ```dotenv
-NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX=tbo_dev_
-NEXT_PUBLIC_TYPESENSE_COLLECTIONS=event,group,performance,person,publication,work,translation
-NEXT_PUBLIC_TYPESENSE_HOST=typesense.example.org
-NEXT_PUBLIC_TYPESENSE_PORT=443
-NEXT_PUBLIC_TYPESENSE_PROTOCOL=https
-NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY=...
+NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX="tbo_"
+NEXT_PUBLIC_TYPESENSE_COLLECTIONS="event,group,performance,person,publication,work,translation"
+NEXT_PUBLIC_TYPESENSE_HOST="localhost"
+NEXT_PUBLIC_TYPESENSE_PORT="8108"
+NEXT_PUBLIC_TYPESENSE_PROTOCOL="http"
+NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY="local-search-api-key"
+
+TYPESENSE_ADMIN_API_KEY="local-admin-api-key"
+
+TYPESENSE_SEED_HOST="typesense.acdh.oeaw.ac.at"
+TYPESENSE_SEED_SEARCH_API_KEY="..."
 ```
+
+To use the shared server directly instead, set `NEXT_PUBLIC_TYPESENSE_HOST="typesense.acdh.oeaw.ac.at"`,
+`NEXT_PUBLIC_TYPESENSE_PORT="443"`, `NEXT_PUBLIC_TYPESENSE_PROTOCOL="https"`, and its search key.
 
 ## Schema generation and joined collections
 
 `lib/typesense/collections.ts` is generated metadata, not the place to hand-edit a Typesense schema.
-Run the generator with the development dotenv context:
+Run the generator with your local development environment:
 
 ```sh
 pnpm run typesense:generate-schema
@@ -183,6 +212,20 @@ Useful checks are:
 
 ```sh
 pnpm run lint:check
+pnpm run styles:check
 pnpm run types:check
 pnpm run format:check
+```
+
+### Docker
+
+The Node.js and pnpm versions are passed as `NODE_VERSION` and `PNPM_VERSION` build args, and have
+no defaults: `devEngines` in `package.json` is the single source of truth. Docker image tags need
+exact versions, so resolve the version ranges first:
+
+```sh
+docker build \
+  --build-arg NODE_VERSION="$(pnpm exec node -p process.versions.node)" \
+  --build-arg PNPM_VERSION="$(pnpm --version)" \
+  --tag thomas-bernhard-online .
 ```

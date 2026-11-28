@@ -1,9 +1,9 @@
 import type { ComponentPropsWithRef } from "react";
 
-import type { Link } from "@/components/link";
-import { env } from "@/config/env.config";
-import { createFullUrl } from "@/lib/navigation/create-full-url";
-import { usePathname } from "@/lib/navigation/navigation";
+import type { Link } from "#/components/link.tsx";
+import { env } from "#/config/env.config.ts";
+import { createFullUrl } from "#/lib/navigation/create-full-url.ts";
+import { usePathname } from "#/lib/navigation/navigation.ts";
 
 type LinkProps = ComponentPropsWithRef<typeof Link>;
 

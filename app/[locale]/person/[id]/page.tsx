@@ -1,13 +1,14 @@
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { TranslationOfWork } from "@/components/translation-of-work";
-import { MainContent } from "@/components/ui/main-content";
-import { getPerson } from "@/lib/data";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import { TranslationOfWork } from "#/components/translation-of-work.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getPerson } from "#/lib/data.ts";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface PageProps {
 	params: Promise<{ id: string; locale: IntlLocale }>;
@@ -17,10 +18,13 @@ export async function generateMetadata(
 	props: Readonly<PageProps>,
 	_parent: ResolvingMetadata,
 ): Promise<Metadata> {
-	const { id } = await props.params;
+	const { id, locale } = await props.params;
 	const person = await getPerson(id);
 
-	return { title: person?.name ?? "Person" };
+	return {
+		title: person?.name ?? "Person",
+		alternates: getAlternates(locale, `/person/${id}`),
+	};
 }
 
 export default async function PersonPage(props: Readonly<PageProps>): Promise<ReactNode> {

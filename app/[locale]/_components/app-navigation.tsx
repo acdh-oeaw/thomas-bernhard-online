@@ -6,20 +6,20 @@ import { type ComponentPropsWithRef, Fragment, type ReactNode } from "react";
 import { chain } from "react-aria";
 import { Button, Disclosure, DisclosurePanel, Heading } from "react-aria-components";
 
-import { Logo } from "@/components/logo";
-import { NavLink } from "@/components/nav-link";
-import { Drawer, DrawerTrigger, Modal, ModalOverlay } from "@/components/ui/drawer";
-import { IconButton } from "@/components/ui/icon-button";
-import { Menu, MenuItem, MenuTrigger } from "@/components/ui/menu";
-import { Popover } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
+import { Logo } from "#/components/logo.tsx";
+import { NavLink } from "#/components/nav-link.tsx";
+import { Drawer, DrawerTrigger, Modal, ModalOverlay } from "#/components/ui/drawer.tsx";
+import { IconButton } from "#/components/ui/icon-button.tsx";
+import { Menu, MenuItem, MenuTrigger } from "#/components/ui/menu.tsx";
+import { Popover } from "#/components/ui/popover.tsx";
+import { Separator } from "#/components/ui/separator.tsx";
 import {
 	type NavigationItem,
 	type NavigationLink,
 	usePathname,
 	useRouter,
-} from "@/lib/navigation/navigation";
-import { isCurrentPage } from "@/lib/navigation/use-nav-link";
+} from "#/lib/navigation/navigation.ts";
+import { isCurrentPage } from "#/lib/navigation/use-nav-link.ts";
 
 interface AppNavigationProps {
 	label: string;
@@ -72,9 +72,9 @@ export function AppNavigation(props: Readonly<AppNavigationProps>): ReactNode {
 
 						case "menu": {
 							/**
-							 * Menu items are not announced as links, so we should use selection state
-							 * instead of `aria-current`. Unfortunately, we cannot set selection state
-							 * on individual menu items, but only on the menu itself.
+							 * Menu items are not announced as links, so we should use selection state instead of
+							 * `aria-current`. Unfortunately, we cannot set selection state on individual menu
+							 * items, but only on the menu itself.
 							 *
 							 * @see https://github.com/adobe/react-spectrum/issues/7587
 							 */
@@ -158,7 +158,6 @@ function MenuLink(props: Readonly<MenuLinkProps>): ReactNode {
 	 * Adds prefetch behavior similar to `next/link`.
 	 *
 	 * @see https://github.com/vercel/next.js/discussions/73381
-	 *
 	 * @see https://github.com/adobe/react-spectrum/blob/main/packages/react-aria-components/src/Link.tsx
 	 * @see https://github.com/adobe/react-spectrum/blob/main/packages/%40react-aria/link/src/useLink.ts
 	 */
@@ -169,8 +168,6 @@ function MenuLink(props: Readonly<MenuLinkProps>): ReactNode {
 	return (
 		<MenuItem
 			{...props}
-			// @ts-expect-error @see https://github.com/adobe/react-spectrum/issues/7453
-			// eslint-disable-next-line @eslint-react/prefer-destructuring-assignment
 			onFocus={chain(prefetch, props.onFocus)}
 			onHoverStart={chain(prefetch, onHoverStart)}
 		/>

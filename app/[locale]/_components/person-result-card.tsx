@@ -2,12 +2,12 @@ import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
-import { HighlightedSnippet } from "@/components/typesense";
-import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
-import type { UniversalSearchDocument } from "@/lib/data";
-import { translationLabel } from "@/lib/translation-label";
+import { HighlightedSnippet } from "#/components/typesense/index.ts";
+import { type SearchDisplayMode, searchResultRelationLimits } from "#/config/ui.ts";
+import type { UniversalSearchDocument } from "#/lib/data.ts";
+import { translationLabel } from "#/lib/translation-label.ts";
 
-import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
+import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card.tsx";
 
 type Person = Extract<UniversalSearchDocument, { type: "person" }>;
 type PersonHit = SearchResponseHit<Person>;

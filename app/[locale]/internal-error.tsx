@@ -5,8 +5,8 @@ import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useTransition } from "react";
 import { Button } from "react-aria-components";
 
-import { MainContent } from "@/components/ui/main-content";
-import { useRouter } from "@/lib/navigation/navigation";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { useRouter } from "#/lib/navigation/navigation.ts";
 
 interface InternalErrorProps {
 	error: Error & { digest?: string };
@@ -14,7 +14,6 @@ interface InternalErrorProps {
 }
 
 /** `React.lazy` requires default export. */
-// eslint-disable-next-line import-x/no-default-export
 export default function InternalError(props: Readonly<InternalErrorProps>): ReactNode {
 	const { error, reset } = props;
 

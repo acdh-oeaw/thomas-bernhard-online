@@ -35,21 +35,21 @@ import {
 	useCollectionSearch,
 	YEAR_FACET_QUERY,
 	yearFacetFilter,
-} from "@/components/typesense";
+} from "#/components/typesense/index.ts";
 import type {
 	CollectionHit,
 	CollectionSearchResult,
-} from "@/components/typesense/use-collection-search";
+} from "#/components/typesense/use-collection-search.ts";
 import {
 	FacetCountsContext,
 	type FacetCountsRequest,
 	type FacetCountsSearch,
-} from "@/components/typesense/use-facet-counts";
-import { LoadingIndicator } from "@/components/ui/loading-indicator";
-import { SearchInput } from "@/components/ui/search-input";
-import { type SearchDisplayMode, searchDisplayModes } from "@/config/ui";
-import { collections } from "@/lib/typesense/collections";
-import type { CollectionSearchParams, WorkCollectionName } from "@/lib/typesense/search";
+} from "#/components/typesense/use-facet-counts.ts";
+import { LoadingIndicator } from "#/components/ui/loading-indicator.tsx";
+import { SearchInput } from "#/components/ui/search-input.tsx";
+import { type SearchDisplayMode, searchDisplayModes } from "#/config/ui.ts";
+import { collections } from "#/lib/typesense/collections.ts";
+import type { CollectionSearchParams, WorkCollectionName } from "#/lib/typesense/search.ts";
 
 export interface SearchFilters {
 	readonly categoryFilters: ReadonlySet<string>;
@@ -339,6 +339,7 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 						options={orderByOptions}
 						value={sortBy}
 					/>
+					{/* oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Keep a named group for these related controls. */}
 					<div aria-label={t("display-mode")} className="flex gap-2" role="group">
 						{searchDisplayModes.map((mode) => {
 							const Icon = displayModeIcons[mode];
@@ -434,6 +435,7 @@ export function SearchResults<D extends DocumentSchema & { id: string }>(
 					<div
 						aria-label={t("filter-ui")}
 						className="ml-auto flex min-h-12 shrink-0 items-center gap-2"
+						// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Group the filter display controls under a shared accessible name.
 						role="group"
 					>
 						{filterUiOptions.map((mode) => {

@@ -10,16 +10,19 @@ import {
 	useObjectRef,
 	usePress,
 } from "react-aria";
-import { type LinkProps as AriaLinkProps, useRenderProps } from "react-aria-components";
+import {
+	type LinkProps as AriaLinkProps,
+	type LinkRenderProps,
+	useRenderProps,
+} from "react-aria-components";
 
-import { LocaleLink, type LocaleLinkProps } from "@/lib/navigation/navigation";
+import { LocaleLink, type LocaleLinkProps } from "#/lib/navigation/navigation.ts";
 
 /**
  * Not using `Link` from `react-aria-components` directly, because we want `next/link`'s built-in
  * prefetch behavior.
  *
  * @see https://github.com/vercel/next.js/discussions/73381
- *
  * @see https://github.com/adobe/react-spectrum/blob/main/packages/react-aria-components/src/Link.tsx
  * @see https://github.com/adobe/react-spectrum/blob/main/packages/%40react-aria/link/src/useLink.ts
  */
@@ -41,7 +44,7 @@ export function Link(props: Readonly<LinkProps>): ReactNode {
 	const ref = useRef<HTMLAnchorElement | HTMLSpanElement>(null);
 	const linkRef = useObjectRef(
 		useMemo(() => {
-			// eslint-disable-next-line react-hooks/refs
+			// oxlint-disable-next-line react/refs
 			return mergeRefs(forwardedRef, ref);
 		}, [forwardedRef, ref]),
 	);
@@ -56,7 +59,7 @@ export function Link(props: Readonly<LinkProps>): ReactNode {
 	const { hoverProps, isHovered } = useHover(interactionProps);
 	const { focusProps, isFocused, isFocusVisible } = useFocusRing();
 
-	const renderProps = useRenderProps({
+	const renderProps = useRenderProps<LinkRenderProps, "a" | "span">({
 		...props,
 		values: {
 			isCurrent,

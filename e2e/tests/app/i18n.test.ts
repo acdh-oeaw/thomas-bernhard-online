@@ -1,8 +1,8 @@
 import { createUrl } from "@acdh-oeaw/lib";
 
-import { env } from "@/config/env.config";
-import { expect, test } from "@/e2e/lib/test";
-import { defaultLocale, locales } from "@/lib/i18n/locales";
+import { env } from "#/config/env.config.ts";
+import { expect, test } from "#/e2e/lib/test.ts";
+import { defaultLocale, locales } from "#/lib/i18n/locales.ts";
 
 test.describe("i18n", () => {
 	test.describe("should redirect root route to preferred locale", () => {
@@ -46,8 +46,8 @@ test.describe("i18n", () => {
 		const i18n = await createI18n("de-AT");
 		const response = await page.goto("/de/unknown");
 		/**
-		 * When streaming a response, because the root layout has a suspense boundary
-		 * or a `loading.tsx`, the response status code will always be 200.
+		 * When streaming a response, because the root layout has a suspense boundary or a
+		 * `loading.tsx`, the response status code will always be 200.
 		 *
 		 * @see https://nextjs.org/docs/app/building-your-application/routing/loading-ui-and-streaming#status-codes
 		 * @see https://nextjs.org/docs/app/api-reference/file-conventions/not-found
@@ -72,7 +72,7 @@ test.describe("i18n", () => {
 
 	test("should support switching locale", async ({ createI18n, createImprintPage, page }) => {
 		// @ts-expect-error Single locale could be configured.
-		// eslint-disable-next-line playwright/no-skipped-test, @typescript-eslint/no-unnecessary-condition
+		// oxlint-disable-next-line playwright/no-skipped-test, typescript/no-unnecessary-condition
 		test.skip(locales.length === 1, "Only single locale configured.");
 
 		const { imprintPage, i18n: de } = await createImprintPage("de-AT");
