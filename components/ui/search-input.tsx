@@ -8,7 +8,7 @@ import {
 	type SearchFieldProps as AriaSearchFieldProps,
 } from "react-aria-components";
 
-import { FieldStatusContext } from "@/components/ui/field-status-context";
+import { FieldStatusContext } from "#/components/ui/field-status-context.tsx";
 
 interface SearchInputProps extends AriaSearchFieldProps {}
 

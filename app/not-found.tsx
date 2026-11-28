@@ -3,10 +3,10 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { MainContent } from "@/components/ui/main-content";
-import { ColorSchemeScript } from "@/lib/color-scheme-script";
-import * as fonts from "@/lib/fonts";
-import { defaultLocale } from "@/lib/i18n/locales";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { ColorSchemeScript } from "#/lib/color-scheme-script.tsx";
+import * as fonts from "#/lib/fonts.ts";
+import { defaultLocale } from "#/lib/i18n/locales.ts";
 
 export async function generateMetadata(
 	_props: Record<string, never>,
@@ -41,9 +41,7 @@ export default async function NotFoundPage(): Promise<ReactNode> {
 				"bg-background-base text-text-strong antialiased",
 			)}
 			lang={defaultLocale}
-			/**
-			 * Suppressing hydration warning because we add `data-ui-color-scheme` before first paint.
-			 */
+			/** Suppressing hydration warning because we add `data-ui-color-scheme` before first paint. */
 			suppressHydrationWarning={true}
 		>
 			<body>

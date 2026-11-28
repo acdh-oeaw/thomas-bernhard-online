@@ -4,7 +4,7 @@ import { XIcon } from "lucide-react";
 import { type ComponentPropsWithRef, Fragment, type ReactNode } from "react";
 import { composeRenderProps } from "react-aria-components";
 
-import { IconButton } from "@/components/ui/icon-button";
+import { IconButton } from "#/components/ui/icon-button.tsx";
 
 interface CloseButtonProps extends ComponentPropsWithRef<typeof IconButton> {}
 

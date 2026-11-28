@@ -8,23 +8,23 @@ import type {
 	UnionSearchResponse,
 } from "typesense";
 
-import { defaultSearchParams } from "@/config/typesense.config";
-import { physicalCollectionName } from "@/lib/typesense/collection-name";
-import type { collections } from "@/lib/typesense/collections";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
+import { defaultSearchParams } from "#/config/typesense.config.ts";
+import { physicalCollectionName } from "#/lib/typesense/collection-name.ts";
+import type { collections } from "#/lib/typesense/collections.ts";
+import { createTypesenseClient } from "#/lib/typesense/create-typesense-client.ts";
 import type {
 	CollectionFacetableFieldName,
 	CollectionQueryableFieldName,
 	CollectionSortableFieldName,
 	DocumentFromSchema,
-} from "@/lib/typesense/schema";
+} from "#/lib/typesense/schema.ts";
 
 export type CollectionName = keyof typeof collections;
 
 /**
  * The collection the app's own UI is built around. The registry also holds the collections it joins
  * to (`translations`, `performances` — see `scripts/typesense/create-joined-schema.ts`), which have
- * different fields, so components that render *work* documents pin themselves to this name rather
+ * different fields, so components that render _work_ documents pin themselves to this name rather
  * than accepting any `CollectionName`.
  */
 export type WorkCollectionName = "work";
@@ -43,9 +43,9 @@ type FacetableField<K extends CollectionName> = CollectionFacetableFieldName<Col
 type OneOrMany<T> = T | ReadonlyArray<T>;
 
 /**
- * A typesense `sort_by` clause: a sortable field with a direction, plus the special relevance token.
- * Exotic clauses (`_eval(...)`, geo `location(...)`) are intentionally not modelled — widen this
- * union if you need them, or fall back to `searchCollectionUnchecked`.
+ * A typesense `sort_by` clause: a sortable field with a direction, plus the special relevance
+ * token. Exotic clauses (`_eval(...)`, geo `location(...)`) are intentionally not modelled — widen
+ * this union if you need them, or fall back to `searchCollectionUnchecked`.
  */
 type SortClause<K extends CollectionName> =
 	| `_text_match:asc`
@@ -105,15 +105,15 @@ function runSearch<
  * Runs a typesense search against one of the generated `collections`, applying the shared
  * `defaultSearchParams`. The collection's base document type is inferred from `collectionName`, so
  * `params` and the returned hits are fully typed, and the field-name params (`query_by`, `sort_by`,
- * `facet_by`, `highlight_full_fields`, …) only accept fields that exist on the collection. Values in
- * `params` override the defaults (e.g. a facet-only search can pass `per_page: 0`). Pass
+ * `facet_by`, `highlight_full_fields`, …) only accept fields that exist on the collection. Values
+ * in `params` override the defaults (e.g. a facet-only search can pass `per_page: 0`). Pass
  * `options.abortSignal` to cancel an in-flight request. `D` defaults to that base document; a
  * data-access wrapper may supply a more specific `D` when it also owns the `include_fields` and
  * `filter_by` clauses that produce its joined projection.
  *
  * When a field-name param can only be assembled at runtime (e.g. a `sort_by` or `facet_by` built
- * from url state) and cannot satisfy `CollectionSearchParams`, reach for `searchCollectionUnchecked`
- * instead of casting.
+ * from url state) and cannot satisfy `CollectionSearchParams`, reach for
+ * `searchCollectionUnchecked` instead of casting.
  */
 export function searchCollection<
 	K extends CollectionName,
@@ -129,8 +129,8 @@ export function searchCollection<
 }
 
 /**
- * Like `searchCollection`, but accepts the raw, unrestricted typesense `SearchParams`. Use this only
- * when the field-name params genuinely cannot be typed statically (e.g. sort or facet fields
+ * Like `searchCollection`, but accepts the raw, unrestricted typesense `SearchParams`. Use this
+ * only when the field-name params genuinely cannot be typed statically (e.g. sort or facet fields
  * assembled from user or url state); the response document type is still inferred from
  * `collectionName`.
  */

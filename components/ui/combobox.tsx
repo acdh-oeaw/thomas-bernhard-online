@@ -12,7 +12,7 @@ import {
 	type GroupProps as AriaGroupProps,
 } from "react-aria-components";
 
-import { FieldStatusContext } from "@/components/ui/field-status-context";
+import { FieldStatusContext } from "#/components/ui/field-status-context.tsx";
 
 interface ComboBoxProps<T extends object> extends AriaComboBoxProps<T> {}
 

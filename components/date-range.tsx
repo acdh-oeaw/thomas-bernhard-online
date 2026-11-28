@@ -1,7 +1,7 @@
 import { useLocale } from "next-intl";
 import type { ReactNode } from "react";
 
-import { formatDateRange } from "@/lib/date-range";
+import { formatDateRange } from "#/lib/date-range.ts";
 
 interface DateRangeProps {
 	from?: number | null;

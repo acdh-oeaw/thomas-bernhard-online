@@ -9,8 +9,8 @@ import {
 	composeRenderProps,
 } from "react-aria-components";
 
-import { Link } from "@/components/link";
-import { NavLink } from "@/components/nav-link";
+import { Link } from "#/components/link.tsx";
+import { NavLink } from "#/components/nav-link.tsx";
 
 const buttonStyles = styles({
 	base: "interactive isolate inline-flex items-center justify-center gap-x-2 border text-center outline-transparent transition hover:hover-overlay focus-visible:focus-outline forced-colors:disabled:text-[GrayText] pending:cursor-not-allowed pressed:press-overlay slot-icon:shrink-0",

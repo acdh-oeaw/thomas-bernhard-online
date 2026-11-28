@@ -5,20 +5,20 @@ import type {
 	SearchResponseRequestParams,
 } from "typesense";
 
-import { searchResultRelationLimits } from "@/config/ui";
-import { physicalCollectionName } from "@/lib/typesense/collection-name";
-import { collections } from "@/lib/typesense/collections";
-import type { DocumentFromSchema } from "@/lib/typesense/schema";
+import { searchResultRelationLimits } from "#/config/ui.ts";
+import { physicalCollectionName } from "#/lib/typesense/collection-name.ts";
+import { collections } from "#/lib/typesense/collections.ts";
+import type { DocumentFromSchema } from "#/lib/typesense/schema.ts";
 import {
 	type CollectionName,
 	type CollectionSearchParams,
 	searchCollection,
 	searchCollectionsUnchecked,
 	searchCollectionUnchecked,
-} from "@/lib/typesense/search";
+} from "#/lib/typesense/search.ts";
 
 /**
- * The app's data access layer: one function per *shape of data a view needs*. Each one is
+ * The app's data access layer: one function per _shape of data a view needs_. Each one is
  * `searchCollection` plus the `include_fields` / `filter_by` join clauses that shape requires — the
  * response is passed through untouched, so what a caller gets is a plain typesense `SearchResponse`
  * whose documents carry the joined documents this query asked for.
@@ -31,10 +31,10 @@ import {
  *
  * Two consequences of returning the response as it comes, both deliberate:
  *
- * - A joined key is OPTIONAL, and absent rather than
- *   empty when nothing matched. Callers read it as `document.translation ?? []`.
- * - A joined key is named after the collection it came from, not after the field pointing at it, so
- *   a translation's `translator_ids` resolve under `authors` (see `getTranslation`).
+ * - A joined key is OPTIONAL, and absent rather than empty when nothing matched. Callers read it as
+ *   `document.translation ?? []`.
+ * - A joined key is named after the collection it came from, not after the field pointing at it, so a
+ *   translation's `translator_ids` resolve under `authors` (see `getTranslation`).
  */
 
 /* -------------------------------------------------------------------------------------------------
@@ -147,7 +147,10 @@ export type ManifestationWithRelations = DocumentWithJoins<
 	}
 >;
 
-/** Union-search projections contain display labels; work summaries also need venue IDs for distinct counts. */
+/**
+ * Union-search projections contain display labels; work summaries also need venue IDs for distinct
+ * counts.
+ */
 type WorkLabel = Pick<Work, "title" | "year">;
 type TranslationLabel = DocumentWithJoins<
 	Pick<Translation, "title">,
@@ -242,7 +245,7 @@ export type GroupWithRelations = DocumentWithJoins<
 
 /**
  * A `$collection(...)` join clause for `include_fields`. Typesense resolves it against the
- * *physical* collection name, so the deployment prefix goes back in here; the `as <registry name>`
+ * _physical_ collection name, so the deployment prefix goes back in here; the `as <registry name>`
  * alias then keys the joined documents by the unprefixed name — the key named in this module's
  * concrete relation types.
  */
@@ -285,7 +288,7 @@ function joinFilterClause(name: CollectionName, filter: string): string {
 }
 
 /**
- * A reverse join — one where the *other* collection holds the reference — is not materialised by
+ * A reverse join — one where the _other_ collection holds the reference — is not materialised by
  * `include_fields` alone: without a matching clause in `filter_by`, typesense returns the documents
  * with nothing joined and no error. OR-ing each clause with `id:*` makes it a LEFT join, so a work
  * with no translation (or no performance) is still returned.
@@ -323,9 +326,9 @@ const nestArray = "*,strategy:nest_array";
  * ---------------------------------------------------------------------------------------------- */
 
 /**
- * The search params a caller may pass. `include_fields` is owned by the wrapper — it is what selects
- * the joins, and overriding it would break the guarantees the return type makes. `filter_by` stays
- * open and is merged with any join filter (see `withJoinFilter`).
+ * The search params a caller may pass. `include_fields` is owned by the wrapper — it is what
+ * selects the joins, and overriding it would break the guarantees the return type makes.
+ * `filter_by` stays open and is merged with any join filter (see `withJoinFilter`).
  */
 export type DataSearchParams<K extends CollectionName> = Omit<
 	CollectionSearchParams<K>,
@@ -354,10 +357,9 @@ export interface ItemSearchParams {
  * ---------------------------------------------------------------------------------------------- */
 
 /**
- * Works, with no joins resolved. This is the query
- * the search and catalog views run — the cheapest one, and the only one whose document type carries
- * no joined keys at all, so a component handed a `Work` cannot read a relation that was never
- * fetched.
+ * Works, with no joins resolved. This is the query the search and catalog views run — the cheapest
+ * one, and the only one whose document type carries no joined keys at all, so a component handed a
+ * `Work` cannot read a relation that was never fetched.
  */
 export function getWorks(
 	params: WorkSearchParams,
@@ -568,7 +570,10 @@ function getItemSearches(params: ItemSearchParams) {
 		});
 }
 
-/** Searches works, persons, groups, translations, publications, performances, and events as one combined result set. */
+/**
+ * Searches works, persons, groups, translations, publications, performances, and events as one
+ * combined result set.
+ */
 export async function getItems(
 	params: ItemSearchParams,
 	options?: SearchOptions,
@@ -627,9 +632,8 @@ export async function getItems(
 		}) as unknown as ReadonlyArray<UniversalSearchHit>,
 		found: response.found,
 		page: response.page,
-		request_params: unionRequestParams?.[0] ?? {
-			...(params.perPage != null ? { per_page: params.perPage } : {}),
-		},
+		request_params:
+			unionRequestParams?.[0] ?? (params.perPage != null ? { per_page: params.perPage } : {}),
 	};
 }
 
@@ -784,7 +788,7 @@ export async function getTranslation(
 }
 
 /**
- * performance with the work they belong to resolved. As with `getTranslation`, `work` is a forward
+ * Performance with the work they belong to resolved. As with `getTranslation`, `work` is a forward
  * join and needs no `filter_by` clause.
  */
 export function getPerformances(

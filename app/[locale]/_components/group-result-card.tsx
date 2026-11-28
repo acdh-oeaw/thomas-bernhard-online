@@ -2,12 +2,12 @@ import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
-import { HighlightedSnippet } from "@/components/typesense";
-import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
-import type { UniversalSearchDocument } from "@/lib/data";
-import { formatDateRange } from "@/lib/date-range";
+import { HighlightedSnippet } from "#/components/typesense/index.ts";
+import { type SearchDisplayMode, searchResultRelationLimits } from "#/config/ui.ts";
+import type { UniversalSearchDocument } from "#/lib/data.ts";
+import { formatDateRange } from "#/lib/date-range.ts";
 
-import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
+import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card.tsx";
 
 type Group = Extract<UniversalSearchDocument, { type: "group" }>;
 type GroupHit = SearchResponseHit<Group>;

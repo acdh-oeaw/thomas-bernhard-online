@@ -1,7 +1,7 @@
 import { cn } from "@acdh-oeaw/style-variants";
 import type { ReactNode } from "react";
 
-import { Image } from "@/components/image";
+import { Image } from "#/components/image.tsx";
 
 interface LogoProps {
 	className?: string;

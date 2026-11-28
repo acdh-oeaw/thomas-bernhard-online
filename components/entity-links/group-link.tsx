@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
-import type { Group } from "@/lib/data";
+import type { Group } from "#/lib/data.ts";
 
-import { TBNavLink } from "./tb-nav-link";
+import { TBNavLink } from "./tb-nav-link.tsx";
 
 interface GroupLinkProps {
 	group: Pick<Group, "id" | "name">;

@@ -6,7 +6,7 @@ const storageKey = "ui-color-scheme";
 export function ColorSchemeScript(): ReactNode {
 	return (
 		<script
-			// eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
+			// oxlint-disable-next-line react/no-danger
 			dangerouslySetInnerHTML={{
 				__html: `(${String(createColorSchemeScript)})("${dataAttribute}", "${storageKey}");`,
 			}}
@@ -54,7 +54,7 @@ function createColorSchemeScript(dataAttribute: string, storageKey: string): voi
 					window.localStorage.setItem(storageKey, value);
 				}
 			} catch {
-				/** noop */
+				/** Noop */
 			}
 		},
 	};

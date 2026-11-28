@@ -3,12 +3,12 @@
 import { useTranslations } from "next-intl";
 import { type ReactNode, useMemo } from "react";
 
-import { type FacetValue, useFacetCounts } from "@/components/typesense/use-facet-counts";
-import { CheckBox } from "@/components/ui/checkbox";
-import { CheckBoxGroup, CheckBoxList } from "@/components/ui/checkbox-group";
-import { Label } from "@/components/ui/label";
-import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/schema";
-import type { CollectionName } from "@/lib/typesense/search";
+import { type FacetValue, useFacetCounts } from "#/components/typesense/use-facet-counts.ts";
+import { CheckBoxGroup, CheckBoxList } from "#/components/ui/checkbox-group.tsx";
+import { CheckBox } from "#/components/ui/checkbox.tsx";
+import { Label } from "#/components/ui/label.tsx";
+import type { Collection, CollectionFacetableFieldName } from "#/lib/typesense/schema.ts";
+import type { CollectionName } from "#/lib/typesense/search.ts";
 
 const EMPTY_SELECTION = new Set<string>();
 
@@ -72,7 +72,7 @@ interface FacetConfig<C extends Collection<ReadonlyArray<never>>> {
 	facetBy?: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 interface FacetListProps<C extends Collection<any>> {
 	collection: C;
 	collectionName: CollectionName;
@@ -88,7 +88,7 @@ interface FacetListProps<C extends Collection<any>> {
  * A vertical, multi-select facet list intended as a sidebar next to the search results: each
  * facetable field is rendered as a labelled group of checkboxes with result counts.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 export function FacetList<C extends Collection<any>>(
 	props: Readonly<FacetListProps<C>>,
 ): ReactNode {

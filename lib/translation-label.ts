@@ -1,4 +1,4 @@
-import type { Translation, Work } from "@/lib/data";
+import type { Translation, Work } from "#/lib/data.ts";
 
 /** A translation reference includes the original work's title when available. */
 export function translationLabel(

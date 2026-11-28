@@ -1,15 +1,15 @@
 "use client";
 
 import { createUrl } from "@acdh-oeaw/lib";
+import { useLocale } from "next-intl";
 import type { NextWebVitalsMetric } from "next/app";
 import Script from "next/script";
 import { useReportWebVitals } from "next/web-vitals";
-import { useLocale } from "next-intl";
 import { Fragment, type ReactNode, Suspense, useEffect } from "react";
 
-import { env } from "@/config/env.config";
-import type { IntlLocale } from "@/lib/i18n/locales";
-import { usePathname, useSearchParams } from "@/lib/navigation/navigation";
+import { env } from "#/config/env.config.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
+import { usePathname, useSearchParams } from "#/lib/navigation/navigation.ts";
 
 declare global {
 	interface Window {
@@ -30,7 +30,7 @@ export function AnalyticsScript(props: Readonly<AnalyticsProps>): ReactNode {
 	return (
 		<Fragment>
 			<Script
-				// eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
+				// oxlint-disable-next-line react/no-danger
 				dangerouslySetInnerHTML={{
 					__html: `(${String(createAnalyticsScript)})("${baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`}", "${String(id)}");`,
 				}}
@@ -73,9 +73,7 @@ function PageViewTracker(): ReactNode {
 	return null;
 }
 
-/**
- * Track urls without locale prefix, and separate custom event for locale.
- */
+/** Track urls without locale prefix, and separate custom event for locale. */
 function trackPageView(locale: IntlLocale, url: URL): void {
 	/** @see https://developer.matomo.org/guides/tracking-javascript-guide#custom-variables */
 	window._paq?.push(["setCustomVariable", 1, "Locale", locale, "page"]);

@@ -1,11 +1,11 @@
 import { useLocale, useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 
-import { GroupLink } from "@/components/entity-links/group-link";
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { WorkLink } from "@/components/entity-links/work-link";
-import type { EventWithRelations, PerformanceWithRelations } from "@/lib/data";
-import { formatDateRange } from "@/lib/date-range";
+import { GroupLink } from "#/components/entity-links/group-link.tsx";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import { WorkLink } from "#/components/entity-links/work-link.tsx";
+import type { EventWithRelations, PerformanceWithRelations } from "#/lib/data.ts";
+import { formatDateRange } from "#/lib/date-range.ts";
 
 /** Keep event and performance links and role labels distinct on related entity pages. */
 export function RelatedActivities(

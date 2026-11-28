@@ -2,71 +2,82 @@ name: Validate
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}-validate"
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  # only cancel superseded pull request runs. pushes to `main` and `develop` deploy, and a cancelled
+  # run could stop a deployment halfway.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 on:
   workflow_dispatch:
   pull_request:
-    branches:
-      - main
-      - develop
   push:
     branches:
       - main
       - develop
 
+permissions:
+  contents: read
+
 jobs:
-  validate:
-    name: Validate
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+  check:
+    name: Format, lint, type check and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
-    strategy:
-      fail-fast: true
-      matrix:
-        node-version: [24.x]
-        os: [ubuntu-24.04]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
+      - name: Install pnpm and Node.js
+        uses: pnpm/setup@v3
+        with:
+          cache: true
+          install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --no-runtime
+
+      - parallel:
+          - run: pnpm run format:check
+          - run: pnpm run lint:check
+          - run: pnpm run styles:check
+          - run: pnpm run types:check
+          - run: pnpm run test
+
+  e2e:
+    name: End-to-end tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    # values which do not differ between environments are set here, so the tests only depend on
+    # repository variables for the typesense server they search.
     env:
       NEXT_PUBLIC_APP_BASE_URL: "http://localhost:3000"
-      NEXT_PUBLIC_IMPRINT_SERVICE_BASE_URL: "${{ vars.NEXT_PUBLIC_IMPRINT_SERVICE_BASE_URL }}"
-      NEXT_PUBLIC_MATOMO_BASE_URL: "${{ vars.NEXT_PUBLIC_MATOMO_BASE_URL }}"
-      NEXT_PUBLIC_MATOMO_ID: "${{ vars.NEXT_PUBLIC_MATOMO_ID }}"
-      NEXT_PUBLIC_REDMINE_ID: "${{ vars.SERVICE_ID }}"
-      NEXT_PUBLIC_TYPESENSE_API_KEY: "${{ vars.NEXT_PUBLIC_TYPESENSE_API_KEY }}"
+      NEXT_PUBLIC_IMPRINT_SERVICE_BASE_URL: "https://imprint.acdh.oeaw.ac.at"
+      NEXT_PUBLIC_REDMINE_ID: "28690"
+      NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY: "${{ vars.NEXT_PUBLIC_TYPESENSE_SEARCH_API_KEY }}"
       NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX: "${{ vars.NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX }}"
       NEXT_PUBLIC_TYPESENSE_COLLECTIONS: "${{ vars.NEXT_PUBLIC_TYPESENSE_COLLECTIONS }}"
       NEXT_PUBLIC_TYPESENSE_HOST: "${{ vars.NEXT_PUBLIC_TYPESENSE_HOST }}"
       NEXT_PUBLIC_TYPESENSE_PORT: "${{ vars.NEXT_PUBLIC_TYPESENSE_PORT }}"
       NEXT_PUBLIC_TYPESENSE_PROTOCOL: "${{ vars.NEXT_PUBLIC_TYPESENSE_PROTOCOL }}"
+      NEXT_TELEMETRY_DISABLED: 1
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+        uses: actions/checkout@v7
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: "pnpm"
+          persist-credentials: false
+
+      - name: Install pnpm and Node.js
+        uses: pnpm/setup@v3
+        with:
+          cache: true
+          install: false
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Format
-        run: pnpm run format:check
-
-      - name: Lint
-        run: pnpm run lint:check
-
-      - name: Typecheck
-        run: pnpm run types:check
-
-      - name: Test
-        run: pnpm run test
+        run: pnpm install --frozen-lockfile --no-runtime
 
       - name: Get playwright version
         run: |
@@ -74,11 +85,11 @@ jobs:
           echo "PLAYWRIGHT_VERSION=$PLAYWRIGHT_VERSION" >> $GITHUB_ENV
 
       - name: Cache playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         id: cache-playwright-browsers
         with:
           path: "~/.cache/ms-playwright"
-          key: "${{ matrix.os }}-playwright-browsers-${{ env.PLAYWRIGHT_VERSION }}"
+          key: "${{ runner.os }}-playwright-browsers-${{ env.PLAYWRIGHT_VERSION }}"
 
       - name: Install playwright browsers
         if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
@@ -87,30 +98,31 @@ jobs:
         if: steps.cache-playwright-browsers.outputs.cache-hit == 'true'
         run: pnpm exec playwright install-deps
 
+      # cache keys are immutable, so the key includes the commit to save a fresh cache on every run,
+      # and `restore-keys` restores the most recent one for the same lockfile.
       # https://nextjs.org/docs/pages/building-your-application/deploying/ci-build-caching#github-actions
       - name: Cache Next.js build output
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: "${{ github.workspace }}/.next/cache"
-          key: "${{ matrix.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}"
+          key: "${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ github.sha }}"
+          restore-keys: "${{ runner.os }}-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-"
 
-      - name: Build app
-        run: pnpm run build
-
+      # the playwright web server builds and serves the standalone output, like the `Dockerfile`.
       - name: Run e2e tests
         run: pnpm run test:e2e
 
-      - uses: actions/upload-artifact@v5
-        if: ${{ !cancelled() }}
+      - uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 30
+          retention-days: 7
 
   build-deploy:
     name: Build and deploy
     if: ${{ github.event_name == 'push' }}
-    needs: [validate]
+    needs: [check, e2e]
     uses: ./.github/workflows/build-deploy.yaml
     secrets: inherit
     # https://docs.github.com/en/actions/using-workflows/reusing-workflows#access-and-permissions

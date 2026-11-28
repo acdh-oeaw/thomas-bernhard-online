@@ -4,11 +4,11 @@ import { LaptopIcon, MoonIcon, SunIcon } from "lucide-react";
 import type { Key, ReactNode } from "react";
 import { Select, SelectValue } from "react-aria-components";
 
-import { IconButton } from "@/components/ui/icon-button";
-import { ListBox, ListBoxItem } from "@/components/ui/listbox";
-import { Popover } from "@/components/ui/popover";
-import type { ColorScheme } from "@/lib/color-scheme-script";
-import { useColorScheme } from "@/lib/use-color-scheme";
+import { IconButton } from "#/components/ui/icon-button.tsx";
+import { ListBox, ListBoxItem } from "#/components/ui/listbox.tsx";
+import { Popover } from "#/components/ui/popover.tsx";
+import type { ColorScheme } from "#/lib/color-scheme-script.tsx";
+import { useColorScheme } from "#/lib/use-color-scheme.ts";
 
 interface ColorSchemeSelectProps {
 	items: Record<ColorScheme | "system", string>;

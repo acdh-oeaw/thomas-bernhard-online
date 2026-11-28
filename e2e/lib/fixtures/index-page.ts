@@ -1,9 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 
-import type { I18n } from "@/e2e/lib/fixtures/i18n";
-import { defaultLocale, type IntlLocale } from "@/lib/i18n/locales";
-import { localePrefix } from "@/lib/i18n/routing";
-// import { getPathname } from "@/lib/i18n/navigation";
+import type { I18n } from "#/e2e/lib/fixtures/i18n.ts";
+import { defaultLocale, type IntlLocale } from "#/lib/i18n/locales.ts";
+import { localePrefix } from "#/lib/i18n/routing.ts";
 
 /** @see https://github.com/microsoft/playwright/issues/35162 */
 function getPathname({ href, locale }: { href: { pathname: string }; locale: IntlLocale }): string {

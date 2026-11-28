@@ -16,12 +16,12 @@ export const clientConfig = {
 export const defaultSearchParams = {
 	/**
 	 * Match-all default query. Typesense requires a `q` on every search and rejects the request
-	 * ("Parameter `q` is required") when it is missing. Defaulting it to `"*"` — typesense's match-all
-	 * wildcard — means a search that omits `q` lists *all* documents instead of erroring, which is the
-	 * behaviour we want when browsing a collection (e.g. the catalog) or when a search box's input is
-	 * currently empty. Any call that passes its own `q` overrides this. Remove this default if you
-	 * would rather a missing `q` surface as an error (typesense's own behaviour) than silently list
-	 * everything.
+	 * ("Parameter `q` is required") when it is missing. Defaulting it to `"*"` — typesense's
+	 * match-all wildcard — means a search that omits `q` lists _all_ documents instead of erroring,
+	 * which is the behaviour we want when browsing a collection (e.g. the catalog) or when a search
+	 * box's input is currently empty. Any call that passes its own `q` overrides this. Remove this
+	 * default if you would rather a missing `q` surface as an error (typesense's own behaviour) than
+	 * silently list everything.
 	 */
 	q: "*",
 
@@ -32,8 +32,8 @@ export const defaultSearchParams = {
 	text_match_type: "sum_score",
 
 	/**
-	 * Intentionally high value to reduce the risk of selected facet values not being
-	 * included in the api response.
+	 * Intentionally high value to reduce the risk of selected facet values not being included in the
+	 * api response.
 	 *
 	 * @see https://github.com/typesense/typesense/issues/2131
 	 */

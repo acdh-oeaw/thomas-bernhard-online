@@ -3,8 +3,8 @@ import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { MainContent } from "@/components/ui/main-content";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface NotFoundPageProps {
 	params: Promise<{

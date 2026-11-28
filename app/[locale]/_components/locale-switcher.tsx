@@ -4,10 +4,10 @@ import { Fragment, type ReactNode, Suspense, useMemo } from "react";
 import {
 	LocaleSwitcherLink,
 	LocaleSwitcherLinkFallback,
-} from "@/app/[locale]/_components/locale-switcher-link";
-import { LinkLoadingIndicator } from "@/components/ui/link-loading-indicator";
-import { TouchTarget } from "@/components/ui/touch-target";
-import { getIntlLanguage, type IntlLocale, locales } from "@/lib/i18n/locales";
+} from "#/app/[locale]/_components/locale-switcher-link.tsx";
+import { LinkLoadingIndicator } from "#/components/ui/link-loading-indicator.tsx";
+import { TouchTarget } from "#/components/ui/touch-target.tsx";
+import { getIntlLanguage, type IntlLocale, locales } from "#/lib/i18n/locales.ts";
 
 export function LocaleSwitcher(): ReactNode {
 	const currentLocale = useLocale();
@@ -53,7 +53,8 @@ export function LocaleSwitcher(): ReactNode {
 				);
 
 				/**
-				 * Suspense boundary is necessary to avoid client-side deoptimisation caused by `useSearchParams`.
+				 * Suspense boundary is necessary to avoid client-side deoptimisation caused by
+				 * `useSearchParams`.
 				 *
 				 * @see https://nextjs.org/docs/messages/deopted-into-client-rendering
 				 */

@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button, Dialog, DialogTrigger, Label, Popover } from "react-aria-components";
 
-import type { CollectionName } from "@/lib/typesense/search";
+import type { CollectionName } from "#/lib/typesense/search.ts";
 
 interface FilterDropdownProps {
 	collectionName: CollectionName;
@@ -15,9 +15,9 @@ interface FilterDropdownProps {
 	onChange: (selectedValues: Set<string>) => void;
 	isLoading?: boolean;
 	/**
-	 * Render a compact icon trigger (a filter icon plus a count badge when values are selected) with no
-	 * visible label, instead of the default labelled text button. Use where the field name is already
-	 * shown next to the control, e.g. inside a table column header.
+	 * Render a compact icon trigger (a filter icon plus a count badge when values are selected) with
+	 * no visible label, instead of the default labelled text button. Use where the field name is
+	 * already shown next to the control, e.g. inside a table column header.
 	 */
 	compact?: boolean;
 }
@@ -76,10 +76,7 @@ export function FilterDropdown(props: Readonly<FilterDropdownProps>): ReactNode 
 					)}
 				</Button>
 				<Popover>
-					<Dialog
-						className="max-w-64 space-y-2 rounded-2 border border-stroke-weak bg-background-raised p-3 shadow-raised"
-						role="dialog"
-					>
+					<Dialog className="max-w-64 space-y-2 rounded-2 border border-stroke-weak bg-background-raised p-3 shadow-raised">
 						<p className="text-small text-text-weak">
 							{t("not-implemented", { field: fieldName })}
 						</p>

@@ -8,8 +8,8 @@
 		background-color: var(--color-background-base);
 		color: var(--color-text-strong);
 		font-family: var(--font-body);
-		overflow-wrap: break-word;
 		font-synthesis: none;
+		overflow-wrap: break-word;
 		text-rendering: optimizeLegibility;
 		text-size-adjust: none;
 		-webkit-tap-highlight-color: transparent;
@@ -57,14 +57,15 @@
 	}
 
 	:where(textarea) {
-		field-sizing: content;
 		min-block-size: 3lh;
+		field-sizing: content;
 	}
 
 	:where([id]) {
 		scroll-margin-block-start: 2ex;
 	}
 
+	/* stylelint-disable-next-line selector-no-unmatchable */
 	:where([inert] ::-webkit-scrollbar) {
 		display: none;
 	}
@@ -74,10 +75,10 @@
 		*,
 		*::after,
 		*::before {
+			scroll-behavior: auto !important;
 			transition-duration: 0.01ms !important;
 			animation-duration: 0.01ms !important;
 			animation-iteration-count: 1 !important;
-			scroll-behavior: auto !important;
 		}
 	}
 

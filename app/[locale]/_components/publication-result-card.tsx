@@ -2,14 +2,14 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import type { SearchResponseHit } from "typesense";
 
-import { DateRange } from "@/components/date-range";
-import { useLanguageLabel } from "@/components/language-label";
-import { HighlightedSnippet } from "@/components/typesense";
-import { type SearchDisplayMode, searchResultRelationLimits } from "@/config/ui";
-import type { PublicationSearchDocument } from "@/lib/data";
-import { translationLabel } from "@/lib/translation-label";
+import { DateRange } from "#/components/date-range.tsx";
+import { useLanguageLabel } from "#/components/language-label.tsx";
+import { HighlightedSnippet } from "#/components/typesense/index.ts";
+import { type SearchDisplayMode, searchResultRelationLimits } from "#/config/ui.ts";
+import type { PublicationSearchDocument } from "#/lib/data.ts";
+import { translationLabel } from "#/lib/translation-label.ts";
 
-import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card";
+import { type ResultCardField, resultCardValues, SearchResultCard } from "./search-result-card.tsx";
 
 export function PublicationResultCard(
 	props: Readonly<{

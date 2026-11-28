@@ -5,12 +5,12 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button, Column, Table, TableBody, TableHeader } from "react-aria-components";
 
-import { FacetDropdown, FilterDropdown, YEAR_FACET_QUERY } from "@/components/typesense";
-import type { CollectionFacetableFieldName } from "@/lib/typesense/schema";
-import type { WorkCollectionName } from "@/lib/typesense/search";
+import { FacetDropdown, FilterDropdown, YEAR_FACET_QUERY } from "#/components/typesense/index.ts";
+import type { CollectionFacetableFieldName } from "#/lib/typesense/schema.ts";
+import type { WorkCollectionName } from "#/lib/typesense/search.ts";
 
-import { catalogRows, CatalogTableEmptyState, CatalogTableShell } from "./catalog-table-shell";
-import { useCatalogTable } from "./use-catalog-table";
+import { catalogRows, CatalogTableEmptyState, CatalogTableShell } from "./catalog-table-shell.tsx";
+import { useCatalogTable } from "./use-catalog-table.ts";
 
 interface CatalogFilterTableProps {
 	collectionName: WorkCollectionName;
@@ -20,12 +20,12 @@ interface CatalogFilterTableProps {
 const emptySelection = new Set<string>();
 
 /**
- * Catalog table variant that folds a filter control into every column header — a live `FacetDropdown`
- * for facetable columns, the `FilterDropdown` skeleton for the rest. Because a filter button can't
- * sit inside react-aria's native sortable header (which is itself the sort button), sorting uses the
- * WAI-ARIA "sortable table" pattern instead: a custom sort button plus `aria-sort` on the column.
- * That is more compact but gives up react-aria's built-in sort keyboard/announcement handling.
- * Compare `CatalogTable`.
+ * Catalog table variant that folds a filter control into every column header — a live
+ * `FacetDropdown` for facetable columns, the `FilterDropdown` skeleton for the rest. Because a
+ * filter button can't sit inside react-aria's native sortable header (which is itself the sort
+ * button), sorting uses the WAI-ARIA "sortable table" pattern instead: a custom sort button plus
+ * `aria-sort` on the column. That is more compact but gives up react-aria's built-in sort
+ * keyboard/announcement handling. Compare `CatalogTable`.
  */
 export function CatalogFilterTable(props: Readonly<CatalogFilterTableProps>): ReactNode {
 	const { collectionName } = props;

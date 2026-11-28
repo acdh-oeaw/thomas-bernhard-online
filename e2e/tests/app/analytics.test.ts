@@ -1,11 +1,11 @@
 import { createUrl } from "@acdh-oeaw/lib";
 
-import { env } from "@/config/env.config";
-import { expect, test } from "@/e2e/lib/test";
-import { defaultLocale } from "@/lib/i18n/locales";
+import { env } from "#/config/env.config.ts";
+import { expect, test } from "#/e2e/lib/test.ts";
+import { defaultLocale } from "#/lib/i18n/locales.ts";
 
 test.describe("analytics service", () => {
-	// eslint-disable-next-line playwright/no-skipped-test
+	// oxlint-disable-next-line playwright/no-skipped-test
 	test.skip(() => {
 		return env.NEXT_PUBLIC_MATOMO_BASE_URL == null || env.NEXT_PUBLIC_MATOMO_ID == null;
 	}, "Analytics service disabled.");

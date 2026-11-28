@@ -2,11 +2,12 @@ import type { Metadata, ResolvingMetadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { ReactNode } from "react";
 
-import { NuqsProvider } from "@/app/[locale]/_components/nuqs-adapter";
-import { MainContent } from "@/components/ui/main-content";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { NuqsProvider } from "#/app/[locale]/_components/nuqs-adapter.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
-import { CatalogView } from "./_components/catalog-view";
+import { CatalogView } from "./_components/catalog-view.tsx";
 
 interface CatalogPageProps {
 	params: Promise<{
@@ -26,6 +27,7 @@ export async function generateMetadata(
 
 	return {
 		title: t("meta.title"),
+		alternates: getAlternates(locale, "/catalog"),
 	};
 }
 

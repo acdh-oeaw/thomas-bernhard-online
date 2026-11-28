@@ -1,6 +1,6 @@
 import { defineRouting, type LocalePrefix } from "next-intl/routing";
 
-import { defaultLocale, locales } from "@/lib/i18n/locales";
+import { defaultLocale, locales } from "#/lib/i18n/locales.ts";
 
 export const localePrefix = {
 	mode: "always",
@@ -11,11 +11,17 @@ export const localePrefix = {
 } as const satisfies LocalePrefix<typeof locales>;
 
 export const routing = defineRouting({
+	/**
+	 * `hreflang` alternates are added via `generateMetadata` instead.
+	 *
+	 * @see {@link "#/lib/i18n/alternates.ts"}
+	 */
+	alternateLinks: false,
 	defaultLocale,
 	/**
-	 * For GDPR-conformance, the locale cookie is stored as a session cookie, which expires when
-	 * the browser is closed. When using an explicit cookie consent banner, the cookie expiration
-	 * can be adjusted via `maxAge`.
+	 * For GDPR-conformance, the locale cookie is stored as a session cookie, which expires when the
+	 * browser is closed. When using an explicit cookie consent banner, the cookie expiration can be
+	 * adjusted via `maxAge`.
 	 */
 	// localeCookie: {
 	// 	maxAge: 60 * 60 * 24 * 365 /** 1 year. */,

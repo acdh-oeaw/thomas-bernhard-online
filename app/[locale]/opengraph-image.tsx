@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import type { ImageResponse } from "next/og";
 
-import { MetadataImage } from "@/components/metadata-image";
-import { type IntlLocale, isValidLocale, locales } from "@/lib/i18n/locales";
-import { getMetadata } from "@/lib/i18n/metadata";
+import { MetadataImage } from "#/components/metadata-image.tsx";
+import { type IntlLocale, isValidLocale, locales } from "#/lib/i18n/locales.ts";
+import { getMetadata } from "#/lib/i18n/metadata.ts";
 
 const size = {
 	height: 630,
@@ -23,8 +23,8 @@ export function generateStaticParams(): Array<Awaited<OpenGraphImageProps["param
 }
 
 /**
- * `generateImageMetadata` allows providing translated alt text,
- * but seems to overwrite `generateStaticParams`.
+ * `generateImageMetadata` allows providing translated alt text, but seems to overwrite
+ * `generateStaticParams`.
  *
  * @see https://github.com/vercel/next.js/issues/76323
  */

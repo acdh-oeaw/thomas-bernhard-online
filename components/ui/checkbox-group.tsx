@@ -8,7 +8,7 @@ import {
 	composeRenderProps,
 } from "react-aria-components";
 
-import { FieldStatusContext } from "@/components/ui/field-status-context";
+import { FieldStatusContext } from "#/components/ui/field-status-context.tsx";
 
 interface CheckBoxGroupProps extends AriaCheckBoxGroupProps {}
 

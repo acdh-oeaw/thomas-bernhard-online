@@ -1,78 +1,29 @@
-## .gitignore ##
+*
 
-# dependencies
-node_modules/
-.pnpm-store/
+!app/
+!assets/
+!components/
+!config/
+!content/
+!lib/
+!messages/
+!patches/
+!public/
+!styles/
+!types/
 
-# logs
-*.log
+!instrumentation-client.ts
+!instrumentation.ts
+!next.config.ts
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!proxy.ts
+!tsconfig.json
 
-# non-public environment variables
-.env.keys
-.env.local
-.env.*.local
-
-# caches
-.eslintcache
-.prettiercache
-.stylelintcache
-*.tsbuildinfo
-
-# performance profiles
-*.cpuprofile
-*.heapprofile
-*.heapsnapshot
-
-# vercel
-.vercel
-
-# misc
-.DS_Store
-*.pem
-.idea/
-
-# next.js
-.next/
-next-env.d.ts
-out/
-
-# i18n
-/content/**/*.d.json.ts
-/messages/**/*.d.json.ts
-
-# test
-/coverage/
-
-# playwright
-/blob-report/
-/playwright/.cache/
-/playwright-report/
-/test-results/
-
-
-## .dockerignore ##
-
-# git
-.git/
-.gitattributes
-# must be allowed because `tailwindcss` v4 will use `.gitignore` to determine which
-# files and folders can be skipped by the compiler.
-# .gitignore
-
-# github
-.github/
-
-# vscode settings
-.vscode/
-
-# environment variables
-.env
-.env.*
-
-# tests
-playwright.config.ts
-/e2e/
-/test/
-
-# misc
-.editorconfig
+**/.DS_Store
+**/.env
+**/.env.*
+**/*.log
+**/*.pem
+**/*.tsbuildinfo

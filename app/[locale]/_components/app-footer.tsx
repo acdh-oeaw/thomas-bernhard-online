@@ -1,8 +1,8 @@
 import { useTranslations } from "next-intl";
 import type { FC, ReactNode } from "react";
 
-import { Logo } from "@/components/logo";
-import { NavLink } from "@/components/nav-link";
+import { Logo } from "#/components/logo.tsx";
+import { NavLink } from "#/components/nav-link.tsx";
 import {
 	BlueskyIcon,
 	InstagramIcon,
@@ -10,15 +10,17 @@ import {
 	MastodonIcon,
 	TwitterIcon,
 	YouTubeIcon,
-} from "@/components/social-media-icons";
-import { TouchTarget } from "@/components/ui/touch-target";
-import { useMetadata } from "@/lib/i18n/metadata";
-import { createHref } from "@/lib/navigation/create-href";
-import type { NavigationLink } from "@/lib/navigation/navigation";
+} from "#/components/social-media-icons.tsx";
+import { TouchTarget } from "#/components/ui/touch-target.tsx";
+import { useMetadata } from "#/lib/i18n/metadata.ts";
+import { createHref } from "#/lib/navigation/create-href.ts";
+import type { NavigationLink } from "#/lib/navigation/navigation.ts";
 
 export function AppFooter(): ReactNode {
 	const t = useTranslations("AppFooter");
 	const meta = useMetadata();
+	// oxlint-disable-next-line react/purity -- This Server Component displays the current UTC year.
+	const copyrightYear = new Date().getUTCFullYear();
 
 	const links = {
 		contact: {
@@ -124,7 +126,7 @@ export function AppFooter(): ReactNode {
 				</nav>
 
 				<small className="text-tiny text-text-weak">
-					&copy; {new Date().getUTCFullYear()}{" "}
+					&copy; {copyrightYear}{" "}
 					<a
 						className="rounded-0.5 outline-transparent hover:underline focus-visible:focus-outline"
 						href={meta.social.website}

@@ -1,4 +1,4 @@
-import { timeZone } from "@/lib/i18n/locales";
+import { timeZone } from "#/lib/i18n/locales.ts";
 
 /** Convert indexed Unix seconds or milliseconds only when a date is formatted. */
 function timestampDate(value: number | null | undefined): Date | undefined {

@@ -3,7 +3,7 @@
 import { cn } from "@acdh-oeaw/style-variants";
 import type { ComponentPropsWithRef, ReactNode } from "react";
 
-import { NavLink } from "@/components/nav-link";
+import { NavLink } from "#/components/nav-link.tsx";
 
 type TBNavLinkProps = Omit<ComponentPropsWithRef<typeof NavLink>, "className"> & {
 	className?: string;

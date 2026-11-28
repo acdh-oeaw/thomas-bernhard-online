@@ -1,13 +1,14 @@
 import { createUrl, createUrlSearchParams, request } from "@acdh-oeaw/lib";
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { MainContent } from "@/components/ui/main-content";
-import { env } from "@/config/env.config";
-import type { IntlLocale } from "@/lib/i18n/locales";
-import { isHttpError } from "@/lib/server/errors";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { env } from "#/config/env.config.ts";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
+import { isHttpError } from "#/lib/server/errors.ts";
 
 interface ImprintPageProps {
 	params: Promise<{
@@ -26,6 +27,7 @@ export async function generateMetadata(
 
 	const metadata: Metadata = {
 		title: t("meta.title"),
+		alternates: getAlternates(locale, "/imprint"),
 	};
 
 	return metadata;
@@ -53,7 +55,7 @@ export default async function ImprintPage(props: Readonly<ImprintPageProps>): Pr
 			</section>
 
 			<section
-				// eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
+				// oxlint-disable-next-line react/no-danger
 				dangerouslySetInnerHTML={{ __html: html }}
 				className="relative layout-subgrid typography content-max-w-text border-t border-stroke-weak py-16 xs:py-20"
 			/>

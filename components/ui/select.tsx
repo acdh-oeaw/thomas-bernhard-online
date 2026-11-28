@@ -13,7 +13,7 @@ import {
 	type SelectValueProps as AriaSelectValueProps,
 } from "react-aria-components";
 
-import { FieldStatusContext } from "@/components/ui/field-status-context";
+import { FieldStatusContext } from "#/components/ui/field-status-context.tsx";
 
 interface SelectProps<T extends object> extends AriaSelectProps<T> {}
 

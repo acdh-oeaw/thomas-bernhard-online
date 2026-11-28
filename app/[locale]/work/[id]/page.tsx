@@ -1,14 +1,15 @@
 import type { Metadata, ResolvingMetadata } from "next";
-import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { RelatedActivities } from "@/app/[locale]/_components/related-activities";
-import { TBNavLink } from "@/components/entity-links/tb-nav-link";
-import { LanguageLabel } from "@/components/language-label";
-import { MainContent } from "@/components/ui/main-content";
-import { getWork, getWorkWithRelations } from "@/lib/data";
-import type { IntlLocale } from "@/lib/i18n/locales";
+import { RelatedActivities } from "#/app/[locale]/_components/related-activities.tsx";
+import { TBNavLink } from "#/components/entity-links/tb-nav-link.tsx";
+import { LanguageLabel } from "#/components/language-label.tsx";
+import { MainContent } from "#/components/ui/main-content.tsx";
+import { getWork, getWorkWithRelations } from "#/lib/data.ts";
+import { getAlternates } from "#/lib/i18n/alternates.ts";
+import type { IntlLocale } from "#/lib/i18n/locales.ts";
 
 interface WorkPageProps {
 	params: Promise<{
@@ -65,18 +66,21 @@ export async function generateMetadata(
 	_parent: ResolvingMetadata,
 ): Promise<Metadata> {
 	const { params } = props;
-	const { id } = await params;
+	const { id, locale } = await params;
 
 	const t = await getTranslations("WorkPage");
+	const alternates = getAlternates(locale, `/work/${id}`);
 	try {
 		const document = await getWork(id);
 
 		return {
 			title: document?.title ?? t("default-title"),
+			alternates,
 		};
 	} catch {
 		return {
 			title: t("default-title"),
+			alternates,
 		};
 	}
 }

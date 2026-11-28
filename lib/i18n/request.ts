@@ -1,10 +1,10 @@
 import { hasLocale } from "next-intl";
 import { getRequestConfig } from "next-intl/server";
 
-import { formats } from "@/lib/i18n/formats";
-import { timeZone } from "@/lib/i18n/locales";
-import { getIntlMessages } from "@/lib/i18n/messages";
-import { routing } from "@/lib/i18n/routing";
+import { formats } from "#/lib/i18n/formats.ts";
+import { timeZone } from "#/lib/i18n/locales.ts";
+import { getIntlMessages } from "#/lib/i18n/messages.ts";
+import { routing } from "#/lib/i18n/routing.ts";
 
 export default getRequestConfig(async ({ requestLocale }) => {
 	const requestedLocale = await requestLocale;

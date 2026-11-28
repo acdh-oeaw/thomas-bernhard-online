@@ -1,11 +1,13 @@
 import fs from "fs";
 import path from "path";
-import { format, resolveConfig } from "prettier";
+
+import { format } from "oxfmt";
 import type { CollectionFieldSchema } from "typesense";
 
-import { env } from "@/config/env.config";
-import { physicalCollectionName } from "@/lib/typesense/collection-name";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
+import { env } from "#/config/env.config.ts";
+import { physicalCollectionName } from "#/lib/typesense/collection-name.ts";
+import { createTypesenseClient } from "#/lib/typesense/create-typesense-client.ts";
+import formatConfig from "#/oxfmt.config.ts";
 
 // Collections to generate schema + field metadata for, configured by NEXT_PUBLIC_TYPESENSE_COLLECTIONS.
 // These are the *unprefixed* names the registry is keyed by; each is fetched from the physical
@@ -13,10 +15,10 @@ import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
 const collectionNames = env.NEXT_PUBLIC_TYPESENSE_COLLECTIONS;
 
 /**
- * Rewrites a `reference` foreign key from physical to registry names ("tbo_test_work.id" →
- * "work.id"), so a join's target resolves against the generated registry (see `JoinedDocuments`).
- * A reference to a collection outside this deployment's prefix is left untouched — it would not
- * resolve either way, and silently rewriting it would hide that.
+ * Rewrites a `reference` foreign key from physical to registry names ("tbo_work.id" → "work.id"),
+ * so a join's target resolves against the generated registry (see `JoinedDocuments`). A reference
+ * to a collection outside this deployment's prefix is left untouched — it would not resolve either
+ * way, and silently rewriting it would hide that.
  */
 const toRegistryReference = (reference: string): string => {
 	const prefix = env.NEXT_PUBLIC_TYPESENSE_COLLECTION_PREFIX;
@@ -288,7 +290,7 @@ async function main() {
 			);
 		}
 
-		const code = `import { defineCollection } from "@/lib/typesense/schema";
+		const code = `import { defineCollection } from "#/lib/typesense/schema.ts";
 
 export const collections = {
 ${entries.join("\n")}
@@ -297,12 +299,18 @@ ${entries.join("\n")}
 
 		const outputPath = path.join(process.cwd(), "lib/typesense/collections.ts");
 
-		// Format with the project's prettier config so the generated file conforms to the same
-		// formatting rules as the rest of the codebase (and re-generating produces no formatting churn).
-		const prettierConfig = await resolveConfig(outputPath);
-		const formatted = await format(code, { ...prettierConfig, filepath: outputPath });
+		const formatted = await format(outputPath, code, formatConfig);
+		if (formatted.errors.length > 0) {
+			throw new Error(
+				formatted.errors
+					.map((error) => {
+						return error.message;
+					})
+					.join("\n"),
+			);
+		}
 
-		fs.writeFileSync(outputPath, formatted);
+		fs.writeFileSync(outputPath, formatted.code);
 		console.warn(
 			`✓ Schema for ${String(collectionNames.length)} collection(s) written to ${outputPath}`,
 		);

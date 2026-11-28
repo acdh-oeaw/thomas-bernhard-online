@@ -4,13 +4,16 @@ import type { CollectionCreateSchema, CollectionFieldSchema, SearchResponseHit }
 type ScalarFieldType = "bool" | "float" | "int32" | "int64" | "string";
 
 type StrictFieldSchema = CollectionFieldSchema &
-	/** A `reference: "<collection>.<field>"` foreign key encodes a Typesense JOIN (see `JoinedDocuments`). */
+	/**
+	 * A `reference: "<collection>.<field>"` foreign key encodes a Typesense JOIN (see
+	 * `JoinedDocuments`).
+	 */
 	{ reference?: string } & (
 		| { index?: true | undefined }
 		| { index: false; facet?: never; sort?: never }
 	) &
 	/**
-	 * A `const` literal may only be attached to a *scalar* field. It types that field as the exact
+	 * A `const` literal may only be attached to a _scalar_ field. It types that field as the exact
 	 * literal in the document type (rather than the general `type`), so a field indexed with the same
 	 * value across every document in a collection becomes a discriminant for narrowing a union of
 	 * collection document types. Array and object fields cannot serve as discriminated-union tags, so
@@ -66,7 +69,7 @@ interface ArrayElementFieldType {
  * array of objects and collapse it to a single value per element (`id: string`). This is correct
  * when each object holds a single value for the sub-field — the common case, and how this codebase
  * reads the data (`author.name` as a string). It is WRONG for a sub-field that is genuinely
- * multi-valued *per element* (e.g. one author with several `name`s): the schema cannot distinguish
+ * multi-valued _per element_ (e.g. one author with several `name`s): the schema cannot distinguish
  * the two, so such a field would be under-typed here. If that case ever arises, model it explicitly
  * rather than relying on this inference.
  */
@@ -75,7 +78,7 @@ type SingularFieldType<T extends string> = T extends keyof ArrayElementFieldType
 	: T;
 
 /**
- * The local key of a field `Name` that is a *direct* child of `Prefix` (e.g. "id" for the field
+ * The local key of a field `Name` that is a _direct_ child of `Prefix` (e.g. "id" for the field
  * "authors.id" under prefix "authors."). Yields `never` for the parent itself and for deeper
  * descendants such as "authors.contact.email".
  */

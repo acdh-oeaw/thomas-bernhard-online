@@ -14,7 +14,7 @@ export function HighlightedSnippet(props: Readonly<HighlightedSnippetProps>): Re
 	if (snippet.includes("<mark>")) {
 		return (
 			<span
-				// eslint-disable-next-line @eslint-react/dom/no-dangerously-set-innerhtml
+				// oxlint-disable-next-line react/no-danger
 				dangerouslySetInnerHTML={{ __html: snippet }}
 				className="[&_mark]:bg-fill-brand-strong [&_mark]:font-strong [&_mark]:text-text-inverse-strong [&_mark]:no-underline"
 			/>

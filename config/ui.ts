@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 
-import type { CollectionName } from "@/lib/typesense/search";
+import type { CollectionName } from "#/lib/typesense/search.ts";
 
 /** Shared brand hues for the API collections and the combined search tab. */
 export const entityBrandHues = {

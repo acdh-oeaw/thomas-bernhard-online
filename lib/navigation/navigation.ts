@@ -1,7 +1,7 @@
 import { createNavigation } from "next-intl/navigation";
 import type { ComponentPropsWithRef, FC } from "react";
 
-import { routing } from "@/lib/i18n/routing";
+import { routing } from "#/lib/i18n/routing.ts";
 
 const {
 	Link,
@@ -16,7 +16,7 @@ const redirect: typeof _redirect = _redirect;
 
 export { getPathname, redirect, usePathname, useRouter };
 
-// eslint-disable-next-line no-restricted-imports
+// oxlint-disable-next-line no-restricted-imports
 export { useSearchParams } from "next/navigation";
 
 export type LocaleLinkProps = Omit<ComponentPropsWithRef<typeof Link>, "href"> & {

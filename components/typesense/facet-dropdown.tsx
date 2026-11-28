@@ -17,9 +17,9 @@ import {
 	type Selection,
 } from "react-aria-components";
 
-import { useFacetCounts } from "@/components/typesense/use-facet-counts";
-import type { Collection, CollectionFacetableFieldName } from "@/lib/typesense/schema";
-import type { CollectionName } from "@/lib/typesense/search";
+import { useFacetCounts } from "#/components/typesense/use-facet-counts.ts";
+import type { Collection, CollectionFacetableFieldName } from "#/lib/typesense/schema.ts";
+import type { CollectionName } from "#/lib/typesense/search.ts";
 
 // NOTE: The ListBox is uncontrolled (`defaultSelectedKeys`). Its selection is mirrored into local
 // state and propagated to the parent from the selection handlers (not via a `useEffect` syncing on
@@ -27,7 +27,7 @@ import type { CollectionName } from "@/lib/typesense/search";
 // `useFacetCounts` keeping the facet list referentially stable, this avoids the re-render cascade
 // that would otherwise make the ListBox lose focus/scroll position on every selection.
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 interface FacetDropdownProps<C extends Collection<any>> {
 	collection: C;
 	collectionName: CollectionName;
@@ -41,14 +41,14 @@ interface FacetDropdownProps<C extends Collection<any>> {
 	isLoading?: boolean;
 	searchPlaceholder?: string;
 	/**
-	 * Render a compact icon trigger (a filter icon plus a count badge when values are selected) with no
-	 * visible label, instead of the default labelled text button. Use where the field name is already
-	 * shown next to the control, e.g. inside a table column header.
+	 * Render a compact icon trigger (a filter icon plus a count badge when values are selected) with
+	 * no visible label, instead of the default labelled text button. Use where the field name is
+	 * already shown next to the control, e.g. inside a table column header.
 	 */
 	compact?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line typescript/no-explicit-any
 export function FacetDropdown<C extends Collection<any>>(
 	props: Readonly<FacetDropdownProps<C>>,
 ): ReactNode {
@@ -64,7 +64,6 @@ export function FacetDropdown<C extends Collection<any>>(
 		otherFilters,
 		onChange,
 		isLoading = false,
-		// eslint-disable-next-line @eslint-react/no-unstable-default-props
 		searchPlaceholder = t("filter-values"),
 		compact = false,
 	} = props;
@@ -160,10 +159,7 @@ export function FacetDropdown<C extends Collection<any>>(
 					)}
 				</Button>
 				<Popover>
-					<Dialog
-						className="space-y-2 rounded-2 border border-stroke-weak bg-background-raised p-3 shadow-raised"
-						role="dialog"
-					>
+					<Dialog className="space-y-2 rounded-2 border border-stroke-weak bg-background-raised p-3 shadow-raised">
 						<Autocomplete inputValue={searchInput} onInputChange={setSearchInput}>
 							<SearchField className="relative">
 								<Label className="sr-only">{t("search")}</Label>
@@ -186,6 +182,7 @@ export function FacetDropdown<C extends Collection<any>>(
 								<div className="px-3 py-2 text-small text-text-weak">{t("no-results")}</div>
 							) : (
 								<ListBox
+									// oxlint-disable-next-line jsx-a11y/no-autofocus -- Focus the first option in the user-opened popover.
 									autoFocus="first"
 									className="max-h-48 divide-y divide-stroke-weak overflow-y-auto"
 									defaultSelectedKeys={internalSelected}

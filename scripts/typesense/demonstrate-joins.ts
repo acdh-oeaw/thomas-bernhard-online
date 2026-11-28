@@ -1,19 +1,19 @@
 import type { DocumentSchema, SearchOptions, SearchParams, SearchResponse } from "typesense";
 
-import { defaultSearchParams } from "@/config/typesense.config";
+import { defaultSearchParams } from "#/config/typesense.config.ts";
 import type {
 	TranslationWithRelations,
 	WorkWithRelations as AppWorkWithRelations,
-} from "@/lib/data";
-import { physicalCollectionName } from "@/lib/typesense/collection-name";
-import { createTypesenseClient } from "@/lib/typesense/create-typesense-client";
+} from "#/lib/data.ts";
+import { physicalCollectionName } from "#/lib/typesense/collection-name.ts";
+import { createTypesenseClient } from "#/lib/typesense/create-typesense-client.ts";
 import {
 	authorsCollectionName,
 	findMissingCollections,
 	performancesCollectionName,
 	translationsCollectionName,
 	workCollectionName,
-} from "@/scripts/typesense/create-joined-schema";
+} from "#/scripts/typesense/create-joined-schema.ts";
 
 /** The demo schema retains an author reference that the production API no longer has. */
 type WorkWithRelations = AppWorkWithRelations & {
@@ -31,16 +31,18 @@ type WorkWithRelations = AppWorkWithRelations & {
 
 /**
  * A note on the `include_fields` strings below: none of them carries a leading `*`. An
- * `include_fields` made up of nothing but `$collection(...)` join clauses leaves the *local*
- * projection alone, so every field of the searched collection is still returned — the wildcard would
- * be redundant. It only starts to matter once a local field is named: `include_fields=title,$work(*)`
- * narrows the local document to `title`, and `*` is how you would widen it back.
+ * `include_fields` made up of nothing but `$collection(...)` join clauses leaves the _local_
+ * projection alone, so every field of the searched collection is still returned — the wildcard
+ * would be redundant. It only starts to matter once a local field is named:
+ * `include_fields=title,$work(*)` narrows the local document to `title`, and `*` is how you would
+ * widen it back.
  */
 
 /**
- * A `$collection(...)` join clause. Typesense resolves it against the *physical* collection name, so
- * the deployment prefix has to go back in here; `as <registry name>` then keys the joined documents
- * by the unprefixed name, which is what the registry — and every type derived from it — uses.
+ * A `$collection(...)` join clause. Typesense resolves it against the _physical_ collection name,
+ * so the deployment prefix has to go back in here; `as <registry name>` then keys the joined
+ * documents by the unprefixed name, which is what the registry — and every type derived from it —
+ * uses.
  */
 function joinClause(name: string, fields: string): string {
 	return `$${physicalCollectionName(name)}(${fields}) as ${name}`;
@@ -63,8 +65,9 @@ function searchPhysicalCollection<D extends DocumentSchema>(
 }
 
 /**
- * Hits per example query. The collections hold the whole live dataset (187 works, 1258 translations),
- * so every query takes a small sample — this script is about the shape of a response, not its size.
+ * Hits per example query. The collections hold the whole live dataset (187 works, 1258
+ * translations), so every query takes a small sample — this script is about the shape of a
+ * response, not its size.
  */
 const samplePerPage = 3;
 
@@ -85,31 +88,31 @@ function printHeading(title: string, params: Record<string, string | undefined>)
 }
 
 /**
- * FORWARD join, the direction the schema declares: each translation carries a `work_id` reference, so
- * the work it belongs to can be pulled into the translation's document. Naming the collection in
+ * FORWARD join, the direction the schema declares: each translation carries a `work_id` reference,
+ * so the work it belongs to can be pulled into the translation's document. Naming the collection in
  * `include_fields` is all it takes — no `filter_by` clause is involved (contrast the reverse
  * direction below, where the same query silently returns nothing joined).
  *
- * A `filter_by` join clause would change *which documents match* rather than their shape:
- * it makes the join an inner one, which is only observable when the reference can be absent. Here
- * `work_id` is required, so every translation has a work and the filter would drop nothing.
+ * A `filter_by` join clause would change _which documents match_ rather than their shape: it makes
+ * the join an inner one, which is only observable when the reference can be absent. Here `work_id`
+ * is required, so every translation has a work and the filter would drop nothing.
  *
  * The default `nest` strategy is deliberate (rather than the `nest_array` used for the reverse
  * direction): this join is many-to-one, so a single work comes back as a bare object — which is
- * exactly the bare-object shape declared by `TranslationWithRelations`, the local `work_id` field not
- * being an array.
+ * exactly the bare-object shape declared by `TranslationWithRelations`, the local `work_id` field
+ * not being an array.
  */
 const forwardJoinIncludeFields = joinClause(workCollectionName, "*");
 
 /**
- * The same forward join, carried one level further: translation → work → authors. The work pulled in
- * by the translation pulls in its own authors, so a single search on the translations answers "who
- * wrote the work this is a translation of".
+ * The same forward join, carried one level further: translation → work → authors. The work pulled
+ * in by the translation pulls in its own authors, so a single search on the translations answers
+ * "who wrote the work this is a translation of".
  *
  * Both levels are forward references (`work_id`, then `author_ids`), so neither needs a `filter_by`
  * clause — unlike the two-level join at the end of the script, whose outer level is a reverse join.
- * The inner clause carries `strategy:nest_array` because `author_ids` is an array reference, and its
- * own `as authors` alias, without which the inner key would keep the physical collection name.
+ * The inner clause carries `strategy:nest_array` because `author_ids` is an array reference, and
+ * its own `as authors` alias, without which the inner key would keep the physical collection name.
  */
 const forwardNestedJoinIncludeFields = joinClause(
 	workCollectionName,
@@ -117,14 +120,15 @@ const forwardNestedJoinIncludeFields = joinClause(
 );
 
 /**
- * The same again, plus the translation's *own* link to the authors collection — its `translator_ids`.
- * One search then answers both "who wrote the original" and "who translated this".
+ * The same again, plus the translation's _own_ link to the authors collection — its
+ * `translator_ids`. One search then answers both "who wrote the original" and "who translated
+ * this".
  *
  * Both land under the key `authors`, because a joined key is named after the target collection and
  * not after the field pointing at it: the translation's translators at the top level, the work's
- * authors one level down inside `work`. Aliasing the outer one `as translators` would read better but
- * would no longer match the explicit `TranslationWithRelations` response shape — the typed access
- * below would then be reading a key the response does not have.
+ * authors one level down inside `work`. Aliasing the outer one `as translators` would read better
+ * but would no longer match the explicit `TranslationWithRelations` response shape — the typed
+ * access below would then be reading a key the response does not have.
  */
 const translatorJoinIncludeFields = [
 	joinClause(authorsCollectionName, "*,strategy:nest_array"),
@@ -132,19 +136,20 @@ const translatorJoinIncludeFields = [
 ].join(",");
 
 /**
- * The work's own joins, in both directions at once — resolving them reconstitutes the nested document
- * the split-up schema was derived from (`authors` / `translations` / `performances` as arrays).
+ * The work's own joins, in both directions at once — resolving them reconstitutes the nested
+ * document the split-up schema was derived from (`authors` / `translations` / `performances` as
+ * arrays).
  *
  * - `authors` is FORWARD, through the work's own `author_ids` array reference, so `include_fields`
  *   alone materialises it — as in the translations search above.
  * - `translations` and `performances` are REVERSE: nothing on the work points at them, so the join is
- *   driven from the other side. Unlike the forward direction, `include_fields` alone is not enough —
- *   without a matching `$collection(...)` clause in `filter_by`, typesense returns the works with no
- *   joined documents attached and no error at all.
+ *   driven from the other side. Unlike the forward direction, `include_fields` alone is not enough
+ *   — without a matching `$collection(...)` clause in `filter_by`, typesense returns the works with
+ *   no joined documents attached and no error at all.
  *
  * OR-ing each `filter_by` clause with `id:*` makes it a left join, keeping works that have no
- * translation or performance, and `strategy:nest_array` keeps every joined value an array whether one
- * or several documents match — matching the `object[]` each one stands in for.
+ * translation or performance, and `strategy:nest_array` keeps every joined value an array whether
+ * one or several documents match — matching the `object[]` each one stands in for.
  */
 const reverseJoinFilter = [translationsCollectionName, performancesCollectionName]
 	.map((name) => {
@@ -164,11 +169,11 @@ const reverseJoinIncludeFields = [
 /**
  * A NESTED join, two levels deep: work ← translations → authors. A join clause may itself contain a
  * join clause, so the translations pulled in by the work each pull in their own translators
- * (`translations.translator_ids` points at the same `authors` collection the work's `author_ids` do,
- * which is why the joined key is `authors` rather than the field's name).
+ * (`translations.translator_ids` points at the same `authors` collection the work's `author_ids`
+ * do, which is why the joined key is `authors` rather than the field's name).
  *
  * The inner clause takes its own `as authors` alias; without it the inner key keeps the physical
- * collection name (`tbo_test_authors`) even though the outer one was aliased.
+ * collection name (`tbo_authors`) even though the outer one was aliased.
  *
  * The `filter_by` requirement applies to the outer, reverse level only — the inner forward join
  * resolves from `include_fields` alone, and a translation with no `author_ids` simply comes back

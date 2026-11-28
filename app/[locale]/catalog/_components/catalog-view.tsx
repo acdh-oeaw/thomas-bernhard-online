@@ -5,10 +5,10 @@ import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { type ReactNode, useId } from "react";
 import { Radio, RadioGroup } from "react-aria-components";
 
-import type { WorkCollectionName } from "@/lib/typesense/search";
+import type { WorkCollectionName } from "#/lib/typesense/search.ts";
 
-import { CatalogFilterTable } from "./catalog-filter-table";
-import { CatalogTable } from "./catalog-table";
+import { CatalogFilterTable } from "./catalog-filter-table.tsx";
+import { CatalogTable } from "./catalog-table.tsx";
 
 interface CatalogViewProps {
 	collectionName: WorkCollectionName;

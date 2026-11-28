@@ -6,11 +6,11 @@ import { type ReactNode, useMemo } from "react";
 import { Tab, TabList, TabPanel, Tabs } from "react-aria-components";
 import type { SearchOptions, SearchResponseHit } from "typesense";
 
-import { type SearchFilters, SearchResults } from "@/app/[locale]/_components/search-results";
-import { yearFacetFilter } from "@/components/typesense";
-import type { CollectionHit } from "@/components/typesense/use-collection-search";
-import type { FacetCountsRequest } from "@/components/typesense/use-facet-counts";
-import { entityBrandStyle } from "@/config/ui";
+import { type SearchFilters, SearchResults } from "#/app/[locale]/_components/search-results.tsx";
+import { yearFacetFilter } from "#/components/typesense/index.ts";
+import type { CollectionHit } from "#/components/typesense/use-collection-search.ts";
+import type { FacetCountsRequest } from "#/components/typesense/use-facet-counts.ts";
+import { entityBrandStyle } from "#/config/ui.ts";
 import {
 	getItemFacetCounts,
 	getItems,
@@ -18,17 +18,17 @@ import {
 	type ItemSearchParams,
 	type UniversalSearchDocument,
 	type UniversalSearchHit,
-} from "@/lib/data";
-import { collections } from "@/lib/typesense/collections";
-import type { CollectionSearchParams } from "@/lib/typesense/search";
+} from "#/lib/data.ts";
+import { collections } from "#/lib/typesense/collections.ts";
+import type { CollectionSearchParams } from "#/lib/typesense/search.ts";
 
-import { EventResultCard } from "./event-result-card";
-import { GroupResultCard } from "./group-result-card";
-import { PerformanceResultCard } from "./performance-result-card";
-import { PersonResultCard } from "./person-result-card";
-import { PublicationResultCard } from "./publication-result-card";
-import { TranslationResultCard } from "./translation-result-card";
-import { WorkResultCard } from "./work-result-card";
+import { EventResultCard } from "./event-result-card.tsx";
+import { GroupResultCard } from "./group-result-card.tsx";
+import { PerformanceResultCard } from "./performance-result-card.tsx";
+import { PersonResultCard } from "./person-result-card.tsx";
+import { PublicationResultCard } from "./publication-result-card.tsx";
+import { TranslationResultCard } from "./translation-result-card.tsx";
+import { WorkResultCard } from "./work-result-card.tsx";
 
 const resultTypes = [
 	"work",

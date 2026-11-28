@@ -1,11 +1,10 @@
 import { createUrl, removeTrailingSlash } from "@acdh-oeaw/lib";
 import { jsonLdScriptProps } from "react-schemaorg";
 
-import { env } from "@/config/env.config";
-import { expect, test } from "@/e2e/lib/test";
-import { defaultLocale, type IntlLocale, locales } from "@/lib/i18n/locales";
-import { localePrefix } from "@/lib/i18n/routing";
-// import { getPathname } from "@/lib/i18n/navigation";
+import { env } from "#/config/env.config.ts";
+import { expect, test } from "#/e2e/lib/test.ts";
+import { defaultLocale, type IntlLocale, locales } from "#/lib/i18n/locales.ts";
+import { localePrefix } from "#/lib/i18n/routing.ts";
 
 /** @see https://github.com/microsoft/playwright/issues/35162 */
 function getPathname({ href, locale }: { href: { pathname: string }; locale: IntlLocale }): string {
@@ -121,7 +120,7 @@ test("should add json+ld metadata", async ({ createIndexPage }) => {
 
 		const json = await indexPage.page.locator('script[type="application/ld+json"]').textContent();
 
-		// eslint-disable-next-line playwright/prefer-web-first-assertions
+		// oxlint-disable-next-line playwright/prefer-web-first-assertions
 		expect(json).toBe(
 			jsonLdScriptProps({
 				"@context": "https://schema.org",

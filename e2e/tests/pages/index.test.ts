@@ -1,5 +1,5 @@
-import { expect, test } from "@/e2e/lib/test";
-import { locales } from "@/lib/i18n/locales";
+import { expect, test } from "#/e2e/lib/test.ts";
+import { locales } from "#/lib/i18n/locales.ts";
 
 test.describe("index page", () => {
 	test("should have document title", async ({ createIndexPage }) => {
@@ -24,7 +24,7 @@ test.describe("index page", () => {
 		}
 	});
 
-	// eslint-disable-next-line playwright/no-skipped-test
+	// oxlint-disable-next-line playwright/no-skipped-test
 	test.describe.skip("should not have visible changes", () => {
 		test.use({ colorScheme: "light" });
 
@@ -38,7 +38,7 @@ test.describe("index page", () => {
 		});
 	});
 
-	// eslint-disable-next-line playwright/no-skipped-test
+	// oxlint-disable-next-line playwright/no-skipped-test
 	test.describe.skip("should not have visible changes", () => {
 		test.use({ colorScheme: "dark" });
 

@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 
-import { Link } from "@/components/link";
-import { createHref } from "@/lib/navigation/create-href";
+import { Link } from "#/components/link.tsx";
+import { createHref } from "#/lib/navigation/create-href.ts";
 
 interface SkipLinkProps {
 	children: ReactNode;
@@ -14,9 +14,7 @@ interface SkipLinkProps {
 export function SkipLink(props: Readonly<SkipLinkProps>): ReactNode {
 	const { children, id, targetId } = props;
 
-	/**
-	 * @see https://bugzilla.mozilla.org/show_bug.cgi?id=308064
-	 */
+	/** @see https://bugzilla.mozilla.org/show_bug.cgi?id=308064 */
 	function onPress() {
 		document.getElementById(targetId)?.focus();
 	}
